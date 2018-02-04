@@ -1,0 +1,123 @@
+defmodule BudgetWeb.AdjustmentControllerTest do
+  use BudgetWeb.ConnCase
+
+  alias Budget.Accounts
+  alias Budget.Accounts.Adjustment
+
+  @account_id 42
+  @create_attrs %{total: 120.5, title: "test"}
+  @update_attrs %{total: 456.7}
+  @invalid_attrs %{total: nil}
+
+  def fixture(:adjustment) do
+    {:ok, adjustment} =
+      Accounts.create_adjustment(@create_attrs |> Map.merge(%{account_id: @account_id}))
+
+    adjustment
+  end
+
+  def fixture(:account) do
+    {:ok, account} =
+      Accounts.create_account(%{id: @account_id, name: "test", balance: 242, debt: false})
+
+    account
+  end
+
+  setup %{conn: conn} do
+    {:ok, conn: put_req_header(conn, "accept", "application/json"), account: fixture(:account)}
+  end
+
+  describe "create adjustments" do
+    test "renders adjustments when data is valid", %{conn: conn, account: account} do
+      conn =
+        post(
+          conn,
+          account_adjustment_path(conn, :create, account),
+          adjustment: @create_attrs
+        )
+
+      assert %{"id" => id} = json_response(conn, 201)["data"]
+
+      conn = get(conn, account_adjustment_path(conn, :show, account, id))
+
+      assert json_response(conn, 200)["data"] == %{
+               "id" => id,
+               "title" => "test",
+               "total" => 120.5,
+               "account_id" => account.id
+             }
+    end
+
+    test "renders errors when data is invalid", %{conn: conn, account: account} do
+      conn =
+        post(
+          conn,
+          account_adjustment_path(conn, :create, account),
+          adjustment: @invalid_attrs
+        )
+
+      assert json_response(conn, 422)["errors"] != %{}
+    end
+  end
+
+  describe "update adjustments" do
+    setup [:create_adjustment]
+
+    test "renders adjustments when data is valid", %{
+      conn: conn,
+      adjustment: %Adjustment{id: id} = adjustment,
+      account: account
+    } do
+      conn =
+        put(
+          conn,
+          account_adjustment_path(conn, :update, account, adjustment),
+          adjustment: @update_attrs
+        )
+
+      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+
+      conn = get(conn, account_adjustment_path(conn, :show, account, id))
+
+      assert json_response(conn, 200)["data"] == %{
+               "id" => id,
+               "title" => "test",
+               "total" => 456.7,
+               "account_id" => @account_id
+             }
+    end
+
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      adjustment: adjustment,
+      account: account
+    } do
+      conn =
+        put(
+          conn,
+          account_adjustment_path(conn, :update, account, adjustment),
+          adjustment: @invalid_attrs
+        )
+
+      assert json_response(conn, 422)["errors"] != %{}
+    end
+  end
+
+  describe "delete adjustments" do
+    setup [:create_adjustment]
+
+    test "deletes chosen adjustments", %{conn: conn, adjustment: adjustment, account: account} do
+      conn = delete(conn, account_adjustment_path(conn, :delete, account, adjustment))
+      assert response(conn, 204)
+
+      assert_error_sent(404, fn ->
+        get(conn, account_adjustment_path(conn, :show, account, adjustment))
+      end)
+    end
+  end
+
+  defp create_adjustment(_) do
+    adjustment = fixture(:adjustment)
+    {:ok, adjustment: adjustment}
+  end
+end

@@ -9,12 +9,13 @@ module.exports = {
   },
   output: {
     filename: '[name].js',
-    path: path.join(__dirname, '../api/priv/static/js'),
-    chunkFilename: "[name].[chunkhash].js",
-    publicPath: "/js/"
+    chunkFilename: '[name].[chunkhash].js',
+    publicPath: "/js/",
+    path: path.join(__dirname, '../priv/static/js'),
   },
   plugins: [
-    new CleanWebpackPlugin([path.join(__dirname, '../api/priv/static/js'), path.join(__dirname, '../api/priv/static/css')], { allowExternal: true }),
+    new CleanWebpackPlugin([ path.join(__dirname, '../priv/static') ], { allowExternal: true }),
+
   ],
   resolve: {
     extensions: ['.js', '.jsx']

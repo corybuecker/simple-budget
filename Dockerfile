@@ -1,16 +1,16 @@
 FROM node:9-alpine as assets
 RUN apk update && apk add yarn python
-ADD www/package.json www/yarn.lock /tmp/
+ADD assets/package.json assets/yarn.lock /tmp/
 RUN cd /tmp && yarn
-RUN mkdir -p /app/www && cd /app/www && ln -s /tmp/node_modules
-COPY api /app/api
-COPY www /app/www
-WORKDIR /app/www
+RUN mkdir -p /app/assets && cd /app/assets && ln -s /tmp/node_modules
+COPY / /app/
+WORKDIR /app/assets
 RUN yarn run webpack --config webpack.prod.js
 
 FROM elixir:1.6-alpine
-COPY --from=assets /app/api /app
+COPY --from=assets /app /app
 WORKDIR /app
+RUN rm -rf assets
 ENV MIX_ENV=prod PORT=4000
 RUN mix local.hex --force && \
     mix local.rebar --force && \

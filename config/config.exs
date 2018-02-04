@@ -11,7 +11,8 @@ config :budget, ecto_repos: [Budget.Repo]
 # Configures the endpoint
 config :budget, BudgetWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "secret_key_base",
+  secret_key_base:
+    "secret_key_basesecret_key_basesecret_key_basesecret_key_basesecret_key_basesecret_key_base",
   render_errors: [view: BudgetWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: Budget.PubSub, adapter: Phoenix.PubSub.PG2]
 

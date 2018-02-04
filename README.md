@@ -1,6 +1,6 @@
 # Budget
 
-[![Travis](https://img.shields.io/travis/corybuecker/simple-budget.svg)]()
+[![Travis](https://img.shields.io/travis/corybuecker/simple-budget.svg)](https://travis-ci.org/corybuecker/simple-budget)
 
 To start your Phoenix server:
 

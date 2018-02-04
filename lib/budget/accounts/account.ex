@@ -6,7 +6,7 @@ defmodule Budget.Accounts.Account do
 
   schema "accounts" do
     field(:name, :string)
-    field(:balance, :float)
+    field(:balance, :decimal)
     field(:debt, :boolean)
     timestamps()
 

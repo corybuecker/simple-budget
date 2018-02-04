@@ -37,13 +37,13 @@ defmodule BudgetWeb.SnapshotControllerTest do
       account_id = account.id
       name = account.name
 
-      assert %{"name" => ^name, "id" => ^account_id, "balance" => 500.0} =
+      assert %{"name" => ^name, "id" => ^account_id, "balance" => "500"} =
                json_response(conn, 200)["data"]
 
       snapshots = Accounts.list_snapshots()
       assert length(snapshots) == 1
       [snapshot | []] = snapshots
-      assert snapshot.after == 500.0
+      assert snapshot.after == Decimal.new("500.000")
     end
 
     test "renders errors when data is invalid", %{conn: conn, account: account} do

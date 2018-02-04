@@ -15,7 +15,10 @@ defmodule Budget.Calculations.Daily do
   end
 
   defp remaining do
-    credits() - debts() - savings() - goals()
+    credits()
+    |> Decimal.sub(debts())
+    |> Decimal.sub(savings())
+    |> Decimal.sub(goals())
   end
 
   defp remaining_per_day(remaining) do
@@ -25,7 +28,7 @@ defmodule Budget.Calculations.Daily do
 
     cond do
       days_left == 0 -> remaining
-      true -> remaining / days_left
+      true -> Decimal.div(Decimal.new(remaining), Decimal.new(days_left))
     end
   end
 
@@ -48,7 +51,7 @@ defmodule Budget.Calculations.Daily do
       )
       |> Repo.one()
 
-    (credits || 0) + (adjustments || 0)
+    Decimal.add(credits || Decimal.new(0), adjustments || Decimal.new(0))
   end
 
   defp debts do
@@ -70,7 +73,7 @@ defmodule Budget.Calculations.Daily do
       )
       |> Repo.one()
 
-    (debts || 0) + (adjustments || 0)
+    Decimal.add(debts || Decimal.new(0), adjustments || Decimal.new(0))
   end
 
   defp savings do
@@ -81,7 +84,7 @@ defmodule Budget.Calculations.Daily do
       )
       |> Repo.one()
 
-    savings || 0
+    Decimal.new(savings || 0)
   end
 
   defp goals do
@@ -95,6 +98,6 @@ defmodule Budget.Calculations.Daily do
       )
       |> Repo.one()
 
-    goals || 0
+    Decimal.new(goals || 0)
   end
 end

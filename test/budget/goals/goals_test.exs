@@ -9,13 +9,13 @@ defmodule Budget.GoalsTest do
     @valid_attrs %{
       end_date: ~D[2010-04-17],
       start_date: ~D[2010-04-17],
-      target: 120.5,
+      target: Decimal.new("120.500"),
       title: "some title"
     }
     @update_attrs %{
       end_date: ~D[2011-05-18],
       start_date: ~D[2011-05-18],
-      target: 456.7,
+      target: Decimal.new("456.700"),
       title: "some updated title"
     }
     @invalid_attrs %{end_date: nil, start_date: nil, target: nil, title: nil}
@@ -43,7 +43,7 @@ defmodule Budget.GoalsTest do
       assert {:ok, %Goal{} = goal} = Goals.create_goal(@valid_attrs)
       assert goal.end_date == ~D[2010-04-17]
       assert goal.start_date == ~D[2010-04-17]
-      assert goal.target == 120.5
+      assert goal.target == Decimal.new("120.500")
       assert goal.title == "some title"
     end
 
@@ -57,7 +57,7 @@ defmodule Budget.GoalsTest do
       assert %Goal{} = goal
       assert goal.end_date == ~D[2011-05-18]
       assert goal.start_date == ~D[2011-05-18]
-      assert goal.target == 456.7
+      assert goal.target == Decimal.new("456.700")
       assert goal.title == "some updated title"
     end
 

@@ -3,10 +3,9 @@ defmodule Budget.Savings.Saving do
   import Ecto.Changeset
   alias Budget.Savings.Saving
 
-
   schema "savings" do
-    field :amount, :float
-    field :title, :string
+    field(:amount, :decimal)
+    field(:title, :string)
 
     timestamps()
   end

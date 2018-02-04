@@ -1,9 +1,12 @@
 # Budget
 
+[![Travis](https://img.shields.io/travis/corybuecker/simple-budget.svg)]()
+
 To start your Phoenix server:
 
   * Install dependencies with `mix deps.get`
-  * Create and migrate your database with `mix ecto.create && mix ecto.migrate`
+  * Create and migrate your database with `mix ecto.setup`
+  * Compile the assets with `cd assets && yarn install && yarn run webpack --config webpack.dev.js`
   * Start Phoenix endpoint with `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.

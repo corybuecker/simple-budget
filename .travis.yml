@@ -1,5 +1,4 @@
-elixir: '1.6'
-node_js: '9'
-cache:
-  directories:
-  - $HOME/.yarn-cache
+language: elixir
+script:
+  - cd assets && yarn install --pure-lockfile && yarn run jest
+  - mix test

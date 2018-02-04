@@ -6,8 +6,8 @@ defmodule Budget.SavingsTest do
   describe "savings" do
     alias Budget.Savings.Saving
 
-    @valid_attrs %{amount: Decimal.new("120.500"), title: "some title"}
-    @update_attrs %{amount: Decimal.new("456.700"), title: "some updated title"}
+    @valid_attrs %{amount: 120.5, title: "some title"}
+    @update_attrs %{amount: 456.7, title: "some updated title"}
     @invalid_attrs %{amount: nil, title: nil}
 
     def saving_fixture(attrs \\ %{}) do
@@ -31,7 +31,7 @@ defmodule Budget.SavingsTest do
 
     test "create_saving/1 with valid data creates a saving" do
       assert {:ok, %Saving{} = saving} = Savings.create_saving(@valid_attrs)
-      assert saving.amount == Decimal.new("120.500")
+      assert saving.amount == 120.5
       assert saving.title == "some title"
     end
 
@@ -43,7 +43,7 @@ defmodule Budget.SavingsTest do
       saving = saving_fixture()
       assert {:ok, saving} = Savings.update_saving(saving, @update_attrs)
       assert %Saving{} = saving
-      assert saving.amount == Decimal.new("456.700")
+      assert saving.amount == 456.7
       assert saving.title == "some updated title"
     end
 

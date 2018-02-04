@@ -7,8 +7,8 @@ defmodule Budget.AccountsTest do
     alias Budget.Accounts.Account
     alias Budget.Accounts.Snapshot
 
-    @valid_attrs %{name: "some name", balance: Decimal.new("123.000"), debt: false}
-    @update_attrs %{name: "some updated name", balance: Decimal.new("456.000"), debt: true}
+    @valid_attrs %{name: "some name", balance: 123, debt: false}
+    @update_attrs %{name: "some updated name", balance: 456, debt: true}
     @invalid_attrs %{name: nil}
 
     def account_fixture(attrs \\ %{}) do
@@ -52,16 +52,9 @@ defmodule Budget.AccountsTest do
       assert %Account{} = account
       assert account.name == "some updated name"
       account_id = account.id
-      before = Decimal.new("123.000")
-      after_value = Decimal.new("456.000")
 
-      assert [
-               %Snapshot{
-                 account_id: ^account_id,
-                 before: ^before,
-                 after: ^after_value
-               }
-             ] = Accounts.list_snapshots()
+      assert [%Snapshot{account_id: ^account_id, before: 123.0, after: 456.0}] =
+               Accounts.list_snapshots()
     end
 
     test "update_account/2 with invalid data returns error changeset" do
@@ -92,8 +85,8 @@ defmodule Budget.AccountsTest do
   describe "adjustments" do
     alias Budget.Accounts.Adjustment
 
-    @valid_attrs %{account_id: 42, total: Decimal.new("120.500"), title: "test"}
-    @update_attrs %{account_id: 43, total: Decimal.new("456.700")}
+    @valid_attrs %{account_id: 42, total: 120.5, title: "test"}
+    @update_attrs %{account_id: 43, total: 456.7}
     @invalid_attrs %{account_id: nil, total: nil}
 
     def adjustment_fixture(attrs \\ %{}) do
@@ -118,7 +111,7 @@ defmodule Budget.AccountsTest do
     test "create_adjustment/1 with valid data creates a adjustment" do
       assert {:ok, %Adjustment{} = adjustment} = Accounts.create_adjustment(@valid_attrs)
       assert adjustment.account_id == 42
-      assert adjustment.total == Decimal.new("120.500")
+      assert adjustment.total == 120.5
     end
 
     test "create_adjustment/1 with invalid data returns error changeset" do
@@ -130,7 +123,7 @@ defmodule Budget.AccountsTest do
       assert {:ok, adjustment} = Accounts.update_adjustment(adjustment, @update_attrs)
       assert %Adjustment{} = adjustment
       assert adjustment.account_id == 43
-      assert adjustment.total == Decimal.new("456.700")
+      assert adjustment.total == 456.7
     end
 
     test "update_adjustment/2 with invalid data returns error changeset" do
@@ -156,8 +149,8 @@ defmodule Budget.AccountsTest do
   describe "snapshots" do
     alias Budget.Accounts.Snapshot
 
-    @valid_attrs %{account_id: 42, after: Decimal.new("120.500"), before: Decimal.new("120.500")}
-    @update_attrs %{account_id: 43, after: Decimal.new("456.700"), before: Decimal.new("456.700")}
+    @valid_attrs %{account_id: 42, after: 120.5, before: 120.5}
+    @update_attrs %{account_id: 43, after: 456.7, before: 456.7}
     @invalid_attrs %{account_id: nil, after: nil, before: nil}
 
     def snapshot_fixture(attrs \\ %{}) do
@@ -182,8 +175,8 @@ defmodule Budget.AccountsTest do
     test "create_snapshot/1 with valid data creates a snapshot" do
       assert {:ok, %Snapshot{} = snapshot} = Accounts.create_snapshot(@valid_attrs)
       assert snapshot.account_id == 42
-      assert snapshot.after == Decimal.new("120.500")
-      assert snapshot.before == Decimal.new("120.500")
+      assert snapshot.after == 120.5
+      assert snapshot.before == 120.5
     end
 
     test "create_snapshot/1 with invalid data returns error changeset" do
@@ -195,8 +188,8 @@ defmodule Budget.AccountsTest do
       assert {:ok, snapshot} = Accounts.update_snapshot(snapshot, @update_attrs)
       assert %Snapshot{} = snapshot
       assert snapshot.account_id == 43
-      assert snapshot.after == Decimal.new("456.700")
-      assert snapshot.before == Decimal.new("456.700")
+      assert snapshot.after == 456.7
+      assert snapshot.before == 456.7
     end
 
     test "update_snapshot/2 with invalid data returns error changeset" do

@@ -4,8 +4,8 @@ defmodule BudgetWeb.AccountControllerTest do
   alias Budget.Accounts
   alias Budget.Accounts.Account
 
-  @create_attrs %{name: "some name", balance: Decimal.new("123.000"), debt: false}
-  @update_attrs %{name: "some updated name", balance: Decimal.new("345.000"), debt: true}
+  @create_attrs %{name: "some name", balance: 123, debt: false}
+  @update_attrs %{name: "some updated name", balance: 345, debt: true}
   @invalid_attrs %{name: nil}
 
   def fixture(:account) do
@@ -30,7 +30,7 @@ defmodule BudgetWeb.AccountControllerTest do
 
       assert json_response(conn, 200)["data"] == [
                %{
-                 "balance" => "123.000",
+                 "balance" => 123.0,
                  "id" => account.id,
                  "name" => "some name",
                  "debt" => false,
@@ -50,7 +50,7 @@ defmodule BudgetWeb.AccountControllerTest do
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
                "name" => "some name",
-               "balance" => "123.000",
+               "balance" => 123.0,
                "debt" => false
              }
     end
@@ -73,7 +73,7 @@ defmodule BudgetWeb.AccountControllerTest do
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
                "name" => "some updated name",
-               "balance" => "345.000",
+               "balance" => 345.0,
                "debt" => true
              }
     end

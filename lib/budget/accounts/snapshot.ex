@@ -3,10 +3,11 @@ defmodule Budget.Accounts.Snapshot do
   import Ecto.Changeset
   alias Budget.Accounts.Snapshot
 
+
   schema "snapshots" do
-    field(:account_id, :integer)
-    field(:after, :decimal)
-    field(:before, :decimal)
+    field :account_id, :integer
+    field :after, :float
+    field :before, :float
 
     timestamps()
   end

@@ -1,4 +1,6 @@
 language: elixir
+elixir: '1.6'
+node_js: '9'
 script:
   - cd assets && yarn install --pure-lockfile && yarn run jest
   - mix test

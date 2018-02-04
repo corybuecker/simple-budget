@@ -14,3 +14,5 @@ docker tag $IMAGE:$version $IMAGE:latest
 
 gcloud docker -- push $IMAGE:latest
 gcloud docker -- push $IMAGE:$version
+
+kubectl set image deployments/simple-budget-simple-budget simple-budget=$IMAGE:$version

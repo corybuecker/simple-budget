@@ -14,10 +14,27 @@ export default class Home extends React.Component {
 
   render() {
     return (
-      <div>
-        {this.state.daily.remaining}
-        <br />
-        {this.state.daily.remaining_per_day}
+      <div class="row">
+        <div class="col-sm-6">
+          <div class="card">
+            <div class="card-header">
+              Total Remaining
+            </div>
+            <div class="card-body">
+              <p class="card-text">{this.state.daily.remaining}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="card">
+            <div class="card-header">
+              Total Remaining per Day
+            </div>
+            <div class="card-body">
+              <p class="card-text">{this.state.daily.remaining_per_day}</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

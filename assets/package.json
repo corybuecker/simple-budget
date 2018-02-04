@@ -14,6 +14,7 @@
     "babel-preset-react": "^6.24",
     "caniuse-lite": "^1.0",
     "clean-webpack-plugin": "^0.1",
+    "coveralls": "^3.0.0",
     "css-loader": "^0.28",
     "eslint": "^4.11",
     "eslint-config-airbnb": "^16.1",

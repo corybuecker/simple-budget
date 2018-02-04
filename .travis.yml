@@ -1,0 +1,4 @@
+- language: elixir
+  script: cd api && mix local.rebar --force && mix local.hex --force && mix deps.get && mix test
+- language: node_js
+  script: cd www && yarn install --pure-lockfile && yarn run jest

@@ -4,4 +4,4 @@ node_js: '9'
 script:
   - node --version
   - cd assets && yarn install --pure-lockfile && yarn run jest
-  - cd ../ && mix test
+  - cd ../ && mix test && mix coveralls.travis

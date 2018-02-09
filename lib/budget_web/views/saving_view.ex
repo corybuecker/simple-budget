@@ -11,8 +11,11 @@ defmodule BudgetWeb.SavingView do
   end
 
   def render("saving.json", %{saving: saving}) do
-    %{id: saving.id,
+    %{
+      id: saving.id,
       title: saving.title,
-      amount: saving.amount}
+      amount: saving.amount,
+      amount_cents: saving.amount * 100.0
+    }
   end
 end

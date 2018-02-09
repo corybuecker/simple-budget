@@ -19,8 +19,8 @@ defmodule Budget.Accounts do
 
   """
   def list_accounts do
-    accounts = Repo.all(Account)
-    accounts |> Repo.preload(:adjustments)
+    Repo.all(Account)
+    |> Repo.preload(:adjustments)
   end
 
   @doc """
@@ -78,12 +78,12 @@ defmodule Budget.Accounts do
       Multi.new()
       |> Multi.update(:account, account_changeset)
       |> Multi.run(:snapshot, fn %{account: updated_account} ->
-           create_snapshot(%{
-             account_id: account.id,
-             before: account.balance,
-             after: updated_account.balance
-           })
-         end)
+        create_snapshot(%{
+          account_id: account.id,
+          before: account.balance,
+          after: updated_account.balance
+        })
+      end)
 
     case Repo.transaction(multi) do
       {:ok, %{account: account, snapshot: _snapshot}} -> {:ok, account}

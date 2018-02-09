@@ -46,6 +46,7 @@ defmodule BudgetWeb.GoalControllerTest do
                "end_date" => "2010-04-17",
                "start_date" => "2010-04-17",
                "target" => 120.5,
+               "target_cents" => 12050,
                "title" => "some title"
              }
     end
@@ -70,6 +71,7 @@ defmodule BudgetWeb.GoalControllerTest do
                "end_date" => "2011-05-18",
                "start_date" => "2011-05-18",
                "target" => 456.7,
+               "target_cents" => 45670,
                "title" => "some updated title"
              }
     end

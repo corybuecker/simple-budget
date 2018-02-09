@@ -44,6 +44,7 @@ defmodule BudgetWeb.AdjustmentControllerTest do
                "id" => id,
                "title" => "test",
                "total" => 120.5,
+               "total_cents" => 12050,
                "account_id" => account.id
              }
     end
@@ -83,6 +84,7 @@ defmodule BudgetWeb.AdjustmentControllerTest do
                "id" => id,
                "title" => "test",
                "total" => 456.7,
+               "total_cents" => 45670,
                "account_id" => @account_id
              }
     end

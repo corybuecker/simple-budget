@@ -11,9 +11,13 @@ defmodule BudgetWeb.SnapshotView do
   end
 
   def render("snapshot.json", %{snapshot: snapshot}) do
-    %{id: snapshot.id,
+    %{
+      id: snapshot.id,
       account_id: snapshot.account_id,
       before: snapshot.before,
-      after: snapshot.after}
+      before_cents: snapshot.before * 100.0,
+      after_cents: snapshot.after * 100.0,
+      after: snapshot.after
+    }
   end
 end

@@ -34,7 +34,8 @@ defmodule BudgetWeb.AccountControllerTest do
                  "id" => account.id,
                  "name" => "some name",
                  "debt" => false,
-                 "adjustments" => []
+                 "adjustments" => [],
+                 "balance_cents" => 12300
                }
              ]
     end
@@ -51,7 +52,8 @@ defmodule BudgetWeb.AccountControllerTest do
                "id" => id,
                "name" => "some name",
                "balance" => 123.0,
-               "debt" => false
+               "debt" => false,
+               "balance_cents" => 12300
              }
     end
 
@@ -74,7 +76,8 @@ defmodule BudgetWeb.AccountControllerTest do
                "id" => id,
                "name" => "some updated name",
                "balance" => 345.0,
-               "debt" => true
+               "debt" => true,
+               "balance_cents" => 34500
              }
     end
 

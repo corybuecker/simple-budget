@@ -33,6 +33,7 @@ defmodule Budget.AccountsTest do
     test "create_account/1 with valid data creates a account" do
       assert {:ok, %Account{} = account} = Accounts.create_account(@valid_attrs)
       assert account.name == "some name"
+      assert account.balance_cents == 12300
     end
 
     test "create_account/1 with invalid data returns error changeset" do
@@ -44,6 +45,7 @@ defmodule Budget.AccountsTest do
       assert {:ok, account} = Accounts.update_account(account, @update_attrs)
       assert %Account{} = account
       assert account.name == "some updated name"
+      assert account.balance_cents == 45600
     end
 
     test "update_account/2 with valid data creates a snapshot" do

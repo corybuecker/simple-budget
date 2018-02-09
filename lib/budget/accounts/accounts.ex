@@ -52,6 +52,16 @@ defmodule Budget.Accounts do
 
   """
   def create_account(attrs \\ %{}) do
+    balance = Map.get(attrs, :balance)
+
+    balance_cents =
+      case balance do
+        balance when is_number(balance) -> round(balance * 100.0)
+        _ -> nil
+      end
+
+    attrs = Map.put(attrs, :balance_cents, balance_cents)
+
     %Account{}
     |> Account.changeset(attrs)
     |> Repo.insert()
@@ -70,6 +80,16 @@ defmodule Budget.Accounts do
 
   """
   def update_account(%Account{} = account, attrs) do
+    balance = Map.get(attrs, :balance)
+
+    balance_cents =
+      case balance do
+        balance when is_number(balance) -> round(balance * 100.0)
+        _ -> nil
+      end
+
+    attrs = Map.put(attrs, :balance_cents, balance_cents)
+
     account_changeset =
       account
       |> Account.changeset(attrs)

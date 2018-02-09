@@ -7,6 +7,7 @@ defmodule Budget.Accounts.Account do
   schema "accounts" do
     field(:name, :string)
     field(:balance, :float)
+    field(:balance_cents, :integer)
     field(:debt, :boolean)
     timestamps()
 
@@ -16,7 +17,7 @@ defmodule Budget.Accounts.Account do
   @doc false
   def changeset(%Account{} = account, attrs) do
     account
-    |> cast(attrs, [:name, :balance, :debt])
+    |> cast(attrs, [:name, :balance, :debt, :balance_cents])
     |> validate_required([:name, :balance, :debt])
   end
 end

@@ -12,24 +12,24 @@
 
 credit_card =
   Budget.Repo.insert!(%Budget.Accounts.Account{
-    name: "American Express",
+    name: "Credit Card",
     balance: 1000.0,
     debt: true
   })
 
 checking =
-  Budget.Repo.insert!(%Budget.Accounts.Account{name: "Chase", balance: 1000.0, debt: false})
+  Budget.Repo.insert!(%Budget.Accounts.Account{name: "Checking", balance: 1000.0, debt: false})
 
 Budget.Repo.insert!(%Budget.Accounts.Adjustment{
   account_id: checking.id,
   total: -124.54,
-  title: "planned payments"
+  title: "Birthday Present"
 })
 
 Budget.Accounts.update_account(credit_card, %{balance: 845.24})
 
 Budget.Repo.insert!(%Budget.Goals.Goal{
-  title: "new laptop",
+  title: "New Laptop",
   target: 2352.52,
   start_date: Timex.shift(Timex.today(), months: -1),
   end_date: Timex.shift(Timex.today(), months: 1)

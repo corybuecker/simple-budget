@@ -15,7 +15,10 @@ ENV MIX_ENV=prod PORT=4000
 RUN mix local.hex --force && \
     mix local.rebar --force && \
     mix deps.get && \
+    MIX_ENV=prod mix compile && \
+    MIX_ENV=demo mix compile && \
     mix phx.digest
+
 CMD ["mix", "phx.server"]
 
 MAINTAINER Cory Buecker <cory.buecker@gmail.com>

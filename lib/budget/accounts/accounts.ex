@@ -52,19 +52,20 @@ defmodule Budget.Accounts do
 
   """
   def create_account(attrs \\ %{}) do
-    balance = Map.get(attrs, :balance)
+    account_changeset =
+      %Account{}
+      |> Account.changeset(attrs)
 
-    balance_cents =
-      case balance do
-        balance when is_number(balance) -> round(balance * 100.0)
-        _ -> nil
+    account_changeset =
+      case account_changeset.changes do
+        %{balance: balance} when is_number(balance) ->
+          Ecto.Changeset.change(account_changeset, %{balance_cents: round(balance * 100)})
+
+        _ ->
+          account_changeset
       end
 
-    attrs = Map.put(attrs, :balance_cents, balance_cents)
-
-    %Account{}
-    |> Account.changeset(attrs)
-    |> Repo.insert()
+    account_changeset |> Repo.insert()
   end
 
   @doc """
@@ -80,19 +81,18 @@ defmodule Budget.Accounts do
 
   """
   def update_account(%Account{} = account, attrs) do
-    balance = Map.get(attrs, :balance)
-
-    balance_cents =
-      case balance do
-        balance when is_number(balance) -> round(balance * 100.0)
-        _ -> nil
-      end
-
-    attrs = Map.put(attrs, :balance_cents, balance_cents)
-
     account_changeset =
       account
       |> Account.changeset(attrs)
+
+    account_changeset =
+      case account_changeset.changes do
+        %{balance: balance} when is_number(balance) ->
+          Ecto.Changeset.change(account_changeset, %{balance_cents: round(balance * 100)})
+
+        _ ->
+          account_changeset
+      end
 
     multi =
       Multi.new()

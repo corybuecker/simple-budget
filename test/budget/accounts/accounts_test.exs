@@ -55,8 +55,15 @@ defmodule Budget.AccountsTest do
       assert account.name == "some updated name"
       account_id = account.id
 
-      assert [%Snapshot{account_id: ^account_id, before: 123.0, after: 456.0}] =
-               Accounts.list_snapshots()
+      assert [
+               %Snapshot{
+                 account_id: ^account_id,
+                 before: 123.0,
+                 after: 456.0,
+                 before_cents: 12300,
+                 after_cents: 45600
+               }
+             ] = Accounts.list_snapshots()
     end
 
     test "update_account/2 with invalid data returns error changeset" do
@@ -114,6 +121,7 @@ defmodule Budget.AccountsTest do
       assert {:ok, %Adjustment{} = adjustment} = Accounts.create_adjustment(@valid_attrs)
       assert adjustment.account_id == 42
       assert adjustment.total == 120.5
+      assert adjustment.total_cents == 12050
     end
 
     test "create_adjustment/1 with invalid data returns error changeset" do
@@ -126,6 +134,7 @@ defmodule Budget.AccountsTest do
       assert %Adjustment{} = adjustment
       assert adjustment.account_id == 43
       assert adjustment.total == 456.7
+      assert adjustment.total_cents == 45670
     end
 
     test "update_adjustment/2 with invalid data returns error changeset" do
@@ -179,6 +188,8 @@ defmodule Budget.AccountsTest do
       assert snapshot.account_id == 42
       assert snapshot.after == 120.5
       assert snapshot.before == 120.5
+      assert snapshot.after_cents == 12050
+      assert snapshot.before_cents == 12050
     end
 
     test "create_snapshot/1 with invalid data returns error changeset" do
@@ -192,6 +203,8 @@ defmodule Budget.AccountsTest do
       assert snapshot.account_id == 43
       assert snapshot.after == 456.7
       assert snapshot.before == 456.7
+      assert snapshot.after_cents == 45670
+      assert snapshot.before_cents == 45670
     end
 
     test "update_snapshot/2 with invalid data returns error changeset" do

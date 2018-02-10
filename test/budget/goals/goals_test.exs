@@ -44,6 +44,7 @@ defmodule Budget.GoalsTest do
       assert goal.end_date == ~D[2010-04-17]
       assert goal.start_date == ~D[2010-04-17]
       assert goal.target == 120.5
+      assert goal.target_cents == 12050
       assert goal.title == "some title"
     end
 
@@ -58,6 +59,7 @@ defmodule Budget.GoalsTest do
       assert goal.end_date == ~D[2011-05-18]
       assert goal.start_date == ~D[2011-05-18]
       assert goal.target == 456.7
+      assert goal.target_cents == 45670
       assert goal.title == "some updated title"
     end
 

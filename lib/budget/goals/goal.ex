@@ -7,6 +7,7 @@ defmodule Budget.Goals.Goal do
     field(:end_date, :date)
     field(:start_date, :date)
     field(:target, :float)
+    field(:target_cents, :integer)
     field(:title, :string)
 
     timestamps()

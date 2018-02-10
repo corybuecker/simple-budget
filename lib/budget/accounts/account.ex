@@ -17,7 +17,7 @@ defmodule Budget.Accounts.Account do
   @doc false
   def changeset(%Account{} = account, attrs) do
     account
-    |> cast(attrs, [:name, :balance, :debt, :balance_cents])
+    |> cast(attrs, [:name, :balance, :debt])
     |> validate_required([:name, :balance, :debt])
   end
 end

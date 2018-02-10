@@ -6,6 +6,7 @@ defmodule Budget.Accounts.Adjustment do
 
   schema "adjustments" do
     field(:total, :float)
+    field(:total_cents, :integer)
     field(:title, :string)
     timestamps()
 

@@ -50,8 +50,20 @@ defmodule Budget.Savings do
 
   """
   def create_saving(attrs \\ %{}) do
-    %Saving{}
-    |> Saving.changeset(attrs)
+    saving_changeset =
+      %Saving{}
+      |> Saving.changeset(attrs)
+
+    saving_changeset =
+      case saving_changeset.changes do
+        %{amount: amount} when is_number(amount) ->
+          Ecto.Changeset.change(saving_changeset, %{amount_cents: round(amount * 100)})
+
+        _ ->
+          saving_changeset
+      end
+
+    saving_changeset
     |> Repo.insert()
   end
 
@@ -68,8 +80,18 @@ defmodule Budget.Savings do
 
   """
   def update_saving(%Saving{} = saving, attrs) do
-    saving
-    |> Saving.changeset(attrs)
+    saving_changeset = saving |> Saving.changeset(attrs)
+
+    saving_changeset =
+      case saving_changeset.changes do
+        %{amount: amount} when is_number(amount) ->
+          Ecto.Changeset.change(saving_changeset, %{amount_cents: round(amount * 100)})
+
+        _ ->
+          saving_changeset
+      end
+
+    saving_changeset
     |> Repo.update()
   end
 

@@ -50,8 +50,20 @@ defmodule Budget.Goals do
 
   """
   def create_goal(attrs \\ %{}) do
-    %Goal{}
-    |> Goal.changeset(attrs)
+    goal_changeset =
+      %Goal{}
+      |> Goal.changeset(attrs)
+
+    goal_changeset =
+      case goal_changeset.changes do
+        %{target: target} when is_number(target) ->
+          Ecto.Changeset.change(goal_changeset, %{target_cents: round(target * 100)})
+
+        _ ->
+          goal_changeset
+      end
+
+    goal_changeset
     |> Repo.insert()
   end
 
@@ -68,8 +80,18 @@ defmodule Budget.Goals do
 
   """
   def update_goal(%Goal{} = goal, attrs) do
-    goal
-    |> Goal.changeset(attrs)
+    goal_changeset = goal |> Goal.changeset(attrs)
+
+    goal_changeset =
+      case goal_changeset.changes do
+        %{target: target} when is_number(target) ->
+          Ecto.Changeset.change(goal_changeset, %{target_cents: round(target * 100)})
+
+        _ ->
+          goal_changeset
+      end
+
+    goal_changeset
     |> Repo.update()
   end
 

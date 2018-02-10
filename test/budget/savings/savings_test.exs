@@ -32,6 +32,7 @@ defmodule Budget.SavingsTest do
     test "create_saving/1 with valid data creates a saving" do
       assert {:ok, %Saving{} = saving} = Savings.create_saving(@valid_attrs)
       assert saving.amount == 120.5
+      assert saving.amount_cents == 12050
       assert saving.title == "some title"
     end
 
@@ -44,6 +45,7 @@ defmodule Budget.SavingsTest do
       assert {:ok, saving} = Savings.update_saving(saving, @update_attrs)
       assert %Saving{} = saving
       assert saving.amount == 456.7
+      assert saving.amount_cents == 45670
       assert saving.title == "some updated title"
     end
 

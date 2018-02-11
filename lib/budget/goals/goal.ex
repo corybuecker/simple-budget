@@ -6,8 +6,7 @@ defmodule Budget.Goals.Goal do
   schema "goals" do
     field(:end_date, :date)
     field(:start_date, :date)
-    field(:target, :float)
-    field(:target_cents, :integer)
+    field(:target, :decimal, scale: 8, precision: 2)
     field(:title, :string)
 
     timestamps()

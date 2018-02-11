@@ -52,20 +52,9 @@ defmodule Budget.Accounts do
 
   """
   def create_account(attrs \\ %{}) do
-    account_changeset =
-      %Account{}
-      |> Account.changeset(attrs)
-
-    account_changeset =
-      case account_changeset.changes do
-        %{balance: balance} when is_number(balance) ->
-          Ecto.Changeset.change(account_changeset, %{balance_cents: round(balance * 100)})
-
-        _ ->
-          account_changeset
-      end
-
-    account_changeset |> Repo.insert()
+    %Account{}
+    |> Account.changeset(attrs)
+    |> Repo.insert()
   end
 
   @doc """
@@ -84,15 +73,6 @@ defmodule Budget.Accounts do
     account_changeset =
       account
       |> Account.changeset(attrs)
-
-    account_changeset =
-      case account_changeset.changes do
-        %{balance: balance} when is_number(balance) ->
-          Ecto.Changeset.change(account_changeset, %{balance_cents: round(balance * 100)})
-
-        _ ->
-          account_changeset
-      end
 
     multi =
       Multi.new()
@@ -185,20 +165,8 @@ defmodule Budget.Accounts do
 
   """
   def create_adjustment(attrs \\ %{}) do
-    adjustment_changeset =
-      %Adjustment{}
-      |> Adjustment.changeset(attrs)
-
-    adjustment_changeset =
-      case adjustment_changeset.changes do
-        %{total: total} when is_number(total) ->
-          Ecto.Changeset.change(adjustment_changeset, %{total_cents: round(total * 100)})
-
-        _ ->
-          adjustment_changeset
-      end
-
-    adjustment_changeset
+    %Adjustment{}
+    |> Adjustment.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -215,20 +183,8 @@ defmodule Budget.Accounts do
 
   """
   def update_adjustment(%Adjustment{} = adjustment, attrs) do
-    adjustment_changeset =
-      adjustment
-      |> Adjustment.changeset(attrs)
-
-    adjustment_changeset =
-      case adjustment_changeset.changes do
-        %{total: total} when is_number(total) ->
-          Ecto.Changeset.change(adjustment_changeset, %{total_cents: round(total * 100)})
-
-        _ ->
-          adjustment_changeset
-      end
-
-    adjustment_changeset
+    adjustment
+    |> Adjustment.changeset(attrs)
     |> Repo.update()
   end
 
@@ -305,29 +261,8 @@ defmodule Budget.Accounts do
 
   """
   def create_snapshot(attrs \\ %{}) do
-    snapshot_changeset =
-      %Snapshot{}
-      |> Snapshot.changeset(attrs)
-
-    snapshot_changeset =
-      case snapshot_changeset.changes do
-        %{before: before} when is_number(before) ->
-          Ecto.Changeset.change(snapshot_changeset, %{before_cents: round(before * 100)})
-
-        _ ->
-          snapshot_changeset
-      end
-
-    snapshot_changeset =
-      case snapshot_changeset.changes do
-        %{after: after_value} when is_number(after_value) ->
-          Ecto.Changeset.change(snapshot_changeset, %{after_cents: round(after_value * 100)})
-
-        _ ->
-          snapshot_changeset
-      end
-
-    snapshot_changeset
+    %Snapshot{}
+    |> Snapshot.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -344,29 +279,8 @@ defmodule Budget.Accounts do
 
   """
   def update_snapshot(%Snapshot{} = snapshot, attrs) do
-    snapshot_changeset =
-      snapshot
-      |> Snapshot.changeset(attrs)
-
-    snapshot_changeset =
-      case snapshot_changeset.changes do
-        %{before: before} when is_number(before) ->
-          Ecto.Changeset.change(snapshot_changeset, %{before_cents: round(before * 100)})
-
-        _ ->
-          snapshot_changeset
-      end
-
-    snapshot_changeset =
-      case snapshot_changeset.changes do
-        %{after: after_value} when is_number(after_value) ->
-          Ecto.Changeset.change(snapshot_changeset, %{after_cents: round(after_value * 100)})
-
-        _ ->
-          snapshot_changeset
-      end
-
-    snapshot_changeset
+    snapshot
+    |> Snapshot.changeset(attrs)
     |> Repo.update()
   end
 

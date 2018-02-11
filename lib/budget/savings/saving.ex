@@ -4,8 +4,7 @@ defmodule Budget.Savings.Saving do
   alias Budget.Savings.Saving
 
   schema "savings" do
-    field(:amount, :float)
-    field(:amount_cents, :integer)
+    field(:amount, :decimal, scale: 8, precision: 2)
     field(:title, :string)
 
     timestamps()

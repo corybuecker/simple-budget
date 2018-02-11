@@ -15,8 +15,7 @@ defmodule BudgetWeb.AdjustmentView do
       id: adjustment.id,
       account_id: adjustment.account_id,
       title: adjustment.title,
-      total: adjustment.total,
-      total_cents: adjustment.total * 100.0
+      total: adjustment.total
     }
   end
 end

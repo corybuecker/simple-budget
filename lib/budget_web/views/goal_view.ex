@@ -16,8 +16,7 @@ defmodule BudgetWeb.GoalView do
       title: goal.title,
       start_date: goal.start_date,
       end_date: goal.end_date,
-      target: goal.target,
-      target_cents: goal.target * 100.0
+      target: goal.target
     }
   end
 end

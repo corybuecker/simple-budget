@@ -5,10 +5,8 @@ defmodule Budget.Accounts.Snapshot do
 
   schema "snapshots" do
     field(:account_id, :integer)
-    field(:after, :float)
-    field(:before, :float)
-    field(:after_cents, :integer)
-    field(:before_cents, :integer)
+    field(:after, :decimal, scale: 8, precision: 2)
+    field(:before, :decimal, scale: 8, precision: 2)
 
     timestamps()
   end

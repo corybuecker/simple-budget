@@ -33,8 +33,7 @@ defmodule BudgetWeb.SavingControllerTest do
 
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
-               "amount" => 120.5,
-               "amount_cents" => 12050,
+               "amount" => "120.50",
                "title" => "some title"
              }
     end
@@ -56,8 +55,7 @@ defmodule BudgetWeb.SavingControllerTest do
 
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
-               "amount" => 456.7,
-               "amount_cents" => 45670,
+               "amount" => "456.70",
                "title" => "some updated title"
              }
     end

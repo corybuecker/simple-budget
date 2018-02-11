@@ -14,8 +14,7 @@ defmodule BudgetWeb.SavingView do
     %{
       id: saving.id,
       title: saving.title,
-      amount: saving.amount,
-      amount_cents: saving.amount * 100.0
+      amount: saving.amount
     }
   end
 end

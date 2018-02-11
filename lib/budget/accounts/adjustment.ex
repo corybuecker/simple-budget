@@ -5,8 +5,7 @@ defmodule Budget.Accounts.Adjustment do
   alias Budget.Accounts.Account
 
   schema "adjustments" do
-    field(:total, :float)
-    field(:total_cents, :integer)
+    field(:total, :decimal, scale: 8, precision: 2)
     field(:title, :string)
     timestamps()
 

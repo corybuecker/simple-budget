@@ -37,7 +37,7 @@ defmodule BudgetWeb.SnapshotControllerTest do
       account_id = account.id
       name = account.name
 
-      assert %{"name" => ^name, "id" => ^account_id, "balance" => "500"} =
+      assert %{"name" => ^name, "id" => ^account_id, "balance" => 500.0} =
                json_response(conn, 200)["data"]
 
       snapshots = Accounts.list_snapshots()

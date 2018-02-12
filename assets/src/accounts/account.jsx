@@ -64,29 +64,26 @@ export default class Account extends React.Component {
 
   render() {
     return (
-      <div className="card">
-        <div className="card-body">
-          <h3 className="card-title">
-            <Input type="text" name="name" required value={this.state.name} title="Account Name" callback={this.updateState} />
-          </h3>
-          <p>{this.state.debt ? 'Debt' : 'Credit'}</p>
-          <form>
-            <div>
-              <div>
-                <span>$</span>
-              </div>
-              <input type="number" name="balance" value={this.state.balance} onChange={this.updateState} />
-            </div>
-            <div>
-              <label htmlFor="debt">
-                <input name="debt" type="checkbox" checked={this.state.debt} onChange={this.updateState} />
-                Debt
-              </label>
-            </div>
-          </form>
-          <Adjustments adjustments={this.props.adjustments} accountId={this.props.id} />
-        </div>
-      </div>
+      <tbody>
+        <tr>
+          <td>
+            {this.props.name}
+          </td>
+          <td>{this.state.debt ? 'Debt' : 'Credit'}</td>
+          <td><input type="number" name="balance" value={this.state.balance} onChange={this.updateState} /></td>
+          <td>
+            <label htmlFor="debt">
+              <input name="debt" type="checkbox" checked={this.state.debt} onChange={this.updateState} />
+              Debt
+            </label>
+          </td>
+        </tr>
+        <tr>
+          <td colSpan="4">
+            <Adjustments adjustments={this.props.adjustments} accountId={this.props.id} />
+          </td>
+        </tr>
+      </tbody>
     );
   }
 }

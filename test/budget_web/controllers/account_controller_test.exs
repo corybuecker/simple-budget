@@ -30,7 +30,7 @@ defmodule BudgetWeb.AccountControllerTest do
 
       assert json_response(conn, 200)["data"] == [
                %{
-                 "balance" => "123.00",
+                 "balance" => 123.0,
                  "id" => account.id,
                  "name" => "some name",
                  "debt" => false,
@@ -50,7 +50,7 @@ defmodule BudgetWeb.AccountControllerTest do
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
                "name" => "some name",
-               "balance" => "123.00",
+               "balance" => 123.0,
                "debt" => false
              }
     end
@@ -73,7 +73,7 @@ defmodule BudgetWeb.AccountControllerTest do
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
                "name" => "some updated name",
-               "balance" => "345.00",
+               "balance" => 345.0,
                "debt" => true
              }
     end

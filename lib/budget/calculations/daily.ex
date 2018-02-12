@@ -83,7 +83,7 @@ defmodule Budget.Calculations.Daily do
       )
       |> Repo.one()
 
-    Decimal.new(savings) || Decimal.new(0)
+    Decimal.new(savings || Decimal.new(0))
   end
 
   defp goals do
@@ -97,6 +97,6 @@ defmodule Budget.Calculations.Daily do
       )
       |> Repo.one()
 
-    Decimal.new(goals) || Decimal.new(0)
+    Decimal.new(goals || Decimal.new(0))
   end
 end

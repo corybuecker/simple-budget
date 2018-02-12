@@ -43,7 +43,7 @@ defmodule BudgetWeb.AdjustmentControllerTest do
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
                "title" => "test",
-               "total" => "120.50",
+               "total" => 120.5,
                "account_id" => account.id
              }
     end
@@ -82,7 +82,7 @@ defmodule BudgetWeb.AdjustmentControllerTest do
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
                "title" => "test",
-               "total" => "456.70",
+               "total" => 456.7,
                "account_id" => @account_id
              }
     end

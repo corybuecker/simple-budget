@@ -40,12 +40,16 @@ export default class Adjustment extends React.Component {
 
   render() {
     return (
-      <div>
-        <input type='text' name='title' onChange={this.valueChanged} value={this.state.title} />
-        <br />
-        <input type='text' name='total' onChange={this.valueChanged} value={this.state.total} />
-        <button onClick={this.delete}>Delete</button>
-      </div>
+      <tbody>
+        <tr>
+          <td>
+            <input type='text' name='title' onChange={this.valueChanged} value={this.state.title} />
+          </td>
+          <td>
+            <input type='text' name='total' onChange={this.valueChanged} value={this.state.total} />
+          </td>
+        </tr>
+      </tbody>
     );
   }
 }

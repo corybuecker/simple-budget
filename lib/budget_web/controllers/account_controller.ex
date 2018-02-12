@@ -4,7 +4,7 @@ defmodule BudgetWeb.AccountController do
   alias Budget.Accounts
   alias Budget.Accounts.Account
 
-  action_fallback BudgetWeb.FallbackController
+  action_fallback(BudgetWeb.FallbackController)
 
   def index(conn, _params) do
     accounts = Accounts.list_accounts()
@@ -35,6 +35,7 @@ defmodule BudgetWeb.AccountController do
 
   def delete(conn, %{"id" => id}) do
     account = Accounts.get_account!(id)
+
     with {:ok, %Account{}} <- Accounts.delete_account(account) do
       send_resp(conn, :no_content, "")
     end

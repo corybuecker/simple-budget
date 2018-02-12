@@ -12,20 +12,24 @@ defmodule BudgetWeb.AccountView do
   end
 
   def render("account.json", %{account: account}) do
-    %{
-      id: account.id,
-      name: account.name,
-      balance: account.balance,
-      debt: account.debt
-    }
+    account |> account_to_map()
   end
 
   def render("account_with_adjustments.json", %{account: account}) do
     account
-    |> Map.take([:id, :name, :debt, :balance])
+    |> account_to_map()
     |> Map.put(
       :adjustments,
       render_many(account.adjustments, AdjustmentView, "adjustment.json")
     )
+  end
+
+  defp account_to_map(account) do
+    %{
+      id: account.id,
+      name: account.name,
+      balance: Decimal.to_float(account.balance),
+      debt: account.debt
+    }
   end
 end

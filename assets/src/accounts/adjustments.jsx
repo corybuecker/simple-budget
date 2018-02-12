@@ -100,11 +100,9 @@ export default class Adjustments extends React.Component {
 
   render() {
     return (
-      <div>
+      <table className="table">
         {this.children()}
-        <button onClick={this.createAdjustment}>New</button>
-
-      </div>
+      </table>
     );
   }
 }

@@ -15,7 +15,7 @@ defmodule BudgetWeb.AdjustmentView do
       id: adjustment.id,
       account_id: adjustment.account_id,
       title: adjustment.title,
-      total: adjustment.total
+      total: Decimal.to_float(adjustment.total)
     }
   end
 end

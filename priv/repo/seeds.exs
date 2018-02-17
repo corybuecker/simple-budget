@@ -34,3 +34,8 @@ Budget.Repo.insert!(%Budget.Goals.Goal{
   start_date: Timex.shift(Timex.today(), months: -1),
   end_date: Timex.shift(Timex.today(), months: 1)
 })
+
+Budget.Repo.insert!(%Budget.Savings.Saving{
+  title: "Checking Account Buffer",
+  amount: 250
+})

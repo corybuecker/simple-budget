@@ -48,6 +48,9 @@ export default class Adjustment extends React.Component {
           <td>
             <input type='text' name='total' onChange={this.valueChanged} value={this.state.total} />
           </td>
+          <td>
+            <button onClick={this.delete}>Delete</button>
+          </td>
         </tr>
       </tbody>
     );

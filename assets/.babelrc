@@ -1,12 +1,4 @@
 {
-  "presets": [
-    "react",
-    ["env", {
-      "targets": {
-        "browsers": ["last 2 versions"]
-      }
-    }]
-  ],
-  "comments": true,
-  "plugins": ["transform-class-properties", "syntax-dynamic-import"]
+  "presets": ["env", "react"],
+  "plugins": ["transform-class-properties"]
 }

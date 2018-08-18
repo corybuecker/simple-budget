@@ -4,10 +4,10 @@ import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 
 import './index.scss';
 
-import LoadableAccounts from './accounts/loadable_accounts';
-import LoadableGoals from './goals/loadable_goals';
-import LoadableSavings from './savings/loadable_savings';
-import LoadableHome from './home_loadable';
+import Accounts from './accounts/accounts';
+import Goals from './goals/goals';
+import Savings from './savings/savings';
+import Home from './home';
 
 ReactDOM.render(
   <Router>
@@ -19,10 +19,10 @@ ReactDOM.render(
         <Link className='nav-link' to='/goals'>Goals</Link>
       </nav>
       <div>
-        <Route exact path='/' component={LoadableHome}/>
-        <Route exact path='/accounts' component={LoadableAccounts}/>
-        <Route exact path='/savings' component={LoadableSavings}/>
-        <Route exact path='/goals' component={LoadableGoals}/>
+        <Route exact path='/' component={Home}/>
+        <Route exact path='/accounts' component={Accounts}/>
+        <Route exact path='/savings' component={Savings}/>
+        <Route exact path='/goals' component={Goals}/>
       </div>
     </div>
   </Router>,

@@ -11,6 +11,10 @@ defmodule BudgetWeb.AccountView do
     %{data: render_one(account, AccountView, "account.json")}
   end
 
+  def render("update.json", %{account: account}) do
+    %{data: render_one(account, AccountView, "account_with_adjustments.json")}
+  end
+
   def render("account.json", %{account: account}) do
     account |> account_to_map()
   end

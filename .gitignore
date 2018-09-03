@@ -75,3 +75,6 @@ typings/
 
 # dotenv environment variables file
 .env
+
+elm-stuff
+node_modules

@@ -16,7 +16,7 @@ defmodule BudgetWeb.GoalView do
       title: goal.title,
       start_date: goal.start_date,
       end_date: goal.end_date,
-      target: goal.target
+      target: Decimal.to_float(goal.target)
     }
   end
 end

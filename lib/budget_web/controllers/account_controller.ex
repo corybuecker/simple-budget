@@ -29,7 +29,7 @@ defmodule BudgetWeb.AccountController do
     account = Accounts.get_account!(id)
 
     with {:ok, %Account{} = account} <- Accounts.update_account(account, account_params) do
-      render(conn, "show.json", account: account)
+      render(conn, "update.json", account: account)
     end
   end
 

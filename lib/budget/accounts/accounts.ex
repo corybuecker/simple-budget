@@ -86,7 +86,7 @@ defmodule Budget.Accounts do
       end)
 
     case Repo.transaction(multi) do
-      {:ok, %{account: account, snapshot: _snapshot}} -> {:ok, account}
+      {:ok, %{account: account, snapshot: _snapshot}} -> {:ok, account |> Repo.preload(:adjustments)}
       {:error, :account, changeset, %{}} -> {:error, changeset}
       {:error, :snapshot, changeset, %{}} -> {:error, changeset}
     end

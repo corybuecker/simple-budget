@@ -3,7 +3,7 @@ defmodule BudgetWeb.PageControllerTest do
 
   test "GET /", %{conn: conn} do
     conn = get(conn, "/")
-    assert html_response(conn, 200) =~ "index\.js"
+    assert html_response(conn, 200) =~ "main\.js"
   end
 
   test "GET /healthcheck", %{conn: conn} do

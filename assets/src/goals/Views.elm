@@ -8,13 +8,14 @@ import Goals.Messages
 
 
 emptyGoal =
-    Goal 0 "" False 0
+    Goal 0 "" "" "" 0
 
 
 editView : Goal -> Html Goals.Messages.Msg
 editView model =
     div []
-        [ input [ type_ "text", value model.name, onInput Goals.Messages.NameUpdated ] []
-        , input [ type_ "checkbox", checked model.debt ] []
-        , input [ type_ "text", value (String.fromFloat model.balance) ] []
+        [ input [ type_ "text", value model.title, onInput Goals.Messages.NameUpdated ] []
+        , input [ type_ "text", value model.startDate ] []
+        , input [ type_ "text", value model.endDate ] []
+        , input [ type_ "text", value (String.fromFloat model.target) ] []
         ]

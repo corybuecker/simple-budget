@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "elm": "^0.19.0-bugfix2",
+    "elm-format": "^0.8.0",
     "elm-webpack-loader": "https://github.com/elm-community/elm-webpack-loader.git#master",
     "file-loader": "^2.0.0",
     "webpack": "^4.17.1",

@@ -1,4 +1,4 @@
-module Goals.Messages exposing (..)
+module Goals.Messages exposing (Msg(..))
 
 import Goals.Models exposing (Goal)
 import Http

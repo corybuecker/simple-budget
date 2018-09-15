@@ -1,4 +1,4 @@
-module Accounts.Messages exposing (..)
+module Accounts.Messages exposing (Msg(..))
 
 import Accounts.Models exposing (Account)
 import Http

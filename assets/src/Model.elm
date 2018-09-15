@@ -1,12 +1,12 @@
-module Model exposing (..)
+module Model exposing (Model, Msg(..))
 
-import Http
-import Accounts.Models exposing (Account)
-import Goals.Models exposing (Goal)
 import Accounts.Messages
-import Goals.Messages
+import Accounts.Models exposing (Account)
 import Browser
 import Browser.Navigation
+import Goals.Messages
+import Goals.Models exposing (Goal)
+import Http
 import Url
 
 

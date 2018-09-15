@@ -1,10 +1,10 @@
-module Goals.Views exposing (..)
+module Goals.Views exposing (editView, emptyGoal)
 
+import Goals.Messages
+import Goals.Models exposing (Goal)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Goals.Models exposing (Goal)
-import Goals.Messages
 
 
 emptyGoal =

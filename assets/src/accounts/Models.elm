@@ -1,4 +1,4 @@
-module Accounts.Models exposing (..)
+module Accounts.Models exposing (Account, Adjustment)
 
 
 type alias Adjustment =

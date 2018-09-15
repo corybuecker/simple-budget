@@ -1,15 +1,14 @@
-module Goals.Update exposing (..)
+module Goals.Update exposing (fetchGoals, goalUrl, goalsUrl, put, refreshGoalsTask, saveGoalAndRefreshGoals, saveGoalTask, update)
 
 import Goals.Messages
 import Goals.Models exposing (Goal)
+import Goals.Utils exposing (encode, goalDecoder, goalUpdatedDecoder, goalsDecoder)
 import Goals.Views
-import Model exposing (Model, Msg(..))
-import Http exposing (post, toTask, jsonBody, get)
-import Goals.Utils exposing (goalsDecoder, goalDecoder, goalUpdatedDecoder)
-import Url.Builder as Url
-import Goals.Utils exposing (encode)
-import Task exposing (Task)
+import Http exposing (get, jsonBody, post, toTask)
 import Json.Decode
+import Model exposing (Model, Msg(..))
+import Task exposing (Task)
+import Url.Builder as Url
 
 
 update : Goals.Messages.Msg -> Model -> ( Model, Cmd Model.Msg )
@@ -23,7 +22,7 @@ update msg model =
                 newActiveGoal =
                     { oldActiveGoal | title = newName }
             in
-                ( { model | activeGoal = newActiveGoal }, saveGoalAndRefreshGoals newActiveGoal )
+            ( { model | activeGoal = newActiveGoal }, saveGoalAndRefreshGoals newActiveGoal )
 
         _ ->
             ( model, Cmd.none )

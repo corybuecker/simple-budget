@@ -1,4 +1,4 @@
-module Goals.Models exposing (..)
+module Goals.Models exposing (Goal)
 
 
 type alias Goal =

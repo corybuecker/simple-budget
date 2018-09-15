@@ -1,9 +1,9 @@
-module Goals.Utils exposing (..)
+module Goals.Utils exposing (encode, end_date, goalDecoder, goalUpdatedDecoder, goalsDecoder, id, start_date, target, title)
 
+import Goals.Models exposing (Goal)
 import Json.Decode
 import Json.Decode.Pipeline
-import Json.Encode as Encode exposing (Value, int, string, object)
-import Goals.Models exposing (Goal)
+import Json.Encode as Encode exposing (Value, int, object, string)
 
 
 goalsDecoder : Json.Decode.Decoder (List Goal)
@@ -53,4 +53,4 @@ target value =
 
 encode : Goal -> Encode.Value
 encode schema =
-    Encode.object [ ( "goal", (Encode.object [ id schema.id, title schema.title, start_date schema.startDate, end_date schema.endDate, target schema.target ]) ) ]
+    Encode.object [ ( "goal", Encode.object [ id schema.id, title schema.title, start_date schema.startDate, end_date schema.endDate, target schema.target ] ) ]

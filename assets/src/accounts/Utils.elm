@@ -1,9 +1,9 @@
-module Accounts.Utils exposing (..)
+module Accounts.Utils exposing (accountDecoder, accountUpdatedDecoder, accountsDecoder, adjustmentDecoder, balance, encode, id, name)
 
+import Accounts.Models exposing (Account, Adjustment)
 import Json.Decode
 import Json.Decode.Pipeline
-import Json.Encode as Encode exposing (Value, int, string, object)
-import Accounts.Models exposing (Account, Adjustment)
+import Json.Encode as Encode exposing (Value, int, object, string)
 
 
 accountsDecoder : Json.Decode.Decoder (List Account)
@@ -51,4 +51,4 @@ balance value =
 
 encode : Account -> Encode.Value
 encode schema =
-    Encode.object [ ( "account", (Encode.object [ id schema.id, name schema.name, balance schema.balance ]) ) ]
+    Encode.object [ ( "account", Encode.object [ id schema.id, name schema.name, balance schema.balance ] ) ]

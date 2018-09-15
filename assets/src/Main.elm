@@ -1,27 +1,27 @@
-module Main exposing (..)
+module Main exposing (errorMessage, init, main, modalView, renderAccount, renderAccounts, renderGoal, renderGoals, subscriptions, update, updatePage, view)
 
+import Accounts.Messages
+import Accounts.Models exposing (Account)
+import Accounts.Update
+import Accounts.Utils exposing (accountDecoder, accountsDecoder, adjustmentDecoder)
+import Accounts.Views
 import Browser
 import Browser.Navigation
+import Debug exposing (log)
+import Goals.Models exposing (Goal)
+import Goals.Update
+import Goals.Views
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode as Decode
-import Url.Builder as Url
+import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import List exposing (..)
-import String
-import Json.Decode.Pipeline exposing (required, optional, hardcoded)
-import Accounts.Utils exposing (accountsDecoder, accountDecoder, adjustmentDecoder)
-import Accounts.Models exposing (Account)
-import Goals.Models exposing (Goal)
-import Accounts.Views
-import Goals.Views
-import Accounts.Messages
-import Accounts.Update
-import Goals.Update
 import Model exposing (Model, Msg(..))
+import String
 import Url exposing (Url)
-import Debug exposing (log)
+import Url.Builder as Url
 
 
 -- MAIN
@@ -44,9 +44,11 @@ main =
 
 init : () -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init _ url key =
-    ( Model [] [] Nothing "" Accounts.Views.emptyAccount Goals.Views.emptyGoal key "home"
-    , Accounts.Update.fetchAccounts
-    )
+    let
+        emptyModel =
+            Model [] [] Nothing "" Accounts.Views.emptyAccount Goals.Views.emptyGoal key ""
+    in
+        updatePage url emptyModel
 
 
 
@@ -93,15 +95,7 @@ update msg model =
             Goals.Update.update goalMsg model
 
         UrlChanged url ->
-            case url.path of
-                "/accounts" ->
-                    ( { model | page = "accounts" }, Accounts.Update.fetchAccounts )
-
-                "/goals" ->
-                    ( { model | page = "goals" }, Goals.Update.fetchGoals )
-
-                _ ->
-                    ( { model | page = "home" }, Cmd.none )
+            updatePage url model
 
         UrlRequest request ->
             case request of
@@ -126,6 +120,19 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
+
+
+updatePage : Url -> Model -> ( Model, Cmd Msg )
+updatePage url model =
+    case url.path of
+        "/accounts" ->
+            ( { model | page = "accounts" }, Accounts.Update.fetchAccounts )
+
+        "/goals" ->
+            ( { model | page = "goals" }, Goals.Update.fetchGoals )
+
+        _ ->
+            ( { model | page = "home" }, Cmd.none )
 
 
 

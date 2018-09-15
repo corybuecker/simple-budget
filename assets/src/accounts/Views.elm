@@ -1,10 +1,10 @@
-module Accounts.Views exposing (..)
+module Accounts.Views exposing (editView, emptyAccount)
 
+import Accounts.Messages
+import Accounts.Models exposing (Account)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Accounts.Models exposing (Account)
-import Accounts.Messages
 
 
 emptyAccount =

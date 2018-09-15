@@ -1,13 +1,13 @@
-FROM node:9-alpine as assets
-RUN apk update && apk add yarn python
+FROM node:alpine as assets
+RUN apk update && apk add yarn python git
 ADD assets/package.json assets/yarn.lock /tmp/
-RUN cd /tmp && yarn
+RUN cd /tmp && yarn install --pure-lockfile
 RUN mkdir -p /app/assets && cd /app/assets && ln -s /tmp/node_modules
 COPY / /app/
 WORKDIR /app/assets
-RUN yarn run webpack --config webpack.prod.js
+RUN yarn run webpack --mode production
 
-FROM elixir:1.6-alpine
+FROM elixir:alpine
 COPY --from=assets /app /app
 WORKDIR /app
 RUN rm -rf assets
@@ -16,9 +16,8 @@ RUN mix local.hex --force && \
     mix local.rebar --force && \
     mix deps.get && \
     MIX_ENV=prod mix compile && \
-    MIX_ENV=demo mix compile && \
     mix phx.digest
 
 CMD ["mix", "phx.server"]
 
-MAINTAINER Cory Buecker <cory.buecker@gmail.com>
+LABEL maintainer="cory.buecker@gmail.com"

@@ -22,7 +22,7 @@ update msg model =
                 newActiveAccount =
                     { oldActiveAccount | name = newName }
             in
-                ( { model | activeAccount = newActiveAccount }, saveAccountAndRefreshAccounts newActiveAccount )
+            ( { model | activeAccount = newActiveAccount }, saveAccountAndRefreshAccounts newActiveAccount )
 
         _ ->
             ( model, Cmd.none )

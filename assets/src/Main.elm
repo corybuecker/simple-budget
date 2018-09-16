@@ -1,14 +1,14 @@
-module Main exposing (errorMessage, init, main, modalView, renderAccount, renderAccounts, renderGoal, renderGoals, subscriptions, update, updatePage, view)
+module Main exposing (errorMessage, init, main, modalView, subscriptions, update, updatePage, view)
 
 import Accounts.Messages
-import Accounts.Models exposing (Account)
+import Accounts.Models
 import Accounts.Update
 import Accounts.Utils exposing (accountDecoder, accountsDecoder, adjustmentDecoder)
 import Accounts.Views
 import Browser
 import Browser.Navigation
 import Debug exposing (log)
-import Goals.Models exposing (Goal)
+import Goals.Models
 import Goals.Update
 import Goals.Views
 import Html exposing (..)
@@ -22,6 +22,7 @@ import Model exposing (Model, Msg(..))
 import String
 import Url exposing (Url)
 import Url.Builder as Url
+
 
 
 -- MAIN
@@ -46,9 +47,9 @@ init : () -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init _ url key =
     let
         emptyModel =
-            Model [] [] Nothing "" Accounts.Views.emptyAccount Goals.Views.emptyGoal key ""
+            Model [] [] Nothing "" Accounts.Models.newAccount Goals.Models.newGoal key ""
     in
-        updatePage url emptyModel
+    updatePage url emptyModel
 
 
 
@@ -94,6 +95,9 @@ update msg model =
         UpdateGoal goalMsg ->
             Goals.Update.update goalMsg model
 
+        CreateGoal ->
+            ( { model | modalOpen = "goal", activeGoal = Goals.Models.newGoal }, Cmd.none )
+
         UrlChanged url ->
             updatePage url model
 
@@ -107,7 +111,7 @@ update msg model =
                         urlString =
                             Url.toString url
                     in
-                        ( model, Browser.Navigation.pushUrl key urlString )
+                    ( model, Browser.Navigation.pushUrl key urlString )
 
                 _ ->
                     ( model, Cmd.none )
@@ -158,79 +162,25 @@ view model =
         body =
             case model.page of
                 "accounts" ->
-                    renderAccounts model
+                    Accounts.Views.renderAccounts model.accounts
 
                 "goals" ->
-                    renderGoals model
+                    Goals.Views.renderGoals model.goals
 
                 _ ->
-                    renderAccounts model
+                    Accounts.Views.renderAccounts model.accounts
     in
-        { title = "test"
-        , body =
-            [ div []
-                [ a [ href "/accounts" ] [ text "Accounts" ]
-                , a [ href "/goals" ] [ text "Goals" ]
-                , body
-                , div [] [ modalView model ]
-                , p [] [ text (errorMessage model.error) ]
-                ]
-            ]
-        }
-
-
-renderAccounts : Model -> Html Msg
-renderAccounts model =
-    table []
-        [ thead []
-            [ tr []
-                [ th [] [ text "Account Name" ]
-                , th [] [ text "Balance" ]
-                , th [] [ text "Debt?" ]
-                ]
-            ]
-        , tbody [] (List.map renderAccount model.accounts)
-        ]
-
-
-renderGoals : Model -> Html Msg
-renderGoals model =
-    table []
-        [ thead []
-            [ tr []
-                [ th [] [ text "Account Name" ]
-                , th [] [ text "Balance" ]
-                , th [] [ text "Debt?" ]
-                ]
-            ]
-        , tbody [] (List.map renderGoal model.goals)
-        ]
-
-
-renderGoal : Goal -> Html Msg
-renderGoal goal =
-    tr []
-        [ td [ onClick (OpenGoalEditor goal) ] [ text goal.title ]
-        , td [] [ text (String.fromFloat goal.target) ]
-        , td [] [ text goal.startDate ]
-        , td [] [ text goal.endDate ]
-        ]
-
-
-renderAccount : Account -> Html Msg
-renderAccount account =
-    tr []
-        [ td [ onClick (OpenAccountEditor account) ] [ text account.name ]
-        , td [] [ text (String.fromFloat account.balance) ]
-        , td []
-            [ text
-                (if account.debt then
-                    "True"
-                 else
-                    "False"
-                )
+    { title = "test"
+    , body =
+        [ div []
+            [ a [ href "/accounts" ] [ text "Accounts" ]
+            , a [ href "/goals" ] [ text "Goals" ]
+            , body
+            , div [] [ modalView model ]
+            , p [] [ text (errorMessage model.error) ]
             ]
         ]
+    }
 
 
 errorMessage : Maybe Http.Error -> String

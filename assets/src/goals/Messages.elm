@@ -5,6 +5,7 @@ import Http
 
 
 type Msg
-    = NameUpdated String
-    | DebtUpdated Bool
-    | BalanceUpdated Float
+    = TitleUpdated String
+    | TargetUpdated String
+    | StartDateUpdated String
+    | EndDateUpdated String

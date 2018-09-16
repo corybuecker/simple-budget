@@ -19,6 +19,7 @@ type Msg
     | UpdateGoal Goals.Messages.Msg
     | UrlRequest Browser.UrlRequest
     | UrlChanged Url.Url
+    | CreateGoal
 
 
 type alias Model =

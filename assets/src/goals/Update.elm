@@ -14,7 +14,7 @@ import Url.Builder as Url
 update : Goals.Messages.Msg -> Model -> ( Model, Cmd Model.Msg )
 update msg model =
     case msg of
-        Goals.Messages.NameUpdated newName ->
+        Goals.Messages.TitleUpdated newName ->
             let
                 oldActiveGoal =
                     model.activeGoal
@@ -24,8 +24,40 @@ update msg model =
             in
             ( { model | activeGoal = newActiveGoal }, saveGoalAndRefreshGoals newActiveGoal )
 
-        _ ->
-            ( model, Cmd.none )
+        Goals.Messages.StartDateUpdated newStartDate ->
+            let
+                oldActiveGoal =
+                    model.activeGoal
+
+                newActiveGoal =
+                    { oldActiveGoal | startDate = newStartDate }
+            in
+            ( { model | activeGoal = newActiveGoal }, saveGoalAndRefreshGoals newActiveGoal )
+
+        Goals.Messages.EndDateUpdated newEndDate ->
+            let
+                oldActiveGoal =
+                    model.activeGoal
+
+                newActiveGoal =
+                    { oldActiveGoal | endDate = newEndDate }
+            in
+            ( { model | activeGoal = newActiveGoal }, saveGoalAndRefreshGoals newActiveGoal )
+
+        Goals.Messages.TargetUpdated newTarget ->
+            let
+                oldActiveGoal =
+                    model.activeGoal
+
+                newActiveGoal =
+                    case String.toFloat newTarget of
+                        Just val ->
+                            { oldActiveGoal | target = val }
+
+                        Nothing ->
+                            { oldActiveGoal | target = 0 }
+            in
+            ( { model | activeGoal = newActiveGoal }, saveGoalAndRefreshGoals newActiveGoal )
 
 
 fetchGoals : Cmd Msg

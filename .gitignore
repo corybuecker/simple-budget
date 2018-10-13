@@ -42,4 +42,4 @@ npm-debug.log
 /config/*.secret.exs
 /assets/node_modules
 .DS_Store
-/assets/elm-stuff
+/assets/js/elm-stuff

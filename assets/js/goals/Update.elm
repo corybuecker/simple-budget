@@ -70,7 +70,12 @@ fetchGoals =
 
 saveGoalAndRefreshGoals : Goals.Models.Goal -> Cmd Msg
 saveGoalAndRefreshGoals model =
-    Task.attempt GoalsFetched (Task.andThen refreshGoalsTask (saveGoalTask model))
+    case model.id of
+        0 ->
+            Task.attempt GoalsFetched (Task.andThen refreshGoalsTask (saveNewGoalTask model))
+
+        _ ->
+            Task.attempt GoalsFetched (Task.andThen refreshGoalsTask (saveGoalTask model))
 
 
 refreshGoalsTask : Goal -> Task Http.Error (List Goal)
@@ -81,6 +86,11 @@ refreshGoalsTask _ =
 saveGoalTask : Goals.Models.Goal -> Task Http.Error Goal
 saveGoalTask model =
     toTask (put (goalUrl model.id) (jsonBody (encode model)) goalUpdatedDecoder)
+
+
+saveNewGoalTask : Goals.Models.Goal -> Task Http.Error Goal
+saveNewGoalTask model =
+    toTask (post goalsUrl (jsonBody (encode model)) goalUpdatedDecoder)
 
 
 goalsUrl : String

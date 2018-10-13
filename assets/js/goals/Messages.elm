@@ -9,3 +9,4 @@ type Msg
     | TargetUpdated String
     | StartDateUpdated String
     | EndDateUpdated String
+    | SaveGoal

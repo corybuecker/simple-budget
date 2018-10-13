@@ -36,9 +36,7 @@ module.exports = (env, options) => ({
         test: /\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
         loader: "elm-webpack-loader",
-        options: {
-          debug: true
-        }
+        options: {}
       }
     ]
   },

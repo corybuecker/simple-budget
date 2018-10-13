@@ -22,7 +22,7 @@ update msg model =
                 newActiveGoal =
                     { oldActiveGoal | title = newName }
             in
-            ( { model | activeGoal = newActiveGoal }, saveGoalAndRefreshGoals newActiveGoal )
+            ( { model | activeGoal = newActiveGoal }, Cmd.none )
 
         Goals.Messages.StartDateUpdated newStartDate ->
             let
@@ -32,7 +32,7 @@ update msg model =
                 newActiveGoal =
                     { oldActiveGoal | startDate = newStartDate }
             in
-            ( { model | activeGoal = newActiveGoal }, saveGoalAndRefreshGoals newActiveGoal )
+            ( { model | activeGoal = newActiveGoal }, Cmd.none )
 
         Goals.Messages.EndDateUpdated newEndDate ->
             let
@@ -42,7 +42,7 @@ update msg model =
                 newActiveGoal =
                     { oldActiveGoal | endDate = newEndDate }
             in
-            ( { model | activeGoal = newActiveGoal }, saveGoalAndRefreshGoals newActiveGoal )
+            ( { model | activeGoal = newActiveGoal }, Cmd.none )
 
         Goals.Messages.TargetUpdated newTarget ->
             let
@@ -57,7 +57,10 @@ update msg model =
                         Nothing ->
                             { oldActiveGoal | target = 0 }
             in
-            ( { model | activeGoal = newActiveGoal }, saveGoalAndRefreshGoals newActiveGoal )
+            ( { model | activeGoal = newActiveGoal }, Cmd.none )
+
+        Goals.Messages.SaveGoal ->
+            ( model, saveGoalAndRefreshGoals model.activeGoal )
 
 
 fetchGoals : Cmd Msg

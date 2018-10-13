@@ -17,7 +17,7 @@ import "phoenix_html"
 // import socket from "./socket"
 import Elm from './Main.elm'
 
-Elm.Main.init({
+Elm.Elm.Main.init({
     node:
         document.getElementById('main')
 });

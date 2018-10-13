@@ -1,10 +1,10 @@
-defmodule Budget.SavingsTest do
-  use Budget.DataCase
+defmodule SimpleBudget.SavingsTest do
+  use SimpleBudget.DataCase
 
-  alias Budget.Savings
+  alias SimpleBudget.Savings
 
   describe "savings" do
-    alias Budget.Savings.Saving
+    alias SimpleBudget.Savings.Saving
 
     @valid_attrs %{amount: 120.55, title: "some title"}
     @update_attrs %{amount: 456.75, title: "some updated title"}

@@ -1,17 +1,16 @@
-defmodule Budget.Mixfile do
+defmodule SimpleBudget.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :budget,
-      version: "0.0.1",
-      elixir: "~> 1.6",
+      app: :simple_budget,
+      version: "0.1.0",
+      elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps(),
-      test_coverage: [tool: ExCoveralls]
+      deps: deps()
     ]
   end
 
@@ -20,7 +19,7 @@ defmodule Budget.Mixfile do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Budget.Application, []},
+      mod: {SimpleBudget.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -34,18 +33,16 @@ defmodule Budget.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.3"},
-      {:phoenix_pubsub, "~> 1.0"},
+      {:phoenix, "~> 1.4.0-rc"},
+      {:phoenix_pubsub, "~> 1.1"},
       {:phoenix_ecto, "~> 3.2"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 2.10"},
-      {:phoenix_live_reload, "~> 1.0", only: :dev},
-      {:gettext, "~> 0.14"},
-      {:cowboy, "~> 1.0"},
-      {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
-      {:timex, "~> 3.1"},
-      {:logster, "~> 0.4"},
-      {:excoveralls, "~> 0.8", only: :test}
+      {:phoenix_html, "~> 2.11"},
+      {:phoenix_live_reload, "~> 1.2-rc", only: :dev},
+      {:gettext, "~> 0.11"},
+      {:jason, "~> 1.0"},
+      {:cowboy, "~> 2.0"},
+      {:timex, "~> 3.1"}
     ]
   end
 
@@ -59,7 +56,7 @@ defmodule Budget.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.drop", "ecto.create", "ecto.migrate", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
 end

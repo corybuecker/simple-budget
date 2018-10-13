@@ -1,10 +1,10 @@
-defmodule Budget.GoalsTest do
-  use Budget.DataCase
+defmodule SimpleBudget.GoalsTest do
+  use SimpleBudget.DataCase
 
-  alias Budget.Goals
+  alias SimpleBudget.Goals
 
   describe "goals" do
-    alias Budget.Goals.Goal
+    alias SimpleBudget.Goals.Goal
 
     @valid_attrs %{
       end_date: ~D[2010-04-17],

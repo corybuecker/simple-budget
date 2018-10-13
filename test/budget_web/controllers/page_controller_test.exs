@@ -1,5 +1,5 @@
-defmodule BudgetWeb.PageControllerTest do
-  use BudgetWeb.ConnCase
+defmodule SimpleBudgetWeb.PageControllerTest do
+  use SimpleBudgetWeb.ConnCase
 
   test "GET /", %{conn: conn} do
     conn = get(conn, "/")

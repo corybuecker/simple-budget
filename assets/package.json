@@ -1,19 +1,25 @@
 {
-  "name": "simple-budget",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "repository": {},
+  "license": "MIT",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "deploy": "webpack --mode production",
+    "watch": "webpack --mode development --watch"
   },
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "phoenix": "file:../deps/phoenix",
+    "phoenix_html": "file:../deps/phoenix_html"
+  },
   "devDependencies": {
-    "elm": "^0.19.0-bugfix2",
-    "elm-format": "^0.8.0",
-    "elm-webpack-loader": "https://github.com/elm-community/elm-webpack-loader.git#master",
-    "file-loader": "^2.0.0",
-    "webpack": "^4.17.1",
-    "webpack-cli": "^3.1.0"
+    "@babel/core": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "babel-loader": "^8.0.0",
+    "copy-webpack-plugin": "^4.5.0",
+    "css-loader": "^0.28.10",
+    "mini-css-extract-plugin": "^0.4.0",
+    "optimize-css-assets-webpack-plugin": "^4.0.0",
+    "uglifyjs-webpack-plugin": "^1.2.4",
+    "webpack": "4.4.0",
+    "webpack-cli": "^2.0.10",
+    "elm-webpack-loader": "https://github.com/elm-community/elm-webpack-loader.git#master"
   }
 }

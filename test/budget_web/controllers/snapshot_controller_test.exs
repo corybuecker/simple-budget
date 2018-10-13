@@ -1,7 +1,7 @@
-defmodule BudgetWeb.SnapshotControllerTest do
-  use BudgetWeb.ConnCase
+defmodule SimpleBudgetWeb.SnapshotControllerTest do
+  use SimpleBudgetWeb.ConnCase
 
-  alias Budget.Accounts
+  alias SimpleBudget.Accounts
 
   @account_id 42
 
@@ -18,7 +18,7 @@ defmodule BudgetWeb.SnapshotControllerTest do
 
   describe "index" do
     test "lists all snapshots", %{conn: conn, account: account} do
-      conn = get(conn, account_snapshot_path(conn, :index, account))
+      conn = get(conn, Routes.account_snapshot_path(conn, :index, account))
       assert json_response(conn, 200)["data"] == []
     end
   end
@@ -30,7 +30,7 @@ defmodule BudgetWeb.SnapshotControllerTest do
       conn =
         patch(
           conn,
-          account_path(conn, :update, account),
+          Routes.account_path(conn, :update, account),
           account: %{balance: 500}
         )
 
@@ -50,7 +50,7 @@ defmodule BudgetWeb.SnapshotControllerTest do
       conn =
         patch(
           conn,
-          account_path(conn, :update, account),
+          Routes.account_path(conn, :update, account),
           account: %{debt: nil}
         )
 

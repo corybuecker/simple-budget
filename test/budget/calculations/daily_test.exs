@@ -1,10 +1,10 @@
-defmodule Budget.Calculations.DailyTest do
-  use Budget.DataCase
+defmodule SimpleBudget.Calculations.DailyTest do
+  use SimpleBudget.DataCase
 
-  alias Budget.Calculations.Daily
-  alias Budget.Accounts
-  alias Budget.Savings
-  alias Budget.Goals
+  alias SimpleBudget.Calculations.Daily
+  alias SimpleBudget.Accounts
+  alias SimpleBudget.Savings
+  alias SimpleBudget.Goals
 
   setup do
     {:ok, credit} = Accounts.create_account(%{name: "some name", balance: 750, debt: false})

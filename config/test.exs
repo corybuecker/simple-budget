@@ -2,7 +2,7 @@ use Mix.Config
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :budget, BudgetWeb.Endpoint,
+config :simple_budget, SimpleBudgetWeb.Endpoint,
   http: [port: 4001],
   server: false
 
@@ -10,10 +10,9 @@ config :budget, BudgetWeb.Endpoint,
 config :logger, level: :warn
 
 # Configure your database
-config :budget, Budget.Repo,
-  adapter: Ecto.Adapters.Postgres,
+config :simple_budget, SimpleBudget.Repo,
   username: "postgres",
   password: "postgres",
-  database: "budget_test",
+  database: "simple_budget_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox

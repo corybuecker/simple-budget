@@ -1,11 +1,11 @@
-defmodule Budget.AccountsTest do
-  use Budget.DataCase
+defmodule SimpleBudget.AccountsTest do
+  use SimpleBudget.DataCase
 
-  alias Budget.Accounts
+  alias SimpleBudget.Accounts
 
   describe "accounts" do
-    alias Budget.Accounts.Account
-    alias Budget.Accounts.Snapshot
+    alias SimpleBudget.Accounts.Account
+    alias SimpleBudget.Accounts.Snapshot
 
     @valid_attrs %{name: "some name", balance: 123.13, debt: false}
     @update_attrs %{name: "some updated name", balance: 456.42, debt: true}
@@ -90,7 +90,7 @@ defmodule Budget.AccountsTest do
   end
 
   describe "adjustments" do
-    alias Budget.Accounts.Adjustment
+    alias SimpleBudget.Accounts.Adjustment
 
     @valid_attrs %{account_id: 42, total: 120.13, title: "test"}
     @update_attrs %{account_id: 43, total: 456.42}
@@ -154,7 +154,7 @@ defmodule Budget.AccountsTest do
   end
 
   describe "snapshots" do
-    alias Budget.Accounts.Snapshot
+    alias SimpleBudget.Accounts.Snapshot
 
     @valid_attrs %{account_id: 42, after: 120.51, before: 120.52}
     @update_attrs %{account_id: 43, after: 456.71, before: 456.72}

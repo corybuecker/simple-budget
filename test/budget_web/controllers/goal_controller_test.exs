@@ -1,8 +1,8 @@
-defmodule BudgetWeb.GoalControllerTest do
-  use BudgetWeb.ConnCase
+defmodule SimpleBudgetWeb.GoalControllerTest do
+  use SimpleBudgetWeb.ConnCase
 
-  alias Budget.Goals
-  alias Budget.Goals.Goal
+  alias SimpleBudget.Goals
+  alias SimpleBudget.Goals.Goal
 
   @create_attrs %{
     end_date: ~D[2010-04-17],
@@ -29,17 +29,17 @@ defmodule BudgetWeb.GoalControllerTest do
 
   describe "index" do
     test "lists all goals", %{conn: conn} do
-      conn = get(conn, goal_path(conn, :index))
+      conn = get(conn, Routes.goal_path(conn, :index))
       assert json_response(conn, 200)["data"] == []
     end
   end
 
   describe "create goal" do
     test "renders goal when data is valid", %{conn: conn} do
-      conn = post(conn, goal_path(conn, :create), goal: @create_attrs)
+      conn = post(conn, Routes.goal_path(conn, :create), goal: @create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get(conn, goal_path(conn, :show, id))
+      conn = get(conn, Routes.goal_path(conn, :show, id))
 
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
@@ -51,7 +51,7 @@ defmodule BudgetWeb.GoalControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, goal_path(conn, :create), goal: @invalid_attrs)
+      conn = post(conn, Routes.goal_path(conn, :create), goal: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -60,10 +60,10 @@ defmodule BudgetWeb.GoalControllerTest do
     setup [:create_goal]
 
     test "renders goal when data is valid", %{conn: conn, goal: %Goal{id: id} = goal} do
-      conn = put(conn, goal_path(conn, :update, goal), goal: @update_attrs)
+      conn = put(conn, Routes.goal_path(conn, :update, goal), goal: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get(conn, goal_path(conn, :show, id))
+      conn = get(conn, Routes.goal_path(conn, :show, id))
 
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
@@ -75,7 +75,7 @@ defmodule BudgetWeb.GoalControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn, goal: goal} do
-      conn = put(conn, goal_path(conn, :update, goal), goal: @invalid_attrs)
+      conn = put(conn, Routes.goal_path(conn, :update, goal), goal: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -84,11 +84,11 @@ defmodule BudgetWeb.GoalControllerTest do
     setup [:create_goal]
 
     test "deletes chosen goal", %{conn: conn, goal: goal} do
-      conn = delete(conn, goal_path(conn, :delete, goal))
+      conn = delete(conn, Routes.goal_path(conn, :delete, goal))
       assert response(conn, 204)
 
       assert_error_sent(404, fn ->
-        get(conn, goal_path(conn, :show, goal))
+        get(conn, Routes.goal_path(conn, :show, goal))
       end)
     end
   end

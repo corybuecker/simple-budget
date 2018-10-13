@@ -1,3 +1,3 @@
-defmodule BudgetWeb.PageViewTest do
-  use BudgetWeb.ConnCase, async: true
+defmodule SimpleBudgetWeb.PageViewTest do
+  use SimpleBudgetWeb.ConnCase, async: true
 end

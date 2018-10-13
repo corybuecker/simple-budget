@@ -1,0 +1,19 @@
+<!doctype html>
+<html class="no-js" lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="csrf" content="<%= Plug.CSRFProtection.get_csrf_token() %>">
+    <link rel="manifest" href="<%= Routes.static_path(@conn, "/site.webmanifest") %>">
+    <link rel="apple-touch-icon" href="<%= Routes.static_path(@conn, "/images/icon.png") %>">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  </head>
+  <body>
+    <main role="main" class="container" id="main">
+      <%=render @view_module, @view_template, assigns %>
+    </main>
+  </body>
+</html>

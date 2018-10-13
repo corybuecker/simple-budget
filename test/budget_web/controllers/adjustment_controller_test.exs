@@ -1,8 +1,8 @@
-defmodule BudgetWeb.AdjustmentControllerTest do
-  use BudgetWeb.ConnCase
+defmodule SimpleBudgetWeb.AdjustmentControllerTest do
+  use SimpleBudgetWeb.ConnCase
 
-  alias Budget.Accounts
-  alias Budget.Accounts.Adjustment
+  alias SimpleBudget.Accounts
+  alias SimpleBudget.Accounts.Adjustment
 
   @account_id 42
   @create_attrs %{total: 120.5, title: "test"}
@@ -32,13 +32,13 @@ defmodule BudgetWeb.AdjustmentControllerTest do
       conn =
         post(
           conn,
-          account_adjustment_path(conn, :create, account),
+          Routes.account_adjustment_path(conn, :create, account),
           adjustment: @create_attrs
         )
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get(conn, account_adjustment_path(conn, :show, account, id))
+      conn = get(conn, Routes.account_adjustment_path(conn, :show, account, id))
 
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
@@ -52,7 +52,7 @@ defmodule BudgetWeb.AdjustmentControllerTest do
       conn =
         post(
           conn,
-          account_adjustment_path(conn, :create, account),
+          Routes.account_adjustment_path(conn, :create, account),
           adjustment: @invalid_attrs
         )
 
@@ -71,13 +71,13 @@ defmodule BudgetWeb.AdjustmentControllerTest do
       conn =
         put(
           conn,
-          account_adjustment_path(conn, :update, account, adjustment),
+          Routes.account_adjustment_path(conn, :update, account, adjustment),
           adjustment: @update_attrs
         )
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get(conn, account_adjustment_path(conn, :show, account, id))
+      conn = get(conn, Routes.account_adjustment_path(conn, :show, account, id))
 
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
@@ -95,7 +95,7 @@ defmodule BudgetWeb.AdjustmentControllerTest do
       conn =
         put(
           conn,
-          account_adjustment_path(conn, :update, account, adjustment),
+          Routes.account_adjustment_path(conn, :update, account, adjustment),
           adjustment: @invalid_attrs
         )
 
@@ -107,11 +107,11 @@ defmodule BudgetWeb.AdjustmentControllerTest do
     setup [:create_adjustment]
 
     test "deletes chosen adjustments", %{conn: conn, adjustment: adjustment, account: account} do
-      conn = delete(conn, account_adjustment_path(conn, :delete, account, adjustment))
+      conn = delete(conn, Routes.account_adjustment_path(conn, :delete, account, adjustment))
       assert response(conn, 204)
 
       assert_error_sent(404, fn ->
-        get(conn, account_adjustment_path(conn, :show, account, adjustment))
+        get(conn, Routes.account_adjustment_path(conn, :show, account, adjustment))
       end)
     end
   end

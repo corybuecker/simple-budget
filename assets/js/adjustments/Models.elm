@@ -9,5 +9,5 @@ newAdjustment =
 type alias Adjustment =
     { id : Int
     , title : String
-    , amount : Float
+    , total : Float
     }

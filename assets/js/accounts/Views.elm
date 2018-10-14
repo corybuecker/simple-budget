@@ -2,6 +2,7 @@ module Accounts.Views exposing (editView, renderAccount, renderAccounts)
 
 import Accounts.Messages exposing (..)
 import Accounts.Models exposing (Account)
+import Adjustments.Models exposing (Adjustment)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -39,15 +40,27 @@ renderAccounts accounts =
 renderAccount : Account -> Html Msg
 renderAccount account =
     tr []
-        [ td [ onClick (OpenAccountEditor account) ] [ text account.name ]
-        , td [] [ text (String.fromFloat account.balance) ]
-        , td []
-            [ text
-                (if account.debt then
-                    "True"
+        (List.concat
+            [ [ td [ onClick (OpenAccountEditor account) ] [ text account.name ]
+              , td [] [ text (String.fromFloat account.balance) ]
+              , td []
+                    [ text
+                        (if account.debt then
+                            "True"
 
-                 else
-                    "False"
-                )
+                         else
+                            "False"
+                        )
+                    ]
+              ]
+            , List.map renderAdjustment account.adjustments
             ]
+        )
+
+
+renderAdjustment : Adjustment -> Html Msg
+renderAdjustment model =
+    tr []
+        [ td [] [ text model.title ]
+        , td [] [ text (String.fromFloat model.total) ]
         ]

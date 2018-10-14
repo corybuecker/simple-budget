@@ -66,6 +66,12 @@ config :logger, level: :info
 # Note you can't rely on `System.get_env/1` when using releases.
 # See the releases documentation accordingly.
 
-# Finally import the config/prod.secret.exs which should be versioned
-# separately.
-import_config "prod.secret.exs"
+config :simple_budget, SimpleBudgetWeb.Endpoint,
+  secret_key_base: System.get_env("SECRET_KEY_BASE")
+
+# Configure your database
+config :simple_budget, SimpleBudget.Repo,
+  username: "postgres",
+  password: System.get_env("PASSWORD"),
+  database: "simple_budget_prod",
+  pool_size: 15

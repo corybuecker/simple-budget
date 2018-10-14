@@ -19,6 +19,9 @@ import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import List exposing (..)
 import Model exposing (Model, Msg(..))
+import Savings.Models
+import Savings.Update
+import Savings.Views
 import String
 import Url exposing (Url)
 import Url.Builder as Url
@@ -47,7 +50,7 @@ init : () -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init _ url key =
     let
         emptyModel =
-            Model [] [] Nothing "" Accounts.Models.newAccount (Just Goals.Models.newGoal) key ""
+            Model [] [] [] Nothing "" (Just Accounts.Models.newAccount) (Just Goals.Models.newGoal) (Just Savings.Models.newSaving) key ""
     in
     updatePage url emptyModel
 
@@ -62,7 +65,7 @@ update msg model =
         AccountsFetched result ->
             case result of
                 Ok accounts ->
-                    ( { model | accounts = accounts }
+                    ( { model | accounts = accounts, activeAccount = Nothing }
                     , Cmd.none
                     )
 
@@ -83,11 +86,26 @@ update msg model =
                     , Cmd.none
                     )
 
+        SavingsFetched result ->
+            case result of
+                Ok savings ->
+                    ( { model | savings = savings, activeSaving = Nothing }
+                    , Cmd.none
+                    )
+
+                Err error ->
+                    ( { model | error = Just error }
+                    , Cmd.none
+                    )
+
         OpenAccountEditor account ->
-            ( { model | modalOpen = "account", activeAccount = account }, Cmd.none )
+            ( { model | modalOpen = "account", activeAccount = Just account }, Cmd.none )
 
         OpenGoalEditor goal ->
             ( { model | modalOpen = "goal", activeGoal = Just goal }, Cmd.none )
+
+        OpenSavingEditor saving ->
+            ( { model | modalOpen = "saving", activeSaving = Just saving }, Cmd.none )
 
         UpdateAccount accountMsg ->
             Accounts.Update.update accountMsg model
@@ -95,8 +113,17 @@ update msg model =
         UpdateGoal goalMsg ->
             Goals.Update.update goalMsg model
 
+        UpdateSaving savingMsg ->
+            Savings.Update.update savingMsg model
+
+        CreateAccount ->
+            ( { model | modalOpen = "account", activeAccount = Just Accounts.Models.newAccount }, Cmd.none )
+
         CreateGoal ->
             ( { model | modalOpen = "goal", activeGoal = Just Goals.Models.newGoal }, Cmd.none )
+
+        CreateSaving ->
+            ( { model | modalOpen = "saving", activeSaving = Just Savings.Models.newSaving }, Cmd.none )
 
         UrlChanged url ->
             updatePage url model
@@ -135,6 +162,9 @@ updatePage url model =
         "/goals" ->
             ( { model | page = "goals" }, Goals.Update.fetchGoals )
 
+        "/savings" ->
+            ( { model | page = "savings" }, Savings.Update.fetchSavings )
+
         _ ->
             ( { model | page = "home" }, Cmd.none )
 
@@ -147,12 +177,25 @@ modalView : Model -> Html Msg
 modalView model =
     case model.modalOpen of
         "account" ->
-            Html.map UpdateAccount (Accounts.Views.editView model.activeAccount)
+            case model.activeAccount of
+                Just a ->
+                    Html.map UpdateAccount (Accounts.Views.editView a)
+
+                Nothing ->
+                    div [] []
 
         "goal" ->
             case model.activeGoal of
                 Just a ->
                     Html.map UpdateGoal (Goals.Views.editView a)
+
+                Nothing ->
+                    div [] []
+
+        "saving" ->
+            case model.activeSaving of
+                Just a ->
+                    Html.map UpdateSaving (Savings.Views.editView a)
 
                 Nothing ->
                     div [] []
@@ -172,6 +215,9 @@ view model =
                 "goals" ->
                     Goals.Views.renderGoals model.goals
 
+                "savings" ->
+                    Savings.Views.renderSavings model.savings
+
                 _ ->
                     Accounts.Views.renderAccounts model.accounts
     in
@@ -180,6 +226,7 @@ view model =
         [ div []
             [ a [ href "/accounts" ] [ text "Accounts" ]
             , a [ href "/goals" ] [ text "Goals" ]
+            , a [ href "/savings" ] [ text "Savings" ]
             , body
             , div [] [ modalView model ]
             , p [] [ text (errorMessage model.error) ]

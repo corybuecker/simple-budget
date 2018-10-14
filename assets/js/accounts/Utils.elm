@@ -49,6 +49,11 @@ balance value =
     ( "balance", Encode.float value )
 
 
+debt : Bool -> ( String, Encode.Value )
+debt value =
+    ( "debt", Encode.bool value )
+
+
 encode : Account -> Encode.Value
 encode schema =
-    Encode.object [ ( "account", Encode.object [ id schema.id, name schema.name, balance schema.balance ] ) ]
+    Encode.object [ ( "account", Encode.object [ id schema.id, name schema.name, debt schema.debt, balance schema.balance ] ) ]

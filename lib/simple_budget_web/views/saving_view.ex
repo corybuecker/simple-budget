@@ -14,7 +14,7 @@ defmodule SimpleBudgetWeb.SavingView do
     %{
       id: saving.id,
       title: saving.title,
-      amount: saving.amount
+      amount: Decimal.to_float(saving.amount)
     }
   end
 end

@@ -52,9 +52,13 @@ defmodule SimpleBudget.Accounts do
 
   """
   def create_account(attrs \\ %{}) do
-    %Account{}
-    |> Account.changeset(attrs)
-    |> Repo.insert()
+    case %Account{} |> Account.changeset(attrs) |> Repo.insert() do
+      {:ok, account} ->
+        {:ok, account |> Repo.preload(:adjustments)}
+
+      {:error, account} ->
+        {:error, account}
+    end
   end
 
   @doc """

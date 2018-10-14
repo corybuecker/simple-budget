@@ -5,6 +5,9 @@ import Accounts.Models
 import Accounts.Update
 import Accounts.Utils exposing (accountDecoder, accountsDecoder, adjustmentDecoder)
 import Accounts.Views
+import Adjustments.Models
+import Adjustments.Update
+import Adjustments.Views
 import Browser
 import Browser.Navigation
 import Debug exposing (log)
@@ -50,7 +53,7 @@ init : () -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init _ url key =
     let
         emptyModel =
-            Model [] [] [] Nothing "" (Just Accounts.Models.newAccount) (Just Goals.Models.newGoal) (Just Savings.Models.newSaving) key ""
+            Model [] [] [] Nothing "" (Just Accounts.Models.newAccount) (Just Goals.Models.newGoal) (Just Savings.Models.newSaving) Nothing key ""
     in
     updatePage url emptyModel
 
@@ -98,6 +101,18 @@ update msg model =
                     , Cmd.none
                     )
 
+        AdjustmentsFetched result ->
+            case result of
+                Ok adjustments ->
+                    ( model
+                    , Cmd.none
+                    )
+
+                Err error ->
+                    ( { model | error = Just error }
+                    , Cmd.none
+                    )
+
         OpenAccountEditor account ->
             ( { model | modalOpen = "account", activeAccount = Just account }, Cmd.none )
 
@@ -106,6 +121,9 @@ update msg model =
 
         OpenSavingEditor saving ->
             ( { model | modalOpen = "saving", activeSaving = Just saving }, Cmd.none )
+
+        OpenAdjustmentEditor adjustment ->
+            ( { model | modalOpen = "adjustment", activeAdjustment = Just adjustment }, Cmd.none )
 
         UpdateAccount accountMsg ->
             Accounts.Update.update accountMsg model
@@ -116,8 +134,14 @@ update msg model =
         UpdateSaving savingMsg ->
             Savings.Update.update savingMsg model
 
+        UpdateAdjustment adjustmentMsg ->
+            Adjustments.Update.update adjustmentMsg model
+
         CreateAccount ->
             ( { model | modalOpen = "account", activeAccount = Just Accounts.Models.newAccount }, Cmd.none )
+
+        CreateAdjustment ->
+            ( { model | modalOpen = "adjustment", activeAdjustment = Just Adjustments.Models.newAdjustment }, Cmd.none )
 
         CreateGoal ->
             ( { model | modalOpen = "goal", activeGoal = Just Goals.Models.newGoal }, Cmd.none )

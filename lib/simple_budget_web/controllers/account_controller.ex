@@ -16,7 +16,7 @@ defmodule SimpleBudgetWeb.AccountController do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.account_path(conn, :show, account))
-      |> render("show.json", account: account)
+      |> render("update.json", account: account)
     end
   end
 

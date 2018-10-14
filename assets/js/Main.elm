@@ -47,7 +47,7 @@ init : () -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init _ url key =
     let
         emptyModel =
-            Model [] [] Nothing "" Accounts.Models.newAccount Goals.Models.newGoal key ""
+            Model [] [] Nothing "" Accounts.Models.newAccount (Just Goals.Models.newGoal) key ""
     in
     updatePage url emptyModel
 
@@ -74,7 +74,7 @@ update msg model =
         GoalsFetched result ->
             case result of
                 Ok goals ->
-                    ( { model | goals = goals }
+                    ( { model | goals = goals, activeGoal = Nothing }
                     , Cmd.none
                     )
 
@@ -87,7 +87,7 @@ update msg model =
             ( { model | modalOpen = "account", activeAccount = account }, Cmd.none )
 
         OpenGoalEditor goal ->
-            ( { model | modalOpen = "goal", activeGoal = goal }, Cmd.none )
+            ( { model | modalOpen = "goal", activeGoal = Just goal }, Cmd.none )
 
         UpdateAccount accountMsg ->
             Accounts.Update.update accountMsg model
@@ -96,7 +96,7 @@ update msg model =
             Goals.Update.update goalMsg model
 
         CreateGoal ->
-            ( { model | modalOpen = "goal", activeGoal = Goals.Models.newGoal }, Cmd.none )
+            ( { model | modalOpen = "goal", activeGoal = Just Goals.Models.newGoal }, Cmd.none )
 
         UrlChanged url ->
             updatePage url model
@@ -150,7 +150,12 @@ modalView model =
             Html.map UpdateAccount (Accounts.Views.editView model.activeAccount)
 
         "goal" ->
-            Html.map UpdateGoal (Goals.Views.editView model.activeGoal)
+            case model.activeGoal of
+                Just a ->
+                    Html.map UpdateGoal (Goals.Views.editView a)
+
+                Nothing ->
+                    div [] []
 
         _ ->
             div [] []

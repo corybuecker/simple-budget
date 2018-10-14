@@ -10,3 +10,4 @@ type Msg
     | StartDateUpdated String
     | EndDateUpdated String
     | SaveGoal
+    | DeleteGoal

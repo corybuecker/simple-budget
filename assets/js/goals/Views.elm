@@ -15,7 +15,8 @@ editView model =
         , input [ type_ "text", value model.startDate, onInput Goals.Messages.StartDateUpdated ] []
         , input [ type_ "text", value model.endDate, onInput Goals.Messages.EndDateUpdated ] []
         , input [ type_ "text", value (String.fromFloat model.target), onInput Goals.Messages.TargetUpdated ] []
-        , button [ type_ "submit", onClick Goals.Messages.SaveGoal ] [ text "Save" ]
+        , button [ onClick Goals.Messages.SaveGoal ] [ text "Save" ]
+        , button [ onClick Goals.Messages.DeleteGoal ] [ text "Delete" ]
         ]
 
 

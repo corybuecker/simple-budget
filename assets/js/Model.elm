@@ -28,7 +28,7 @@ type alias Model =
     , error : Maybe Http.Error
     , modalOpen : String
     , activeAccount : Account
-    , activeGoal : Goal
+    , activeGoal : Maybe Goal
     , key : Browser.Navigation.Key
     , page : String
     }

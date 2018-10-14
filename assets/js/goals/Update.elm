@@ -13,59 +13,60 @@ import Url.Builder as Url
 
 update : Goals.Messages.Msg -> Model -> ( Model, Cmd Model.Msg )
 update msg model =
-    case msg of
-        Goals.Messages.TitleUpdated newName ->
-            let
-                oldActiveGoal =
-                    model.activeGoal
+    case model.activeGoal of
+        Just oldActiveGoal ->
+            case msg of
+                Goals.Messages.TitleUpdated newName ->
+                    let
+                        newActiveGoal =
+                            { oldActiveGoal | title = newName }
+                    in
+                    ( { model | activeGoal = Just newActiveGoal }, Cmd.none )
 
-                newActiveGoal =
-                    { oldActiveGoal | title = newName }
-            in
-            ( { model | activeGoal = newActiveGoal }, Cmd.none )
+                Goals.Messages.StartDateUpdated newStartDate ->
+                    let
+                        newActiveGoal =
+                            { oldActiveGoal | startDate = newStartDate }
+                    in
+                    ( { model | activeGoal = Just newActiveGoal }, Cmd.none )
 
-        Goals.Messages.StartDateUpdated newStartDate ->
-            let
-                oldActiveGoal =
-                    model.activeGoal
+                Goals.Messages.EndDateUpdated newEndDate ->
+                    let
+                        newActiveGoal =
+                            { oldActiveGoal | endDate = newEndDate }
+                    in
+                    ( { model | activeGoal = Just newActiveGoal }, Cmd.none )
 
-                newActiveGoal =
-                    { oldActiveGoal | startDate = newStartDate }
-            in
-            ( { model | activeGoal = newActiveGoal }, Cmd.none )
+                Goals.Messages.TargetUpdated newTarget ->
+                    let
+                        newActiveGoal =
+                            case String.toFloat newTarget of
+                                Just val ->
+                                    { oldActiveGoal | target = val }
 
-        Goals.Messages.EndDateUpdated newEndDate ->
-            let
-                oldActiveGoal =
-                    model.activeGoal
+                                Nothing ->
+                                    { oldActiveGoal | target = 0 }
+                    in
+                    ( { model | activeGoal = Just newActiveGoal }, Cmd.none )
 
-                newActiveGoal =
-                    { oldActiveGoal | endDate = newEndDate }
-            in
-            ( { model | activeGoal = newActiveGoal }, Cmd.none )
+                Goals.Messages.SaveGoal ->
+                    ( model, saveGoalAndRefreshGoals oldActiveGoal )
 
-        Goals.Messages.TargetUpdated newTarget ->
-            let
-                oldActiveGoal =
-                    model.activeGoal
+                Goals.Messages.DeleteGoal ->
+                    ( model, deleteGoalAndRefreshGoals oldActiveGoal )
 
-                newActiveGoal =
-                    case String.toFloat newTarget of
-                        Just val ->
-                            { oldActiveGoal | target = val }
-
-                        Nothing ->
-                            { oldActiveGoal | target = 0 }
-            in
-            ( { model | activeGoal = newActiveGoal }, Cmd.none )
-
-        Goals.Messages.SaveGoal ->
-            ( model, saveGoalAndRefreshGoals model.activeGoal )
+        Nothing ->
+            ( model, Cmd.none )
 
 
 fetchGoals : Cmd Msg
 fetchGoals =
     Http.send GoalsFetched (get goalsUrl goalsDecoder)
+
+
+deleteGoalAndRefreshGoals : Goals.Models.Goal -> Cmd Msg
+deleteGoalAndRefreshGoals model =
+    Task.attempt GoalsFetched (Task.andThen refreshGoalsTask (deleteGoalTask model))
 
 
 saveGoalAndRefreshGoals : Goals.Models.Goal -> Cmd Msg
@@ -78,7 +79,7 @@ saveGoalAndRefreshGoals model =
             Task.attempt GoalsFetched (Task.andThen refreshGoalsTask (saveGoalTask model))
 
 
-refreshGoalsTask : Goal -> Task Http.Error (List Goal)
+refreshGoalsTask : a -> Task Http.Error (List Goal)
 refreshGoalsTask _ =
     toTask (get goalsUrl goalsDecoder)
 
@@ -86,6 +87,11 @@ refreshGoalsTask _ =
 saveGoalTask : Goals.Models.Goal -> Task Http.Error Goal
 saveGoalTask model =
     toTask (put (goalUrl model.id) (jsonBody (encode model)) goalUpdatedDecoder)
+
+
+deleteGoalTask : Goals.Models.Goal -> Task Http.Error String
+deleteGoalTask model =
+    toTask (delete (goalUrl model.id))
 
 
 saveNewGoalTask : Goals.Models.Goal -> Task Http.Error Goal
@@ -115,6 +121,19 @@ put url body decoder =
         , url = url
         , body = body
         , expect = Http.expectJson decoder
+        , timeout = Nothing
+        , withCredentials = False
+        }
+
+
+delete : String -> Http.Request String
+delete url =
+    Http.request
+        { method = "DELETE"
+        , headers = []
+        , url = url
+        , body = Http.emptyBody
+        , expect = Http.expectString
         , timeout = Nothing
         , withCredentials = False
         }

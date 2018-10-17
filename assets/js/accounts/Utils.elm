@@ -1,6 +1,7 @@
 module Accounts.Utils exposing (accountDecoder, accountUpdatedDecoder, accountsDecoder, adjustmentDecoder, balance, encode, id, name)
 
-import Accounts.Models exposing (Account, Adjustment)
+import Accounts.Models exposing (Account)
+import Adjustments.Models exposing (Adjustment)
 import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode as Encode exposing (Value, int, object, string)
@@ -29,6 +30,7 @@ accountUpdatedDecoder =
 adjustmentDecoder : Json.Decode.Decoder Adjustment
 adjustmentDecoder =
     Json.Decode.succeed Adjustment
+        |> Json.Decode.Pipeline.required "account_id" Json.Decode.int
         |> Json.Decode.Pipeline.required "id" Json.Decode.int
         |> Json.Decode.Pipeline.required "title" Json.Decode.string
         |> Json.Decode.Pipeline.required "total" Json.Decode.float

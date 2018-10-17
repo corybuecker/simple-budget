@@ -1,4 +1,4 @@
-module Adjustments.Utils exposing (adjustmentDecoder, adjustmentUpdatedDecoder, adjustmentsDecoder, amount, encode, id, title)
+module Adjustments.Utils exposing (adjustmentDecoder, adjustmentUpdatedDecoder, adjustmentsDecoder, encode, id, title, total)
 
 import Adjustments.Models exposing (Adjustment)
 import Json.Decode
@@ -14,9 +14,10 @@ adjustmentsDecoder =
 adjustmentDecoder : Json.Decode.Decoder Adjustment
 adjustmentDecoder =
     Json.Decode.succeed Adjustment
+        |> Json.Decode.Pipeline.required "account_id" Json.Decode.int
         |> Json.Decode.Pipeline.required "id" Json.Decode.int
         |> Json.Decode.Pipeline.required "title" Json.Decode.string
-        |> Json.Decode.Pipeline.required "amount" Json.Decode.float
+        |> Json.Decode.Pipeline.required "total" Json.Decode.float
 
 
 adjustmentUpdatedDecoder : Json.Decode.Decoder Adjustment
@@ -34,11 +35,11 @@ title value =
     ( "title", Encode.string value )
 
 
-amount : Float -> ( String, Encode.Value )
-amount value =
-    ( "amount", Encode.float value )
+total : Float -> ( String, Encode.Value )
+total value =
+    ( "total", Encode.float value )
 
 
 encode : Adjustment -> Encode.Value
 encode schema =
-    Encode.object [ ( "adjustment", Encode.object [ id schema.id, title schema.title, amount schema.amount ] ) ]
+    Encode.object [ ( "adjustment", Encode.object [ id schema.id, title schema.title, total schema.total ] ) ]

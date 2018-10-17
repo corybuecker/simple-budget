@@ -32,7 +32,7 @@ type Msg
     | CreateGoal
     | CreateSaving
     | CreateAccount
-    | CreateAdjustment
+    | CreateAdjustment Account
 
 
 type alias Model =

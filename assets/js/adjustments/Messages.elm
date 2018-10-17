@@ -6,6 +6,6 @@ import Http
 
 type Msg
     = TitleUpdated String
-    | AmountUpdated String
+    | TotalUpdated String
     | SaveAdjustment
     | DeleteAdjustment

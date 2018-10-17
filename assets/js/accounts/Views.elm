@@ -52,6 +52,7 @@ renderAccount account =
                             "False"
                         )
                     ]
+              , td [ onClick (CreateAdjustment account) ] [ text "Adjustment" ]
               ]
             , List.map renderAdjustment account.adjustments
             ]
@@ -59,8 +60,8 @@ renderAccount account =
 
 
 renderAdjustment : Adjustment -> Html Msg
-renderAdjustment model =
+renderAdjustment adjustment =
     tr []
-        [ td [] [ text model.title ]
-        , td [] [ text (String.fromFloat model.total) ]
+        [ td [ onClick (OpenAdjustmentEditor adjustment) ] [ text adjustment.title ]
+        , td [] [ text (String.fromFloat adjustment.total) ]
         ]

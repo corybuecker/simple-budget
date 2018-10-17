@@ -1,5 +1,6 @@
-module Adjustments.Update exposing (adjustmentUrl, adjustmentsUrl, fetchAdjustments, put, refreshAdjustmentsTask, saveAdjustmentAndRefreshAdjustments, saveAdjustmentTask, update)
+module Adjustments.Update exposing (adjustmentUrl, adjustmentsUrl, delete, deleteAdjustmentAndRefreshAdjustments, deleteAdjustmentTask, put, saveAdjustmentAndRefreshAdjustments, saveAdjustmentTask, saveNewAdjustmentTask, update)
 
+import Accounts.Update exposing (refreshAccountsTask)
 import Adjustments.Messages
 import Adjustments.Models exposing (Adjustment)
 import Adjustments.Utils exposing (adjustmentDecoder, adjustmentUpdatedDecoder, adjustmentsDecoder, encode)
@@ -23,15 +24,15 @@ update msg model =
                     in
                     ( { model | activeAdjustment = Just newActiveAdjustment }, Cmd.none )
 
-                Adjustments.Messages.AmountUpdated newAmount ->
+                Adjustments.Messages.TotalUpdated newTotal ->
                     let
                         newActiveAdjustment =
-                            case String.toFloat newAmount of
+                            case String.toFloat newTotal of
                                 Just val ->
-                                    { oldActiveAdjustment | amount = val }
+                                    { oldActiveAdjustment | total = val }
 
                                 Nothing ->
-                                    { oldActiveAdjustment | amount = 0 }
+                                    { oldActiveAdjustment | total = 0 }
                     in
                     ( { model | activeAdjustment = Just newActiveAdjustment }, Cmd.none )
 
@@ -45,57 +46,47 @@ update msg model =
             ( model, Cmd.none )
 
 
-fetchAdjustments : Cmd Msg
-fetchAdjustments =
-    Http.send AdjustmentsFetched (get adjustmentsUrl adjustmentsDecoder)
-
-
 deleteAdjustmentAndRefreshAdjustments : Adjustments.Models.Adjustment -> Cmd Msg
 deleteAdjustmentAndRefreshAdjustments model =
-    Task.attempt AdjustmentsFetched (Task.andThen refreshAdjustmentsTask (deleteAdjustmentTask model))
+    Task.attempt AccountsFetched (Task.andThen refreshAccountsTask (deleteAdjustmentTask model))
 
 
 saveAdjustmentAndRefreshAdjustments : Adjustments.Models.Adjustment -> Cmd Msg
 saveAdjustmentAndRefreshAdjustments model =
     case model.id of
         0 ->
-            Task.attempt AdjustmentsFetched (Task.andThen refreshAdjustmentsTask (saveNewAdjustmentTask model))
+            Task.attempt AccountsFetched (Task.andThen refreshAccountsTask (saveNewAdjustmentTask model))
 
         _ ->
-            Task.attempt AdjustmentsFetched (Task.andThen refreshAdjustmentsTask (saveAdjustmentTask model))
-
-
-refreshAdjustmentsTask : a -> Task Http.Error (List Adjustment)
-refreshAdjustmentsTask _ =
-    toTask (get adjustmentsUrl adjustmentsDecoder)
+            Task.attempt AccountsFetched (Task.andThen refreshAccountsTask (saveAdjustmentTask model))
 
 
 saveAdjustmentTask : Adjustments.Models.Adjustment -> Task Http.Error Adjustment
 saveAdjustmentTask model =
-    toTask (put (adjustmentUrl model.id) (jsonBody (encode model)) adjustmentUpdatedDecoder)
+    toTask (put (adjustmentUrl model.accountId model.id) (jsonBody (encode model)) adjustmentUpdatedDecoder)
 
 
 deleteAdjustmentTask : Adjustments.Models.Adjustment -> Task Http.Error String
 deleteAdjustmentTask model =
-    toTask (delete (adjustmentUrl model.id))
+    toTask (delete (adjustmentUrl model.accountId model.id))
 
 
 saveNewAdjustmentTask : Adjustments.Models.Adjustment -> Task Http.Error Adjustment
 saveNewAdjustmentTask model =
-    toTask (post adjustmentsUrl (jsonBody (encode model)) adjustmentUpdatedDecoder)
+    toTask (post (adjustmentsUrl model.accountId) (jsonBody (encode model)) adjustmentUpdatedDecoder)
 
 
-adjustmentsUrl : String
-adjustmentsUrl =
+adjustmentsUrl : Int -> String
+adjustmentsUrl accountId =
     Url.crossOrigin "//localhost:4000"
-        [ "api", "adjustments" ]
+        [ "api", "accounts", String.fromInt accountId, "adjustments" ]
         []
 
 
-adjustmentUrl : Int -> String
-adjustmentUrl id =
+adjustmentUrl : Int -> Int -> String
+adjustmentUrl accountId id =
     Url.crossOrigin "//localhost:4000"
-        [ "api", "adjustments", String.fromInt id ]
+        [ "api", "accounts", String.fromInt accountId, "adjustments", String.fromInt id ]
         []
 
 

@@ -3,11 +3,12 @@ module Adjustments.Models exposing (Adjustment, newAdjustment)
 
 newAdjustment : Adjustment
 newAdjustment =
-    Adjustment 0 "" 0.0
+    Adjustment 0 0 "" 0.0
 
 
 type alias Adjustment =
-    { id : Int
+    { accountId : Int
+    , id : Int
     , title : String
     , total : Float
     }

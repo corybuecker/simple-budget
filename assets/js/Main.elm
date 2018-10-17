@@ -68,7 +68,7 @@ update msg model =
         AccountsFetched result ->
             case result of
                 Ok accounts ->
-                    ( { model | accounts = accounts, activeAccount = Nothing }
+                    ( { model | accounts = accounts, activeAccount = Nothing, activeAdjustment = Nothing }
                     , Cmd.none
                     )
 
@@ -140,8 +140,12 @@ update msg model =
         CreateAccount ->
             ( { model | modalOpen = "account", activeAccount = Just Accounts.Models.newAccount }, Cmd.none )
 
-        CreateAdjustment ->
-            ( { model | modalOpen = "adjustment", activeAdjustment = Just Adjustments.Models.newAdjustment }, Cmd.none )
+        CreateAdjustment account ->
+            let
+                newAdjustment =
+                    Adjustments.Models.Adjustment account.id 0 "" 0.0
+            in
+            ( { model | modalOpen = "adjustment", activeAdjustment = Just newAdjustment }, Cmd.none )
 
         CreateGoal ->
             ( { model | modalOpen = "goal", activeGoal = Just Goals.Models.newGoal }, Cmd.none )
@@ -220,6 +224,14 @@ modalView model =
             case model.activeSaving of
                 Just a ->
                     Html.map UpdateSaving (Savings.Views.editView a)
+
+                Nothing ->
+                    div [] []
+
+        "adjustment" ->
+            case model.activeAdjustment of
+                Just a ->
+                    Html.map UpdateAdjustment (Adjustments.Views.editView a)
 
                 Nothing ->
                     div [] []

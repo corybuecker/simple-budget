@@ -1,11 +1,6 @@
-module Accounts.Models exposing (Account, Adjustment, newAccount)
+module Accounts.Models exposing (Account, newAccount)
 
-
-type alias Adjustment =
-    { id : Int
-    , title : String
-    , total : Float
-    }
+import Adjustments.Models exposing (Adjustment)
 
 
 type alias Account =

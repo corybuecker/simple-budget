@@ -1,4 +1,4 @@
-module Adjustments.Views exposing (editView, renderAdjustment, renderAdjustments)
+module Adjustments.Views exposing (editView)
 
 import Adjustments.Messages exposing (..)
 import Adjustments.Models exposing (Adjustment)
@@ -12,32 +12,7 @@ editView : Adjustment -> Html Adjustments.Messages.Msg
 editView model =
     div []
         [ input [ type_ "text", value model.title, onInput Adjustments.Messages.TitleUpdated ] []
-        , input [ type_ "text", value (String.fromFloat model.amount), onInput Adjustments.Messages.AmountUpdated ] []
+        , input [ type_ "text", value (String.fromFloat model.total), onInput Adjustments.Messages.TotalUpdated ] []
         , button [ onClick Adjustments.Messages.SaveAdjustment ] [ text "Save" ]
         , button [ onClick Adjustments.Messages.DeleteAdjustment ] [ text "Delete" ]
-        ]
-
-
-renderAdjustments : List Adjustment -> Html Model.Msg
-renderAdjustments adjustments =
-    div []
-        [ button [ onClick CreateAdjustment ] [ text "New Adjustment" ]
-        , table
-            []
-            [ thead []
-                [ tr []
-                    [ th [] [ text "Title" ]
-                    , th [] [ text "Amount" ]
-                    ]
-                ]
-            , tbody [] (List.map renderAdjustment adjustments)
-            ]
-        ]
-
-
-renderAdjustment : Adjustment -> Html Model.Msg
-renderAdjustment adjustment =
-    tr []
-        [ td [ onClick (OpenAdjustmentEditor adjustment) ] [ text adjustment.title ]
-        , td [] [ text (String.fromFloat adjustment.amount) ]
         ]

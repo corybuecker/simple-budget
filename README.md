@@ -1,4 +1,4 @@
-# Simple Budget [![Build Status](https://travis-ci.org/corybuecker/simple-budget.svg?branch=master)](https://travis-ci.org/corybuecker/simple-budget) [![Coverage Status](https://coveralls.io/repos/github/corybuecker/simple-budget/badge.svg?branch=master)](https://coveralls.io/github/corybuecker/simple-budget?branch=master)
+# Simple Budget [![CircleCI](https://circleci.com/gh/corybuecker/simple-budget/tree/master.svg?style=svg)](https://circleci.com/gh/corybuecker/simple-budget/tree/master) [![Coverage Status](https://coveralls.io/repos/github/corybuecker/simple-budget/badge.svg?branch=master)](https://coveralls.io/github/corybuecker/simple-budget?branch=master)
 
 To start your Phoenix server:
 

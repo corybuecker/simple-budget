@@ -1,4 +1,4 @@
-FROM elixir:alpine
+FROM elixir:1.7-alpine
 COPY / /app
 WORKDIR /app
 ENV MIX_ENV=prod PORT=4000

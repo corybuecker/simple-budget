@@ -23,4 +23,4 @@ jobs:
       - run: mix local.rebar --force
       - run: mix ecto.create
       - run: mix test
-      - run: mix coveralls.circle
+      - run: MIX_ENV=test mix coveralls.circle

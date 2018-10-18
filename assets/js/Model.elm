@@ -1,4 +1,4 @@
-module Model exposing (Model, Msg(..))
+module Model exposing (Calculation, Model, Msg(..))
 
 import Accounts.Messages
 import Accounts.Models exposing (Account)
@@ -14,11 +14,16 @@ import Savings.Models exposing (Saving)
 import Url
 
 
+type alias Calculation =
+    { remaining : Float, remainingPerDay : Float }
+
+
 type Msg
     = AccountsFetched (Result Http.Error (List Account))
     | GoalsFetched (Result Http.Error (List Goal))
     | SavingsFetched (Result Http.Error (List Saving))
     | AdjustmentsFetched (Result Http.Error (List Adjustment))
+    | CalculationFetched (Result Http.Error Calculation)
     | OpenAccountEditor Account
     | OpenGoalEditor Goal
     | OpenSavingEditor Saving
@@ -47,4 +52,6 @@ type alias Model =
     , activeAdjustment : Maybe Adjustment
     , key : Browser.Navigation.Key
     , page : String
+    , remainingMonth : Float
+    , remainingPerDay : Float
     }

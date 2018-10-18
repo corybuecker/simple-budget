@@ -17,11 +17,11 @@ import Goals.Views
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Http
+import Http exposing (get, jsonBody, post, toTask)
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import List exposing (..)
-import Model exposing (Model, Msg(..))
+import Model exposing (Calculation, Model, Msg(..))
 import Savings.Models
 import Savings.Update
 import Savings.Views
@@ -53,7 +53,7 @@ init : () -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init _ url key =
     let
         emptyModel =
-            Model [] [] [] Nothing "" (Just Accounts.Models.newAccount) (Just Goals.Models.newGoal) (Just Savings.Models.newSaving) Nothing key ""
+            Model [] [] [] Nothing "" (Just Accounts.Models.newAccount) (Just Goals.Models.newGoal) (Just Savings.Models.newSaving) Nothing key "" 0.0 0.0
     in
     updatePage url emptyModel
 
@@ -171,6 +171,16 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        CalculationFetched result ->
+            case result of
+                Ok calculation ->
+                    ( { model | remainingMonth = calculation.remaining, remainingPerDay = calculation.remainingPerDay }, Cmd.none )
+
+                Err error ->
+                    ( { model | error = Just error }
+                    , Cmd.none
+                    )
+
 
 
 -- SUBSCRIPTIONS
@@ -193,8 +203,35 @@ updatePage url model =
         "/savings" ->
             ( { model | page = "savings" }, Savings.Update.fetchSavings )
 
+        "/home" ->
+            ( { model | page = "home" }, fetchHome )
+
         _ ->
             ( { model | page = "home" }, Cmd.none )
+
+
+fetchHome : Cmd Msg
+fetchHome =
+    Http.send CalculationFetched (get calculationsUrl calculationsDecoder)
+
+
+calculationsUrl : String
+calculationsUrl =
+    Url.crossOrigin "//localhost:4000"
+        [ "api", "calculations" ]
+        []
+
+
+calculationsDecoder : Decode.Decoder Calculation
+calculationsDecoder =
+    Decode.field "data" calculationDecoder
+
+
+calculationDecoder : Decode.Decoder Calculation
+calculationDecoder =
+    Decode.succeed Calculation
+        |> Json.Decode.Pipeline.required "remaining" Decode.float
+        |> Json.Decode.Pipeline.required "remaining_per_day" Decode.float
 
 
 
@@ -254,13 +291,20 @@ view model =
                 "savings" ->
                     Savings.Views.renderSavings model.savings
 
+                "home" ->
+                    div []
+                        [ div [] [ text (String.fromFloat model.remainingMonth) ]
+                        , div [] [ text (String.fromFloat model.remainingPerDay) ]
+                        ]
+
                 _ ->
                     Accounts.Views.renderAccounts model.accounts
     in
     { title = "test"
     , body =
         [ div []
-            [ a [ href "/accounts" ] [ text "Accounts" ]
+            [ a [ href "/home" ] [ text "Home" ]
+            , a [ href "/accounts" ] [ text "Accounts" ]
             , a [ href "/goals" ] [ text "Goals" ]
             , a [ href "/savings" ] [ text "Savings" ]
             , body

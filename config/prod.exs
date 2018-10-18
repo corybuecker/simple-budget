@@ -74,4 +74,5 @@ config :simple_budget, SimpleBudget.Repo,
   username: "postgres",
   password: System.get_env("PASSWORD"),
   database: "simple_budget_prod",
+  hostname: System.get_env("HOSTNAME"),
   pool_size: 15

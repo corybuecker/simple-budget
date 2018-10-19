@@ -101,14 +101,14 @@ saveNewGoalTask model =
 
 goalsUrl : String
 goalsUrl =
-    Url.crossOrigin "//localhost:4000"
+    Url.relative
         [ "api", "goals" ]
         []
 
 
 goalUrl : Int -> String
 goalUrl id =
-    Url.crossOrigin "//localhost:4000"
+    Url.relative
         [ "api", "goals", String.fromInt id ]
         []
 

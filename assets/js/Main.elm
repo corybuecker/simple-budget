@@ -217,7 +217,7 @@ fetchHome =
 
 calculationsUrl : String
 calculationsUrl =
-    Url.crossOrigin "//localhost:4000"
+    Url.relative
         [ "api", "calculations" ]
         []
 

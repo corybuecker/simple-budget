@@ -94,14 +94,14 @@ deleteAccountTask model =
 
 accountsUrl : String
 accountsUrl =
-    Url.crossOrigin "//localhost:4000"
+    Url.relative
         [ "api", "accounts" ]
         []
 
 
 accountUrl : Int -> String
 accountUrl id =
-    Url.crossOrigin "//localhost:4000"
+    Url.relative
         [ "api", "accounts", String.fromInt id ]
         []
 

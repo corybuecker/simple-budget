@@ -87,14 +87,14 @@ saveNewSavingTask model =
 
 savingsUrl : String
 savingsUrl =
-    Url.crossOrigin "//localhost:4000"
+    Url.relative
         [ "api", "savings" ]
         []
 
 
 savingUrl : Int -> String
 savingUrl id =
-    Url.crossOrigin "//localhost:4000"
+    Url.relative
         [ "api", "savings", String.fromInt id ]
         []
 

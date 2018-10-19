@@ -78,14 +78,14 @@ saveNewAdjustmentTask model =
 
 adjustmentsUrl : Int -> String
 adjustmentsUrl accountId =
-    Url.crossOrigin "//localhost:4000"
+    Url.relative
         [ "api", "accounts", String.fromInt accountId, "adjustments" ]
         []
 
 
 adjustmentUrl : Int -> Int -> String
 adjustmentUrl accountId id =
-    Url.crossOrigin "//localhost:4000"
+    Url.relative
         [ "api", "accounts", String.fromInt accountId, "adjustments", String.fromInt id ]
         []
 

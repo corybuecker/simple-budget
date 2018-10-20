@@ -1,0 +1,39 @@
+<script src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
+<div class="g-signin2" data-onsuccess="onSignIn"></div>
+<script>
+(function (xhr) {
+  let node, token;
+  let originalOpen = xhr.open;
+
+  node = document.head.querySelector('meta[name="csrf"]')
+  token = node.content;
+
+  xhr.open = function (method, url) {
+    let originalResult = originalOpen.apply(this, arguments);
+    this.setRequestHeader("X-CSRF-Token", token);
+    return originalResult;
+  }
+
+})(XMLHttpRequest.prototype);
+
+function onSignIn(googleUser) {
+    var id_token = googleUser.getAuthResponse().id_token;
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/login');
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function() {
+        console.log('Signed in as: ' + xhr.responseText);
+    };
+    xhr.send('{ "idtoken": "' + id_token + '"}');
+}
+</script>
+<a href="#" onclick="signOut();">Sign out</a>
+<script>
+  function signOut() {
+    var auth2 = gapi.auth2.getAuthInstance();
+    auth2.signOut().then(function () {
+      console.log('User signed out.');
+    });
+  }
+</script>

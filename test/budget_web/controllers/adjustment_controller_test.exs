@@ -24,7 +24,12 @@ defmodule SimpleBudgetWeb.AdjustmentControllerTest do
   end
 
   setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json"), account: fixture(:account)}
+    {:ok,
+     conn:
+       conn
+       |> init_test_session(%{token: "validid"})
+       |> put_req_header("accept", "application/json"),
+     account: fixture(:account)}
   end
 
   describe "create adjustments" do

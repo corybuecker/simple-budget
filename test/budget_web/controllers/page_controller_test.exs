@@ -2,12 +2,12 @@ defmodule SimpleBudgetWeb.PageControllerTest do
   use SimpleBudgetWeb.ConnCase
 
   test "GET /", %{conn: conn} do
-    conn = get(conn, "/")
+    conn = get(conn |> init_test_session(%{token: "validid"}), "/")
     assert html_response(conn, 200) =~ "app\.js"
   end
 
-  test "GET /healthcheck", %{conn: conn} do
-    conn = get(conn, "/healthcheck")
-    assert response(conn, 200) =~ ""
+  test "unauthorized GET /", %{conn: conn} do
+    conn = get(conn, "/")
+    assert redirected_to(conn, 302) =~ "/login"
   end
 end

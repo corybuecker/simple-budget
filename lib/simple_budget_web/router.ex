@@ -1,5 +1,6 @@
 defmodule SimpleBudgetWeb.Router do
   use SimpleBudgetWeb, :router
+  import SimpleBudgetWeb.Auth, only: [check_google_session: 2, check_google_session_api: 2]
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -7,6 +8,7 @@ defmodule SimpleBudgetWeb.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :check_google_session
   end
 
   pipeline :api do
@@ -14,6 +16,7 @@ defmodule SimpleBudgetWeb.Router do
     plug :fetch_session
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :check_google_session_api
   end
 
   scope "/", SimpleBudgetWeb do
@@ -23,7 +26,8 @@ defmodule SimpleBudgetWeb.Router do
     get("/accounts", PageController, :index)
     get("/goals", PageController, :index)
     get("/savings", PageController, :index)
-    forward("/healthcheck", HealthcheckRouter)
+    get("/login", LoginController, :index)
+    post("/login", LoginController, :create)
   end
 
   scope "/api", SimpleBudgetWeb do

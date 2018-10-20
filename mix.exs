@@ -50,7 +50,8 @@ defmodule SimpleBudget.MixProject do
       {:jason, "~> 1.0"},
       {:cowboy, "~> 2.0"},
       {:timex, "~> 3.1"},
-      {:excoveralls, "~> 0.10", only: :test}
+      {:excoveralls, "~> 0.10", only: :test},
+      {:joken_jwks, git: "https://github.com/victorolinasc/joken_jwks"}
     ]
   end
 

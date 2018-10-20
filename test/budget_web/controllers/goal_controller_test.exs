@@ -24,7 +24,11 @@ defmodule SimpleBudgetWeb.GoalControllerTest do
   end
 
   setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    {:ok,
+     conn:
+       conn
+       |> init_test_session(%{token: "validid"})
+       |> put_req_header("accept", "application/json")}
   end
 
   describe "index" do

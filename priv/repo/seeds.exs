@@ -43,3 +43,7 @@ SimpleBudget.Repo.insert!(%SimpleBudget.Savings.Saving{
   title: "Checking Account Buffer",
   amount: 250
 })
+
+SimpleBudget.Repo.insert!(%SimpleBudget.Users.User{
+  email: "test@user.com"
+})

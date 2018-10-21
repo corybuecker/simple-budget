@@ -45,13 +45,14 @@ defmodule SimpleBudget.MixProject do
       {:phoenix_ecto, "~> 3.2"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.11"},
-      {:phoenix_live_reload, "~> 1.2-rc", only: :dev},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:cowboy, "~> 2.0"},
       {:timex, "~> 3.1"},
-      {:excoveralls, "~> 0.10", only: :test},
-      {:joken_jwks, git: "https://github.com/victorolinasc/joken_jwks"}
+      {:joken_jwks, git: "https://github.com/victorolinasc/joken_jwks"},
+      {:phoenix_live_reload, "~> 1.2-rc", only: :dev},
+      {:mox, "~> 0.4", only: :test},
+      {:excoveralls, "~> 0.10", only: :test}
     ]
   end
 

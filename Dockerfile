@@ -1,4 +1,5 @@
 FROM elixir:1.7-alpine
+RUN apk update && apk add git
 COPY / /app
 WORKDIR /app
 ENV MIX_ENV=prod PORT=4000

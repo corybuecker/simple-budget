@@ -21,13 +21,10 @@ editView model =
 renderSavings : List Saving -> Html Model.Msg
 renderSavings savings =
     div []
-        [ button [ onClick CreateSaving ] [ text "New Saving" ]
-        , div
-            []
-            [ div []
-                [ th [] [ text "Title" ]
-                , th [] [ text "Amount" ]
-                ]
+        [ button [ class "btn btn-primary", onClick CreateSaving ] [ text "New Saving" ]
+        , div []
+            [ div [] [ text "Title" ]
+            , div [] [ text "Amount" ]
             ]
         , div [] (List.map renderSaving savings)
         ]

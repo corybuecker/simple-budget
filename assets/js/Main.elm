@@ -302,16 +302,16 @@ view model =
     in
     { title = "test"
     , body =
-        [ div [ class "container-fluid" ]
-            [ nav [ class "navbar navbar-expand-lg navbar-light bg-light" ]
-                [ a [ class "navbar-brand", href "/home" ] [ text "Simple Budget" ]
-                , ul [ class "navbar-nav mr-auto" ]
-                    [ li [ class "nav-item" ] [ a [ class "nav-link", href "/accounts" ] [ text "Accounts" ] ]
-                    , li [ class "nav-item" ] [ a [ class "nav-link", href "/goals" ] [ text "Goals" ] ]
-                    , li [ class "nav-item" ] [ a [ class "nav-link", href "/savings" ] [ text "Savings" ] ]
-                    ]
+        [ nav [ class "navbar navbar-expand-lg navbar-light bg-light" ]
+            [ a [ class "navbar-brand", href "/home" ] [ text "Simple Budget" ]
+            , ul [ class "navbar-nav mr-auto" ]
+                [ li [ class "nav-item" ] [ a [ class "nav-link", href "/accounts" ] [ text "Accounts" ] ]
+                , li [ class "nav-item" ] [ a [ class "nav-link", href "/goals" ] [ text "Goals" ] ]
+                , li [ class "nav-item" ] [ a [ class "nav-link", href "/savings" ] [ text "Savings" ] ]
                 ]
-            , body
+            ]
+        , div [ class "container-fluid" ]
+            [ body
             , div [] [ modalView model ]
             , p [] [ text (errorMessage model.error) ]
             ]

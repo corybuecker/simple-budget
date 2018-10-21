@@ -15,7 +15,7 @@ editView model =
         [ input [ type_ "text", value model.name, onInput Accounts.Messages.NameUpdated ] []
         , input [ type_ "checkbox", checked model.debt, onClick Accounts.Messages.ToggleDebt ] []
         , input [ type_ "text", value (String.fromFloat model.balance), onInput Accounts.Messages.BalanceUpdated ] []
-        , button [ onClick Accounts.Messages.SaveAccount ] [ text "Save" ]
+        , button [ onClick Accounts.Messages.SaveAccount, class "button" ] [ text "Save" ]
         , button [ onClick Accounts.Messages.DeleteAccount ] [ text "Delete" ]
         ]
 
@@ -23,7 +23,7 @@ editView model =
 renderAccounts : List Account -> Html Msg
 renderAccounts accounts =
     div []
-        [ button [ onClick CreateAccount ] [ text "New Account" ]
+        [ button [ class "btn btn-primary", onClick CreateAccount ] [ text "New Account" ]
         , div []
             [ div [] [ text "Account Name" ]
             , div [] [ text "Balance" ]
@@ -35,24 +35,26 @@ renderAccounts accounts =
 
 renderAccount : Account -> Html Msg
 renderAccount account =
-    div []
-        (List.concat
-            [ [ div [ onClick (OpenAccountEditor account) ] [ text account.name ]
-              , div [] [ text (String.fromFloat account.balance) ]
-              , div []
-                    [ text
-                        (if account.debt then
-                            "True"
+    div [ class "card" ]
+        [ div [ class "card-body" ]
+            (List.concat
+                [ [ h5 [ class "card-title", onClick (OpenAccountEditor account) ] [ text account.name ]
+                  , div [] [ text (String.fromFloat account.balance) ]
+                  , div []
+                        [ text
+                            (if account.debt then
+                                "True"
 
-                         else
-                            "False"
-                        )
-                    ]
-              , div [ onClick (CreateAdjustment account) ] [ text "Adjustment" ]
-              ]
-            , List.map renderAdjustment account.adjustments
-            ]
-        )
+                             else
+                                "False"
+                            )
+                        ]
+                  , div [ onClick (CreateAdjustment account) ] [ text "Adjustment" ]
+                  ]
+                , List.map renderAdjustment account.adjustments
+                ]
+            )
+        ]
 
 
 renderAdjustment : Adjustment -> Html Msg

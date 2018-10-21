@@ -23,7 +23,7 @@ editView model =
 renderGoals : List Goal -> Html Msg
 renderGoals goals =
     div []
-        [ button [ onClick CreateGoal ] [ text "New Goal" ]
+        [ button [ class "btn btn-primary", onClick CreateGoal ] [ text "New Goal" ]
         , div
             []
             [ div []

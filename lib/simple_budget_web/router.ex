@@ -20,6 +20,10 @@ defmodule SimpleBudgetWeb.Router do
   end
 
   scope "/", SimpleBudgetWeb do
+    # do not pipe healthcheck through CSRF and
+    # related checks
+    forward("/healthcheck", HealthcheckRouter)
+
     pipe_through :browser
 
     get("/", PageController, :index)

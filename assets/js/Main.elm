@@ -302,15 +302,19 @@ view model =
     in
     { title = "test"
     , body =
-        [ div []
-            [ a [ href "/home" ] [ text "Home" ]
-            , a [ href "/accounts" ] [ text "Accounts" ]
-            , a [ href "/goals" ] [ text "Goals" ]
-            , a [ href "/savings" ] [ text "Savings" ]
-            , body
-            , div [] [ modalView model ]
-            , p [] [ text (errorMessage model.error) ]
+        [ div [ class "container-fluid" ]
+            [ nav [ class "navbar navbar-expand-lg navbar-light bg-light" ]
+                [ a [ class "navbar-brand", href "/home" ] [ text "Simple Budget" ]
+                , ul [ class "navbar-nav mr-auto" ]
+                    [ li [ class "nav-item" ] [ a [ class "nav-link", href "/accounts" ] [ text "Accounts" ] ]
+                    , li [ class "nav-item" ] [ a [ class "nav-link", href "/goals" ] [ text "Goals" ] ]
+                    , li [ class "nav-item" ] [ a [ class "nav-link", href "/savings" ] [ text "Savings" ] ]
+                    ]
+                ]
             ]
+        , body
+        , div [] [ modalView model ]
+        , p [] [ text (errorMessage model.error) ]
         ]
     }
 

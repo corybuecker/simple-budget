@@ -24,26 +24,22 @@ renderAccounts : List Account -> Html Msg
 renderAccounts accounts =
     div []
         [ button [ onClick CreateAccount ] [ text "New Account" ]
-        , table []
-            [ thead []
-                [ tr []
-                    [ th [] [ text "Account Name" ]
-                    , th [] [ text "Balance" ]
-                    , th [] [ text "Debt?" ]
-                    ]
-                ]
-            , tbody [] (List.map renderAccount accounts)
+        , div []
+            [ div [] [ text "Account Name" ]
+            , div [] [ text "Balance" ]
+            , div [] [ text "Debt?" ]
             ]
+        , div [] (List.map renderAccount accounts)
         ]
 
 
 renderAccount : Account -> Html Msg
 renderAccount account =
-    tr []
+    div []
         (List.concat
-            [ [ td [ onClick (OpenAccountEditor account) ] [ text account.name ]
-              , td [] [ text (String.fromFloat account.balance) ]
-              , td []
+            [ [ div [ onClick (OpenAccountEditor account) ] [ text account.name ]
+              , div [] [ text (String.fromFloat account.balance) ]
+              , div []
                     [ text
                         (if account.debt then
                             "True"
@@ -52,7 +48,7 @@ renderAccount account =
                             "False"
                         )
                     ]
-              , td [ onClick (CreateAdjustment account) ] [ text "Adjustment" ]
+              , div [ onClick (CreateAdjustment account) ] [ text "Adjustment" ]
               ]
             , List.map renderAdjustment account.adjustments
             ]
@@ -61,7 +57,7 @@ renderAccount account =
 
 renderAdjustment : Adjustment -> Html Msg
 renderAdjustment adjustment =
-    tr []
-        [ td [ onClick (OpenAdjustmentEditor adjustment) ] [ text adjustment.title ]
-        , td [] [ text (String.fromFloat adjustment.total) ]
+    div []
+        [ div [ onClick (OpenAdjustmentEditor adjustment) ] [ text adjustment.title ]
+        , div [] [ text (String.fromFloat adjustment.total) ]
         ]

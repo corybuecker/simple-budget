@@ -311,10 +311,10 @@ view model =
                     , li [ class "nav-item" ] [ a [ class "nav-link", href "/savings" ] [ text "Savings" ] ]
                     ]
                 ]
+            , body
+            , div [] [ modalView model ]
+            , p [] [ text (errorMessage model.error) ]
             ]
-        , body
-        , div [] [ modalView model ]
-        , p [] [ text (errorMessage model.error) ]
         ]
     }
 

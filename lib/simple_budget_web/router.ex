@@ -2,7 +2,7 @@ defmodule SimpleBudgetWeb.Router do
   use SimpleBudgetWeb, :router
   import SimpleBudgetWeb.Auth, only: [check_google_session: 2, check_google_session_api: 2]
 
-  @csp "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; object-src 'none'; style-src 'self' 'unsafe-inline'"
+  @csp "default-src 'self'; script-src 'self' 'nonce-7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0='; frame-src 'self' https://accounts.google.com; object-src 'none'; style-src 'self' 'unsafe-inline'; connect-src 'self'"
 
   pipeline :browser do
     if Application.get_env(:simple_budget, :env) == :prod do

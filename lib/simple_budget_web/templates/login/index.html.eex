@@ -1,6 +1,6 @@
-<script nonce="twALM4szAwoDCkrztzPoDtdo8mUfMYylMAhmJ3SK9Ao" src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
+<script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=" src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
 <div class="g-signin2" data-onsuccess="onSignIn"></div>
-<script>
+<script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
 (function (xhr) {
   let node, token;
   let originalOpen = xhr.open;
@@ -29,7 +29,7 @@ function onSignIn(googleUser) {
 }
 </script>
 <a href="#" onclick="signOut();">Sign out</a>
-<script>
+<script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
   function signOut() {
     var auth2 = gapi.auth2.getAuthInstance();
     auth2.signOut().then(function () {

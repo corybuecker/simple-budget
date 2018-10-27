@@ -27,10 +27,9 @@ defmodule SimpleBudgetWeb.Router do
     plug :check_google_session_api
   end
 
-  scope "/", SimpleBudgetWeb do
-    # do not pipe healthcheck through SSL and related checks
-    forward("/healthcheck", HealthcheckRouter)
+  forward("/healthcheck", SimpleBudgetWeb.HealthcheckRouter)
 
+  scope "/", SimpleBudgetWeb do
     pipe_through :browser
 
     get("/", PageController, :index)

@@ -2,6 +2,8 @@ defmodule SimpleBudgetWeb.Router do
   use SimpleBudgetWeb, :router
   import SimpleBudgetWeb.Auth, only: [check_google_session: 2, check_google_session_api: 2]
 
+  @csp "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; object-src 'none'; style-src 'self' 'unsafe-inline'"
+
   pipeline :browser do
     if Application.get_env(:simple_budget, :env) == :prod do
       plug Plug.SSL, rewrite_on: [:x_forwarded_proto], hsts: true
@@ -11,7 +13,7 @@ defmodule SimpleBudgetWeb.Router do
     plug :fetch_session
     plug :fetch_flash
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug :put_secure_browser_headers, %{"content-security-policy" => @csp}
     plug :check_google_session
   end
 
@@ -23,7 +25,7 @@ defmodule SimpleBudgetWeb.Router do
     plug :accepts, ["json"]
     plug :fetch_session
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug :put_secure_browser_headers, %{"content-security-policy" => @csp}
     plug :check_google_session_api
   end
 

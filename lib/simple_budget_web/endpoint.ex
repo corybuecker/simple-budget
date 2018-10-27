@@ -40,6 +40,7 @@ defmodule SimpleBudgetWeb.Endpoint do
   plug Plug.Session,
     store: :cookie,
     key: "_simple_budget_key",
+    max_age: 1800,
     secure: Application.get_env(:simple_budget, :env) == :prod,
     signing_salt: "yiLOUw9l"
 

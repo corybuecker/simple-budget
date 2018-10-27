@@ -67,9 +67,6 @@ config :logger, level: :info
 # See the releases documentation accordingly.
 
 config :simple_budget, SimpleBudgetWeb.Endpoint,
-  force_ssl: [hsts: true, rewrite_on: [:x_forwarded_proto]]
-
-config :simple_budget, SimpleBudgetWeb.Endpoint,
   secret_key_base: System.get_env("SECRET_KEY_BASE")
 
 # Configure your database

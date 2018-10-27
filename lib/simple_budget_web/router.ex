@@ -3,6 +3,10 @@ defmodule SimpleBudgetWeb.Router do
   import SimpleBudgetWeb.Auth, only: [check_google_session: 2, check_google_session_api: 2]
 
   pipeline :browser do
+    if Application.get_env(:simple_budget, :env) == :prod do
+      plug Plug.SSL, rewrite_on: [:x_forwarded_proto], hsts: true
+    end
+
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
@@ -12,6 +16,10 @@ defmodule SimpleBudgetWeb.Router do
   end
 
   pipeline :api do
+    if Application.get_env(:simple_budget, :env) == :prod do
+      plug Plug.SSL, rewrite_on: [:x_forwarded_proto], hsts: true
+    end
+
     plug :accepts, ["json"]
     plug :fetch_session
     plug :protect_from_forgery
@@ -20,8 +28,7 @@ defmodule SimpleBudgetWeb.Router do
   end
 
   scope "/", SimpleBudgetWeb do
-    # do not pipe healthcheck through CSRF and
-    # related checks
+    # do not pipe healthcheck through SSL and related checks
     forward("/healthcheck", HealthcheckRouter)
 
     pipe_through :browser

@@ -1,4 +1,4 @@
-<script src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
+<script nonce="twALM4szAwoDCkrztzPoDtdo8mUfMYylMAhmJ3SK9Ao" src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
 <div class="g-signin2" data-onsuccess="onSignIn"></div>
 <script>
 (function (xhr) {

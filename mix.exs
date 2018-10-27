@@ -48,6 +48,7 @@ defmodule SimpleBudget.MixProject do
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:cowboy, "~> 2.0"},
+      {:poison, "~> 3.1"},
       {:timex, "~> 3.1"},
       {:joken_jwks, git: "https://github.com/victorolinasc/joken_jwks"},
       {:phoenix_live_reload, "~> 1.2-rc", only: :dev},

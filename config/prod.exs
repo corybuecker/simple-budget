@@ -10,7 +10,7 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :simple_budget, SimpleBudgetWeb.Endpoint,
-  http: [:inet6, port: System.get_env("PORT") || 4000],
+  http: [:inet6, port: 4001],
   url: [host: "simplebudget.bueckered.com", port: 443],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
@@ -65,6 +65,9 @@ config :logger, level: :info
 #
 # Note you can't rely on `System.get_env/1` when using releases.
 # See the releases documentation accordingly.
+
+config :simple_budget, SimpleBudgetWeb.Endpoint,
+  force_ssl: [hsts: true, rewrite_on: :x_forwarded_proto]
 
 config :simple_budget, SimpleBudgetWeb.Endpoint,
   secret_key_base: System.get_env("SECRET_KEY_BASE")

@@ -300,7 +300,7 @@ view model =
                 _ ->
                     Accounts.Views.renderAccounts model.accounts
     in
-    { title = "test"
+    { title = "Simple Budget"
     , body =
         [ nav [ class "navbar navbar-expand-lg navbar-light bg-light" ]
             [ a [ class "navbar-brand", href "/home" ] [ text "Simple Budget" ]

@@ -24,11 +24,6 @@ renderAccounts : List Account -> Html Msg
 renderAccounts accounts =
     div []
         [ button [ class "btn btn-primary", onClick CreateAccount ] [ text "New Account" ]
-        , div []
-            [ div [] [ text "Account Name" ]
-            , div [] [ text "Balance" ]
-            , div [] [ text "Debt?" ]
-            ]
         , div [] (List.map renderAccount accounts)
         ]
 
@@ -60,6 +55,6 @@ renderAccount account =
 renderAdjustment : Adjustment -> Html Msg
 renderAdjustment adjustment =
     div []
-        [ div [ onClick (OpenAdjustmentEditor adjustment) ] [ text adjustment.title ]
+        [ div [ onClick (OpenAdjustmentEditor adjustment), class "button" ] [ text adjustment.title ]
         , div [] [ text (String.fromFloat adjustment.total) ]
         ]

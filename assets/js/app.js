@@ -1,4 +1,5 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
+import './app.scss'
 
 // webpack automatically bundles all modules in your
 // entry points. Those entry points can be configured

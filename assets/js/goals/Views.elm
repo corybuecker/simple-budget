@@ -24,14 +24,6 @@ renderGoals : List Goal -> Html Msg
 renderGoals goals =
     div []
         [ button [ class "btn btn-primary", onClick CreateGoal ] [ text "New Goal" ]
-        , div
-            []
-            [ div []
-                [ th [] [ text "Account Name" ]
-                , th [] [ text "Balance" ]
-                , th [] [ text "Debt?" ]
-                ]
-            ]
         , div [] (List.map renderGoal goals)
         ]
 
@@ -39,7 +31,7 @@ renderGoals goals =
 renderGoal : Goal -> Html Msg
 renderGoal goal =
     div []
-        [ div [ onClick (OpenGoalEditor goal) ] [ text goal.title ]
+        [ div [ onClick (OpenGoalEditor goal), class "button" ] [ text goal.title ]
         , div [] [ text (String.fromFloat goal.target) ]
         , div [] [ text goal.startDate ]
         , div [] [ text goal.endDate ]

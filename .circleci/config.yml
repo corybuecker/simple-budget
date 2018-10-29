@@ -1,26 +1,51 @@
-# Elixir CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-elixir/ for more details
 version: 2
 jobs:
-  build:
+  test:
     docker:
-      # specify the version here
       - image: circleci/elixir:1.7
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
       - image: circleci/postgres:10-alpine
-
-    working_directory: ~/repo
+    environment:
+      - MIX_ENV: "test"
     steps:
       - checkout
-
-      # specify any bash command here prefixed with `run: `
       - run: mix local.hex --force
       - run: mix deps.get
       - run: mix local.rebar --force
       - run: mix ecto.create
-      - run: mix test
-      - run: MIX_ENV=test mix coveralls.circle
+      - run: mix coveralls.circle
+  push:
+    docker:
+      - image: google/cloud-sdk
+    environment:
+      - PROJECT_NAME: "simple-budget"
+      - GOOGLE_PROJECT_ID: "cluster-1249"
+      - GOOGLE_COMPUTE_ZONE: "us-central1-a"
+    steps:
+      - checkout
+      - run:
+          name: Setup Google Cloud SDK
+          command: |
+            apt-get install -qq -y gettext
+            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+      - setup_remote_docker
+      - run:
+          name: Docker build and push
+          command: |
+            gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://gcr.io
+            docker build -t ${PROJECT_NAME} .
+            docker tag ${PROJECT_NAME} gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}:${CIRCLE_SHA1}
+            docker push gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}:${CIRCLE_SHA1}
+workflows:
+  version: 2
+  da_pipeline:
+    jobs:
+      - test
+      - push:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master

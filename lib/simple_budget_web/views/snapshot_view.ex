@@ -6,10 +6,6 @@ defmodule SimpleBudgetWeb.SnapshotView do
     %{data: render_many(snapshots, SnapshotView, "snapshot.json")}
   end
 
-  def render("show.json", %{snapshot: snapshot}) do
-    %{data: render_one(snapshot, SnapshotView, "snapshot.json")}
-  end
-
   def render("snapshot.json", %{snapshot: snapshot}) do
     %{
       id: snapshot.id,

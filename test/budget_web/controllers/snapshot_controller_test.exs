@@ -49,6 +49,12 @@ defmodule SimpleBudgetWeb.SnapshotControllerTest do
       assert length(snapshots) == 1
       [snapshot | []] = snapshots
       assert snapshot.after == Decimal.new("500.00")
+
+      conn = get(conn, Routes.account_snapshot_path(conn, :index, account))
+
+      assert json_response(conn, 200)["data"] == [
+               %{"account_id" => 123, "after" => "500.00", "before" => "1000.00", "id" => 56}
+             ]
     end
 
     test "renders errors when data is invalid", %{conn: conn, account: account} do

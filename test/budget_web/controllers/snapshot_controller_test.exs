@@ -53,7 +53,12 @@ defmodule SimpleBudgetWeb.SnapshotControllerTest do
       conn = get(conn, Routes.account_snapshot_path(conn, :index, account))
 
       assert json_response(conn, 200)["data"] == [
-               %{"account_id" => 123, "after" => "500.00", "before" => "1000.00", "id" => 56}
+               %{
+                 "account_id" => snapshot.account_id,
+                 "after" => "500.00",
+                 "before" => "1000.00",
+                 "id" => snapshot.id
+               }
              ]
     end
 

@@ -44,7 +44,7 @@ renderAccount account =
                                 "False"
                             )
                         ]
-                  , div [ onClick (CreateAdjustment account) ] [ text "Adjustment" ]
+                  , div [ onClick (CreateAdjustment account), class "button" ] [ text "Adjustment" ]
                   ]
                 , List.map renderAdjustment account.adjustments
                 ]

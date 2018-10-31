@@ -2,7 +2,6 @@ defmodule SimpleBudget.Calculations.Daily do
   import Ecto.Query
 
   alias SimpleBudget.Repo
-  alias Timex.Interval
 
   def all do
     remaining = remaining()
@@ -22,8 +21,9 @@ defmodule SimpleBudget.Calculations.Daily do
 
   defp remaining_per_day(remaining) do
     days_left =
-      Interval.new(from: Timex.today(), until: Timex.today() |> Timex.end_of_month())
-      |> Interval.duration(:days)
+      Timex.now()
+      |> Timex.end_of_month()
+      |> Timex.diff(Timex.now(), :days)
 
     cond do
       days_left == 0 -> remaining

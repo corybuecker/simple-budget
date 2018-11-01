@@ -17,7 +17,6 @@ jobs:
     docker:
       - image: google/cloud-sdk
     environment:
-      - PROJECT_NAME: "simple-budget"
       - GOOGLE_PROJECT_ID: "cluster-1249"
       - GOOGLE_COMPUTE_ZONE: "us-central1-a"
     steps:
@@ -30,14 +29,7 @@ jobs:
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
             gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
             gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
-      - setup_remote_docker
-      - run:
-          name: Docker build and push
-          command: |
-            gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://gcr.io
-            docker build -t ${PROJECT_NAME} .
-            docker tag ${PROJECT_NAME} gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}:${CIRCLE_SHA1}
-            docker push gcr.io/${GOOGLE_PROJECT_ID}/${PROJECT_NAME}:${CIRCLE_SHA1}
+            gcloud builds submit --config cloudbuild.yml --async --substitutions=COMMIT_SHA="${CIRCLE_SHA1}" .
 workflows:
   version: 2
   da_pipeline:

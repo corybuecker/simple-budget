@@ -34,10 +34,11 @@ workflows:
   version: 2
   da_pipeline:
     jobs:
-      - test
-      - push:
-          requires:
-            - test
-          filters:
-            branches:
-              only: master
+      - push
+      # - test
+      # - push:
+      #     requires:
+      #       - test
+      #     filters:
+      #       branches:
+      #         only: master

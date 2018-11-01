@@ -18,7 +18,11 @@ COPY assets /assets
 WORKDIR /assets
 RUN ln -s /assets-base/node_modules .
 COPY --from=builder /app/deps /deps
-RUN rm -rf /assets/js/elm-stuff && npm run deploy
+RUN mv /assets/js/accounts /assets/js/Accounts && \
+    mv /assets/js/adjustments /assets/js/Adjustments && \
+    mv /assets/js/goals /assets/js/Goals && \
+    mv /assets/js/savings /assets/js/Savings && \
+    rm -rf /assets/js/elm-stuff && npm run deploy
 
 FROM builder
 COPY config /app/config

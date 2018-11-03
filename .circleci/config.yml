@@ -8,9 +8,17 @@ jobs:
       - MIX_ENV: "test"
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - elixir-deps-{{ checksum "mix.lock" }}
       - run: mix local.hex --force
       - run: mix deps.get
       - run: mix local.rebar --force
+      - run: mix deps.compile
+      - save_cache:
+        key: elixir-deps-{{ checksum "mix.lock" }}
+        paths:
+          - deps
       - run: mix ecto.create
       - run: mix coveralls.circle
   push:

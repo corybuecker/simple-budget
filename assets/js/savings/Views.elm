@@ -22,10 +22,6 @@ renderSavings : List Saving -> Html Model.Msg
 renderSavings savings =
     div []
         [ button [ class "btn btn-primary", onClick CreateSaving ] [ text "New Saving" ]
-        , div []
-            [ div [] [ text "Title" ]
-            , div [] [ text "Amount" ]
-            ]
         , div [] (List.map renderSaving savings)
         ]
 
@@ -33,6 +29,6 @@ renderSavings savings =
 renderSaving : Saving -> Html Model.Msg
 renderSaving saving =
     div []
-        [ div [ onClick (OpenSavingEditor saving) ] [ text saving.title ]
+        [ div [ onClick (OpenSavingEditor saving), class "button" ] [ text saving.title ]
         , div [] [ text (String.fromFloat saving.amount) ]
         ]

@@ -19,6 +19,7 @@ jobs:
           key: elixir-deps-{{ checksum "mix.lock" }}
           paths:
             - deps
+            - _build
       - run: mix ecto.create
       - run: mix coveralls.circle
   push:

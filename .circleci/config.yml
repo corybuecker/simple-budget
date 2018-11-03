@@ -16,9 +16,9 @@ jobs:
       - run: mix local.rebar --force
       - run: mix deps.compile
       - save_cache:
-        key: elixir-deps-{{ checksum "mix.lock" }}
-        paths:
-          - deps
+          key: elixir-deps-{{ checksum "mix.lock" }}
+          paths:
+            - deps
       - run: mix ecto.create
       - run: mix coveralls.circle
   push:

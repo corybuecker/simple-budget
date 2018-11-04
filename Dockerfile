@@ -8,21 +8,12 @@ RUN mix local.hex --force && \
 RUN mix deps.get && \
     mix deps.compile
 
-FROM node:10.12 AS assets-base
-COPY assets/package.json assets/package-lock.json /assets-base/
-WORKDIR /assets-base
-RUN npm install
-
-FROM assets-base AS assets
+FROM node:10.12 AS assets
 COPY assets /assets
 WORKDIR /assets
-RUN ln -s /assets-base/node_modules .
+RUN npm install
 COPY --from=builder /app/deps /deps
-RUN mv /assets/js/accounts /assets/js/Accounts && \
-    mv /assets/js/adjustments /assets/js/Adjustments && \
-    mv /assets/js/goals /assets/js/Goals && \
-    mv /assets/js/savings /assets/js/Savings && \
-    rm -rf /assets/js/elm-stuff && npm run deploy
+RUN npm run deploy
 
 FROM builder
 COPY config /app/config

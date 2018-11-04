@@ -1,5 +1,5 @@
 /assets/node_modules
-/assets/elm-stuff
+/assets/js/elm-stuff
 /deps
 /_build
 /priv/static

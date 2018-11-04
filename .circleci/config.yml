@@ -1,52 +1,47 @@
 version: 2
 jobs:
-  test:
+  build:
+    parallelism: 1
     docker:
-      - image: circleci/elixir:1.7
-      - image: circleci/postgres:9.6-alpine
-    environment:
-      - MIX_ENV: "test"
+      - image: circleci/elixir:1.7.3
+        environment:
+          MIX_ENV: test
+      - image: circleci/postgres:9.6-alpine  # database image
+
+    working_directory: ~/app
+
     steps:
       - checkout
+
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+
       - restore_cache:
           keys:
-            - elixir-deps-{{ checksum "mix.lock" }}
-      - run: mix local.hex --force
-      - run: mix deps.get
-      - run: mix local.rebar --force
-      - run: mix deps.compile
+            - v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - v1-mix-cache-{{ .Branch }}
+            - v1-mix-cache
+      - restore_cache:
+          keys:
+            - v1-build-cache-{{ .Branch }}
+            - v1-build-cache
+      - run: mix do deps.get, compile
       - save_cache:
-          key: elixir-deps-{{ checksum "mix.lock" }}
-          paths:
-            - deps
-            - _build
+          key: v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          paths: "deps"
+      - save_cache:
+          key: v1-mix-cache-{{ .Branch }}
+          paths: "deps"
+      - save_cache:
+          key: v1-mix-cache
+          paths: "deps"
+      - save_cache:
+          key: v1-build-cache-{{ .Branch }}
+          paths: "_build"
+      - save_cache:
+          key: v1-build-cache
+          paths: "_build"
+
       - run: mix ecto.create
-      - run: mix coveralls.circle
-  push:
-    docker:
-      - image: google/cloud-sdk
-    environment:
-      - GOOGLE_PROJECT_ID: "cluster-1249"
-      - GOOGLE_COMPUTE_ZONE: "us-central1-a"
-    steps:
-      - checkout
-      - run:
-          name: Setup Google Cloud SDK
-          command: |
-            apt-get install -qq -y gettext
-            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
-            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
-            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
-            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
-            gcloud builds submit --config cloudbuild.yml --async --substitutions=COMMIT_SHA="${CIRCLE_SHA1}" .
-workflows:
-  version: 2
-  da_pipeline:
-    jobs:
-      - test
-      - push:
-          requires:
-            - test
-          filters:
-            branches:
-              only: master
+
+      - run: mix coveralls

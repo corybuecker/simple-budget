@@ -19,7 +19,9 @@ defmodule SimpleBudget.Accounts do
 
   """
   def list_accounts do
-    Repo.all(Account)
+    Account
+    |> order_by(:id)
+    |> Repo.all()
     |> Repo.preload(:adjustments)
   end
 

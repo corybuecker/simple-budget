@@ -302,7 +302,7 @@ view model =
     in
     { title = "Simple Budget"
     , body =
-        [ nav [ class "navbar navbar-expand-lg navbar-light bg-light" ]
+        [ header [ class "navbar navbar-expand-lg navbar-light bg-light" ]
             [ a [ class "navbar-brand", href "/home" ] [ text "Simple Budget" ]
             , ul [ class "navbar-nav mr-auto" ]
                 [ li [ class "nav-item" ] [ a [ class "nav-link", href "/accounts" ] [ text "Accounts" ] ]
@@ -311,7 +311,7 @@ view model =
                 ]
             ]
         , div [ class "container-fluid" ]
-            [ body
+            [ div [ class "row flex-xl-nowrap" ] [ body ]
             , div [] [ modalView model ]
             , p [] [ text (errorMessage model.error) ]
             ]

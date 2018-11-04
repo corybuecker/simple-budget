@@ -13,7 +13,11 @@ COPY assets /assets
 WORKDIR /assets
 RUN npm install
 COPY --from=builder /app/deps /deps
-RUN npm run deploy
+RUN mv /assets/js/accounts /assets/js/Accounts && \
+    mv /assets/js/adjustments /assets/js/Adjustments && \
+    mv /assets/js/goals /assets/js/Goals && \
+    mv /assets/js/savings /assets/js/Savings && \
+    npm run deploy
 
 FROM builder
 COPY config /app/config

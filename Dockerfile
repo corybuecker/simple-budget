@@ -1,4 +1,4 @@
-FROM elixir:1.7-alpine AS builder
+FROM elixir:1.7.4-alpine AS builder
 RUN apk update && apk add git
 COPY mix.exs mix.lock /app/
 WORKDIR /app
@@ -8,7 +8,7 @@ RUN mix local.hex --force && \
 RUN mix deps.get && \
     mix deps.compile
 
-FROM node:10.12 AS assets
+FROM node:11.1 AS assets
 COPY assets /assets
 WORKDIR /assets
 RUN npm install

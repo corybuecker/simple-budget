@@ -18,12 +18,12 @@ jobs:
 
       - restore_cache:
           keys:
-            - v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - v1-mix-cache-{{ checksum "mix.lock" }}
 
       - run: mix do deps.get, compile
 
       - save_cache:
-          key: v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          key: v1-mix-cache-{{ checksum "mix.lock" }}
           paths:
             - "deps"
             - "_build"

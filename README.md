@@ -1,20 +1,17 @@
 # Simple Budget [![CircleCI](https://circleci.com/gh/corybuecker/simple-budget/tree/master.svg?style=svg)](https://circleci.com/gh/corybuecker/simple-budget/tree/master) [![Coverage Status](https://coveralls.io/repos/github/corybuecker/simple-budget/badge.svg?branch=master)](https://coveralls.io/github/corybuecker/simple-budget?branch=master)
 
-To start your Phoenix server:
+Simple budget is a very simple, and opinionated, budgeting tool. I use it for my personal finances. It is based on the concept of envelope saving, but with more automation. I practice a "daily" budget, where money for long-term goals is amortized and removed from my remaining funds on a daily basis.
 
-  * Install dependencies with `mix deps.get`
-  * Create and migrate your database with `mix ecto.setup`
-  * Compile the assets with `cd assets && yarn install && yarn run webpack --config webpack.dev.js`
-  * Start Phoenix endpoint with `mix phx.server`
+A web-based demo will be added soon. In the meantime, you can run the application locally with Docker.
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+    docker-compose build
+    docker-compose run web mix ecto.setup
+    docker-compose up
 
-Ready to run in production? Please [check our deployment guides](http://www.phoenixframework.org/docs/deployment).
+### TODOs
 
-## Learn more
-
-  * Official website: http://www.phoenixframework.org/
-  * Guides: http://phoenixframework.org/docs/overview
-  * Docs: https://hexdocs.pm/phoenix
-  * Mailing list: http://groups.google.com/group/phoenix-talk
-  * Source: https://github.com/phoenixframework/phoenix
+- [ ] Make authentication more user-friendly
+- [ ] Setup demo site
+- [ ] Add instructions for running locally without Docker
+- [ ] Add user guide and definitions
+- [ ] Make editor UI more user-friendly

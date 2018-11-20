@@ -71,5 +71,7 @@ config :simple_budget, SimpleBudget.Repo,
   username: "postgres",
   password: "postgres",
   database: "simple_budget_dev",
-  hostname: "localhost",
+  hostname: System.get_env("HOSTNAME") || "localhost",
   pool_size: 10
+
+config :simple_budget, skip_auth: true

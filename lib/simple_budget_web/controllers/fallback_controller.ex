@@ -9,12 +9,14 @@ defmodule SimpleBudgetWeb.FallbackController do
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> render(SimpleBudgetWeb.ChangesetView, "error.json", changeset: changeset)
+    |> put_view(SimpleBudgetWeb.ChangesetView)
+    |> render(:error, changeset: changeset)
   end
 
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
-    |> render(SimpleBudgetWeb.ErrorView, :"404")
+    |> put_view(SimpleBudgetWeb.ErrorView)
+    |> render(:"404")
   end
 end

@@ -4,8 +4,8 @@ defmodule SimpleBudget.MixProject do
   def project do
     [
       app: :simple_budget,
-      version: "0.1.0",
-      elixir: "~> 1.5",
+      version: "1.0.0",
+      elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -40,20 +40,21 @@ defmodule SimpleBudget.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.4.0-rc"},
+      {:phoenix, "~> 1.4.0"},
       {:phoenix_pubsub, "~> 1.1"},
-      {:phoenix_ecto, "~> 3.2"},
+      {:phoenix_ecto, "~> 4.0"},
+      {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 2.11"},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
-      {:cowboy, "~> 2.0"},
+      {:plug_cowboy, "~> 2.0"},
       {:poison, "~> 3.1"},
       {:timex, "~> 3.1"},
       {:joken_jwks, git: "https://github.com/victorolinasc/joken_jwks"},
-      {:phoenix_live_reload, "~> 1.2-rc", only: :dev},
       {:mox, "~> 0.4", only: :test},
-      {:excoveralls, "~> 0.10", only: :test}
+      {:excoveralls, "~> 0.10", only: :test},
+      {:phoenix_html, "~> 2.11"},
+      {:phoenix_live_reload, "~> 1.2", only: :dev}
     ]
   end
 

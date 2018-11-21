@@ -21,8 +21,9 @@ defmodule SimpleBudgetWeb.AccountController do
   end
 
   def show(conn, %{"id" => id}) do
-    account = Accounts.get_account!(id)
-    render(conn, "show.json", account: account)
+    with {:ok, account} <- Accounts.get_account(id) do
+      render(conn, "show.json", account: account)
+    end
   end
 
   def update(conn, %{"id" => id, "account" => account_params}) do

@@ -10,4 +10,10 @@ defmodule SimpleBudgetWeb.PageControllerTest do
     conn = get(conn, "/")
     assert redirected_to(conn, 302) =~ "/login"
   end
+
+  test "not found", %{conn: conn} do
+    assert_raise Phoenix.Router.NoRouteError, fn ->
+      get(conn, "/unknown")
+    end
+  end
 end

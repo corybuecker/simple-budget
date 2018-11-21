@@ -23,10 +23,6 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-# Use Jason for JSON parsing in Phoenix and Ecto
-config :phoenix, :json_library, Jason
-config :ecto, :json_library, Jason
-
 config :simple_budget, env: Mix.env()
 
 # Import environment specific config. This must remain at the bottom

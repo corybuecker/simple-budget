@@ -21,6 +21,13 @@ defmodule SimpleBudgetWeb.AccountControllerTest do
        |> put_req_header("accept", "application/json")}
   end
 
+  describe "show" do
+    test "missing account", %{conn: conn} do
+      conn = get(conn, Routes.account_path(conn, :show, -1))
+      assert json_response(conn, 404) =~ "Not Found"
+    end
+  end
+
   describe "index" do
     test "lists all accounts", %{conn: conn} do
       conn = get(conn, Routes.account_path(conn, :index))
@@ -95,9 +102,8 @@ defmodule SimpleBudgetWeb.AccountControllerTest do
       conn = delete(conn, Routes.account_path(conn, :delete, account))
       assert response(conn, 204)
 
-      assert_error_sent(404, fn ->
-        get(conn, Routes.account_path(conn, :show, account))
-      end)
+      conn = get(conn, Routes.account_path(conn, :show, account))
+      assert json_response(conn, 404) =~ "Not Found"
     end
   end
 

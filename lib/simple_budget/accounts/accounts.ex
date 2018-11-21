@@ -41,6 +41,13 @@ defmodule SimpleBudget.Accounts do
   """
   def get_account!(id), do: Repo.get!(Account, id)
 
+  def get_account(id) do
+    case Repo.get(Account, id) do
+      nil -> {:error, :not_found}
+      %Account{} = account -> {:ok, account}
+    end
+  end
+
   @doc """
   Creates a account.
 
@@ -83,7 +90,7 @@ defmodule SimpleBudget.Accounts do
     multi =
       Multi.new()
       |> Multi.update(:account, account_changeset)
-      |> Multi.run(:snapshot, fn %{account: updated_account} ->
+      |> Multi.run(:snapshot, fn _repo, %{account: updated_account} ->
         create_snapshot(%{
           account_id: account.id,
           before: account.balance,

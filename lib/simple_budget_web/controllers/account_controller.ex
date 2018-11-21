@@ -8,7 +8,7 @@ defmodule SimpleBudgetWeb.AccountController do
 
   def index(conn, _params) do
     accounts = Accounts.list_accounts()
-    render(conn, "index.json", accounts: accounts)
+    render(conn, :index, accounts: accounts)
   end
 
   def create(conn, %{"account" => account_params}) do
@@ -16,7 +16,7 @@ defmodule SimpleBudgetWeb.AccountController do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.account_path(conn, :show, account))
-      |> render("update.json", account: account)
+      |> render(:update, account: account)
     end
   end
 
@@ -29,7 +29,7 @@ defmodule SimpleBudgetWeb.AccountController do
     account = Accounts.get_account!(id)
 
     with {:ok, %Account{} = account} <- Accounts.update_account(account, account_params) do
-      render(conn, "update.json", account: account)
+      render(conn, :update, account: account)
     end
   end
 

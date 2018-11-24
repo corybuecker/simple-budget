@@ -13,6 +13,7 @@ defmodule SimpleBudget.DataCase do
   """
 
   use ExUnit.CaseTemplate
+  alias Ecto.Adapters.SQL.Sandbox
 
   using do
     quote do
@@ -26,10 +27,10 @@ defmodule SimpleBudget.DataCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(SimpleBudget.Repo)
+    :ok = Sandbox.checkout(SimpleBudget.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(SimpleBudget.Repo, {:shared, self()})
+      Sandbox.mode(SimpleBudget.Repo, {:shared, self()})
     end
 
     :ok

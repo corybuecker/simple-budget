@@ -1,8 +1,9 @@
 defmodule SimpleBudget.Accounts.Adjustment do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  alias SimpleBudget.Accounts.Adjustment
   alias SimpleBudget.Accounts.Account
+  alias SimpleBudget.Accounts.Adjustment
 
   schema "adjustments" do
     field(:total, :decimal, scale: 8, precision: 2)

@@ -1,10 +1,10 @@
 defmodule SimpleBudget.Calculations.DailyTest do
   use SimpleBudget.DataCase
 
-  alias SimpleBudget.Calculations.Daily
   alias SimpleBudget.Accounts
-  alias SimpleBudget.Savings
+  alias SimpleBudget.Calculations.Daily
   alias SimpleBudget.Goals
+  alias SimpleBudget.Savings
 
   setup do
     {:ok, credit} = Accounts.create_account(%{name: "some name", balance: 750, debt: false})
@@ -33,13 +33,11 @@ defmodule SimpleBudget.Calculations.DailyTest do
     # not a great test since it duplicates the implementation, TODO: find a
     # way to freeze Timex to a given datetime.
     days_left =
-      cond do
-        Timex.today() == Timex.today() |> Timex.end_of_month() ->
-          1
-
-        true ->
-          Timex.Interval.new(from: Timex.today(), until: Timex.today() |> Timex.end_of_month())
-          |> Timex.Interval.duration(:days)
+      if Timex.today() == Timex.today() |> Timex.end_of_month() do
+        1
+      else
+        Timex.Interval.new(from: Timex.today(), until: Timex.today() |> Timex.end_of_month())
+        |> Timex.Interval.duration(:days)
       end
 
     assert Daily.all() == %{

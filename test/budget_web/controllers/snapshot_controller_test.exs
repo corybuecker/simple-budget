@@ -30,7 +30,7 @@ defmodule SimpleBudgetWeb.SnapshotControllerTest do
 
   describe "create snapshot" do
     test "creates a snapshot when the account is update", %{conn: conn, account: account} do
-      assert length(Accounts.list_snapshots()) == 0
+      assert Enum.empty?(Accounts.list_snapshots())
 
       conn =
         patch(

@@ -1,4 +1,5 @@
 defmodule SimpleBudget.Token do
+  @moduledoc false
   use Joken.Config
 
   alias SimpleBudget.Users

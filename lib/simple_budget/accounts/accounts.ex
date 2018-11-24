@@ -4,10 +4,10 @@ defmodule SimpleBudget.Accounts do
   """
 
   import Ecto.Query, warn: false
-  alias SimpleBudget.Repo
 
-  alias SimpleBudget.Accounts.Account
   alias Ecto.Multi
+  alias SimpleBudget.Accounts.Account
+  alias SimpleBudget.Repo
 
   @doc """
   Returns the list of accounts.

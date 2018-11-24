@@ -7,7 +7,7 @@ defmodule SimpleBudget.UsersTest do
   describe "users" do
     @valid_attrs %{email: "test@user.com"}
 
-    def user_fixture() do
+    def user_fixture do
       {:ok, user} =
         %User{}
         |> User.changeset(@valid_attrs)

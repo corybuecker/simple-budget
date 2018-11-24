@@ -1,4 +1,5 @@
 defmodule SimpleBudget.Accounts.Snapshot do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
   alias SimpleBudget.Accounts.Snapshot

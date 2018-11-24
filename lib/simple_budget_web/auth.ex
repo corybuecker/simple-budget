@@ -1,4 +1,5 @@
 defmodule SimpleBudgetWeb.Auth do
+  @moduledoc false
   import Plug.Conn
   import Phoenix.Controller, only: [redirect: 2]
 

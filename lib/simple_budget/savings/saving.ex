@@ -1,4 +1,5 @@
 defmodule SimpleBudget.Savings.Saving do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
   alias SimpleBudget.Savings.Saving

@@ -27,7 +27,8 @@ defmodule SimpleBudget.AccountsTest do
 
     test "get_account!/1 returns the account with given id" do
       account = account_fixture()
-      assert Accounts.get_account!(account.id) |> Repo.preload(:adjustments) == account
+      account_query = Accounts.get_account!(account.id)
+      assert account_query |> Repo.preload(:adjustments) == account
     end
 
     test "create_account/1 with valid data creates a account" do
@@ -67,13 +68,16 @@ defmodule SimpleBudget.AccountsTest do
     test "update_account/2 with invalid data returns error changeset" do
       account = account_fixture()
       assert {:error, %Ecto.Changeset{}} = Accounts.update_account(account, @invalid_attrs)
-      assert account == Accounts.get_account!(account.id) |> Repo.preload(:adjustments)
+      account_query = Accounts.get_account!(account.id)
+      assert account == account_query |> Repo.preload(:adjustments)
     end
 
     test "update_account/2 with invalid data does not create a snapshot" do
       account = account_fixture()
       assert {:error, %Ecto.Changeset{}} = Accounts.update_account(account, @invalid_attrs)
-      assert account == Accounts.get_account!(account.id) |> Repo.preload(:adjustments)
+      account_query = Accounts.get_account!(account.id)
+
+      assert account == account_query |> Repo.preload(:adjustments)
       assert [] = Accounts.list_snapshots()
     end
 

@@ -1,4 +1,5 @@
 defmodule SimpleBudgetWeb.HealthcheckRouter do
+  @moduledoc false
   use Plug.Router
 
   plug(:match)

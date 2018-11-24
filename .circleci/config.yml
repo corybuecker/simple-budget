@@ -30,4 +30,6 @@ jobs:
 
       - run: mix ecto.create
 
-      - run: mix coveralls
+      - run: mix credo --strict
+
+      - run: mix coveralls.circle

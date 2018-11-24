@@ -1,4 +1,5 @@
 defmodule SimpleBudget.Users.User do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
   alias SimpleBudget.Users.User

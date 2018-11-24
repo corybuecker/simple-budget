@@ -54,7 +54,8 @@ defmodule SimpleBudget.MixProject do
       {:mox, "~> 0.4", only: :test},
       {:excoveralls, "~> 0.10", only: :test},
       {:phoenix_html, "~> 2.11"},
-      {:phoenix_live_reload, "~> 1.2", only: :dev}
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
+      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false}
     ]
   end
 

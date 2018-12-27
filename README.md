@@ -8,6 +8,8 @@ A web-based demo will be added soon. In the meantime, you can run the applicatio
     docker-compose run web mix ecto.setup
     docker-compose up
 
+Once the containers have started, just browse to localhost:4000 in your browser. Authentication is disabled in the local development environment.
+
 ### TODOs
 
 - [ ] Make authentication more user-friendly

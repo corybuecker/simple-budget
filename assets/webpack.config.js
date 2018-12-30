@@ -4,6 +4,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const ElmMinify = require('elm-minify');
 
 module.exports = (env, options) => ({
   optimization: {
@@ -13,10 +14,11 @@ module.exports = (env, options) => ({
     ]
   },
   entry: {
-    './js/app.js': ['./js/app.js'].concat(glob.sync('./vendor/**/*.js'))
+    accounts: "./js/accounts",
+    goals: "./js/goals",
+    savings: "./js/savings"
   },
   output: {
-    filename: 'app.js',
     path: path.resolve(__dirname, '../priv/static/js')
   },
   module: {
@@ -55,6 +57,7 @@ module.exports = (env, options) => ({
   devtool: 'none',
   plugins: [
     new MiniCssExtractPlugin({ filename: '../css/app.css' }),
-    new CopyWebpackPlugin([{ from: 'static/', to: '../' }])
+    new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
+    new ElmMinify.WebpackPlugin()
   ]
 });

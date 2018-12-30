@@ -1,4 +1,6 @@
-module Savings.Models exposing (Saving, newSaving)
+module Savings.Models exposing (Model, Saving, emptyModel, newSaving)
+
+import Http
 
 
 newSaving : Saving
@@ -11,3 +13,16 @@ type alias Saving =
     , title : String
     , amount : Float
     }
+
+
+type alias Model =
+    { savings : List Saving
+    , activeSaving : Maybe Saving
+    , error : Maybe Http.Error
+    , modalOpen : String
+    }
+
+
+emptyModel : Model
+emptyModel =
+    Model [] Nothing Nothing ""

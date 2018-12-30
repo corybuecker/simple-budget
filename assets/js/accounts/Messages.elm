@@ -1,5 +1,8 @@
 module Accounts.Messages exposing (Msg(..))
 
+import Accounts.Models exposing (..)
+import Http exposing (Error)
+
 
 type Msg
     = NameUpdated String
@@ -7,3 +10,13 @@ type Msg
     | BalanceUpdated String
     | SaveAccount
     | DeleteAccount
+    | AccountsFetched (Result Http.Error (List Account))
+    | AdjustmentsFetched (Result Http.Error (List Adjustment))
+    | OpenAccountEditor Account
+    | OpenAdjustmentEditor Adjustment
+    | CreateAccount
+    | CreateAdjustment Account
+    | TitleUpdated String
+    | TotalUpdated String
+    | SaveAdjustment
+    | DeleteAdjustment

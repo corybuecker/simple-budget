@@ -7,18 +7,17 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import List exposing (map)
 import List.Extra exposing (greedyGroupsOf)
-import Model exposing (Msg(..))
 
 
-editView : Goal -> Html Goals.Messages.Msg
+editView : Goal -> Html Msg
 editView model =
     div []
-        [ input [ type_ "text", value model.title, onInput Goals.Messages.TitleUpdated ] []
-        , input [ type_ "text", value model.startDate, onInput Goals.Messages.StartDateUpdated ] []
-        , input [ type_ "text", value model.endDate, onInput Goals.Messages.EndDateUpdated ] []
-        , input [ type_ "text", value (String.fromFloat model.target), onInput Goals.Messages.TargetUpdated ] []
-        , button [ onClick Goals.Messages.SaveGoal ] [ text "Save" ]
-        , button [ onClick Goals.Messages.DeleteGoal ] [ text "Delete" ]
+        [ input [ type_ "text", value model.title, onInput TitleUpdated ] []
+        , input [ type_ "text", value model.startDate, onInput StartDateUpdated ] []
+        , input [ type_ "text", value model.endDate, onInput EndDateUpdated ] []
+        , input [ type_ "text", value (String.fromFloat model.target), onInput TargetUpdated ] []
+        , button [ onClick SaveGoal ] [ text "Save" ]
+        , button [ onClick DeleteGoal ] [ text "Delete" ]
         ]
 
 

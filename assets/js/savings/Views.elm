@@ -3,22 +3,21 @@ module Savings.Views exposing (editView, renderSaving, renderSavings)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Model exposing (Msg(..))
 import Savings.Messages exposing (..)
 import Savings.Models exposing (Saving)
 
 
-editView : Saving -> Html Savings.Messages.Msg
+editView : Saving -> Html Msg
 editView model =
     div []
-        [ input [ type_ "text", value model.title, onInput Savings.Messages.TitleUpdated ] []
-        , input [ type_ "text", value (String.fromFloat model.amount), onInput Savings.Messages.AmountUpdated ] []
-        , button [ onClick Savings.Messages.SaveSaving ] [ text "Save" ]
-        , button [ onClick Savings.Messages.DeleteSaving ] [ text "Delete" ]
+        [ input [ type_ "text", value model.title, onInput TitleUpdated ] []
+        , input [ type_ "text", value (String.fromFloat model.amount), onInput AmountUpdated ] []
+        , button [ onClick SaveSaving ] [ text "Save" ]
+        , button [ onClick DeleteSaving ] [ text "Delete" ]
         ]
 
 
-renderSavings : List Saving -> Html Model.Msg
+renderSavings : List Saving -> Html Msg
 renderSavings savings =
     div []
         [ button [ class "btn btn-primary", onClick CreateSaving ] [ text "New Saving" ]
@@ -26,7 +25,7 @@ renderSavings savings =
         ]
 
 
-renderSaving : Saving -> Html Model.Msg
+renderSaving : Saving -> Html Msg
 renderSaving saving =
     div [ class "col-sm-6" ]
         [ div [ class "card" ]

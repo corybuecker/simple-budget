@@ -11,3 +11,6 @@ type Msg
     | EndDateUpdated String
     | SaveGoal
     | DeleteGoal
+    | CreateGoal
+    | OpenGoalEditor Goal
+    | GoalsFetched (Result Http.Error (List Goal))

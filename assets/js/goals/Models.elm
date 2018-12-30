@@ -1,4 +1,6 @@
-module Goals.Models exposing (Goal, newGoal)
+module Goals.Models exposing (Goal, Model, emptyModel, newGoal)
+
+import Http
 
 
 newGoal : Goal
@@ -13,3 +15,16 @@ type alias Goal =
     , endDate : String
     , target : Float
     }
+
+
+type alias Model =
+    { goals : List Goal
+    , activeGoal : Maybe Goal
+    , error : Maybe Http.Error
+    , modalOpen : String
+    }
+
+
+emptyModel : Model
+emptyModel =
+    Model [] Nothing Nothing ""

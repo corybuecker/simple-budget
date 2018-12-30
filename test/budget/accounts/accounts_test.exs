@@ -53,8 +53,8 @@ defmodule SimpleBudget.AccountsTest do
       assert %Account{} = account
       assert account.name == "some updated name"
       account_id = account.id
-      expected_before = Decimal.new(123.13)
-      expected_after = Decimal.new(456.42)
+      expected_before = Decimal.from_float(123.13)
+      expected_after = Decimal.from_float(456.42)
 
       assert [
                %Snapshot{
@@ -122,7 +122,7 @@ defmodule SimpleBudget.AccountsTest do
     test "create_adjustment/1 with valid data creates a adjustment" do
       assert {:ok, %Adjustment{} = adjustment} = Accounts.create_adjustment(@valid_attrs)
       assert adjustment.account_id == 42
-      assert adjustment.total == Decimal.new(120.13)
+      assert adjustment.total == Decimal.from_float(120.13)
     end
 
     test "create_adjustment/1 with invalid data returns error changeset" do
@@ -134,7 +134,7 @@ defmodule SimpleBudget.AccountsTest do
       assert {:ok, adjustment} = Accounts.update_adjustment(adjustment, @update_attrs)
       assert %Adjustment{} = adjustment
       assert adjustment.account_id == 43
-      assert adjustment.total == Decimal.new(456.42)
+      assert adjustment.total == Decimal.from_float(456.42)
     end
 
     test "update_adjustment/2 with invalid data returns error changeset" do
@@ -186,8 +186,8 @@ defmodule SimpleBudget.AccountsTest do
     test "create_snapshot/1 with valid data creates a snapshot" do
       assert {:ok, %Snapshot{} = snapshot} = Accounts.create_snapshot(@valid_attrs)
       assert snapshot.account_id == 42
-      assert snapshot.after == Decimal.new(120.51)
-      assert snapshot.before == Decimal.new(120.52)
+      assert snapshot.after == Decimal.from_float(120.51)
+      assert snapshot.before == Decimal.from_float(120.52)
     end
 
     test "create_snapshot/1 with invalid data returns error changeset" do
@@ -199,8 +199,8 @@ defmodule SimpleBudget.AccountsTest do
       assert {:ok, snapshot} = Accounts.update_snapshot(snapshot, @update_attrs)
       assert %Snapshot{} = snapshot
       assert snapshot.account_id == 43
-      assert snapshot.after == Decimal.new(456.71)
-      assert snapshot.before == Decimal.new(456.72)
+      assert snapshot.after == Decimal.from_float(456.71)
+      assert snapshot.before == Decimal.from_float(456.72)
     end
 
     test "update_snapshot/2 with invalid data returns error changeset" do

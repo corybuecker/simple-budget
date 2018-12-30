@@ -31,7 +31,7 @@ defmodule SimpleBudget.SavingsTest do
 
     test "create_saving/1 with valid data creates a saving" do
       assert {:ok, %Saving{} = saving} = Savings.create_saving(@valid_attrs)
-      assert saving.amount == Decimal.new(120.55)
+      assert saving.amount == Decimal.from_float(120.55)
       assert saving.title == "some title"
     end
 
@@ -43,7 +43,7 @@ defmodule SimpleBudget.SavingsTest do
       saving = saving_fixture()
       assert {:ok, saving} = Savings.update_saving(saving, @update_attrs)
       assert %Saving{} = saving
-      assert saving.amount == Decimal.new(456.75)
+      assert saving.amount == Decimal.from_float(456.75)
       assert saving.title == "some updated title"
     end
 

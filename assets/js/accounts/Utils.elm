@@ -1,7 +1,6 @@
 module Accounts.Utils exposing (accountDecoder, accountUpdatedDecoder, accountsDecoder, adjustmentDecoder, balance, encode, id, name)
 
-import Accounts.Models exposing (Account)
-import Adjustments.Models exposing (Adjustment)
+import Accounts.Models exposing (Account, Adjustment)
 import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode as Encode exposing (Value, int, object, string)

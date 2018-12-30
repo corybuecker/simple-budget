@@ -30,10 +30,6 @@ import Url exposing (Url)
 import Url.Builder as Url
 
 
-
--- MAIN
-
-
 main =
     Browser.application
         { init = init

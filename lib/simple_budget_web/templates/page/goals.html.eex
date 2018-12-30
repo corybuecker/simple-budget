@@ -1,0 +1,1 @@
+<script src="<%= Routes.static_path(@conn, "/js/goals.js") %>"></script>

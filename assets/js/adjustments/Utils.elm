@@ -1,6 +1,6 @@
 module Adjustments.Utils exposing (adjustmentDecoder, adjustmentUpdatedDecoder, adjustmentsDecoder, encode, id, title, total)
 
-import Adjustments.Models exposing (Adjustment)
+import Accounts.Models exposing (Adjustment)
 import Json.Decode
 import Json.Decode.Pipeline
 import Json.Encode as Encode exposing (Value, int, object, string)

@@ -35,9 +35,10 @@ defmodule SimpleBudgetWeb.Router do
     pipe_through :browser
 
     get("/", PageController, :index)
-    get("/accounts", PageController, :index)
-    get("/goals", PageController, :index)
-    get("/savings", PageController, :index)
+    get("/accounts", PageController, :accounts)
+    get("/goals", PageController, :goals)
+    get("/savings", PageController, :savings)
+
     get("/login", LoginController, :index)
     post("/login", LoginController, :create)
   end

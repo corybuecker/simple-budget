@@ -1,14 +1,12 @@
-module Accounts.Views exposing (editView, renderAccount, renderAccounts)
+module Accounts.Views exposing (adjustmentEditView, editView, renderAccount, renderAccountGroup, renderAccounts, renderAdjustment)
 
 import Accounts.Messages exposing (..)
-import Accounts.Models exposing (Account)
-import Adjustments.Models exposing (Adjustment)
+import Accounts.Models exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import List exposing (map)
 import List.Extra exposing (greedyGroupsOf)
-import Model exposing (Msg(..))
 
 
 editView : Account -> Html Accounts.Messages.Msg
@@ -66,4 +64,14 @@ renderAdjustment adjustment =
     div []
         [ div [ onClick (OpenAdjustmentEditor adjustment), class "button" ] [ text adjustment.title ]
         , div [] [ text (String.fromFloat adjustment.total) ]
+        ]
+
+
+adjustmentEditView : Adjustment -> Html Msg
+adjustmentEditView model =
+    div []
+        [ input [ type_ "text", value model.title, onInput TitleUpdated ] []
+        , input [ type_ "text", value (String.fromFloat model.total), onInput TotalUpdated ] []
+        , button [ onClick SaveAdjustment ] [ text "Save" ]
+        , button [ onClick DeleteAdjustment ] [ text "Delete" ]
         ]

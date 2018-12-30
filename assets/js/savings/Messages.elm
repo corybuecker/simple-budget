@@ -9,3 +9,6 @@ type Msg
     | AmountUpdated String
     | SaveSaving
     | DeleteSaving
+    | CreateSaving
+    | OpenSavingEditor Saving
+    | SavingsFetched (Result Http.Error (List Saving))

@@ -11,7 +11,6 @@ use Mix.Config
 # before starting your production server.
 config :simple_budget, SimpleBudgetWeb.Endpoint,
   http: [:inet6, port: 4001],
-  url: [host: "simplebudget.bueckered.com", port: 443],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Do not print debug messages in production

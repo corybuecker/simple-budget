@@ -40,9 +40,10 @@ defmodule SimpleBudget.Calculations.DailyTest do
         |> Timex.Interval.duration(:days)
       end
 
-    assert Daily.all() == %{
-             remaining: Decimal.new("612.00"),
-             remaining_per_day: Decimal.div(Decimal.new("612.00"), Decimal.new(days_left))
-           }
+    assert Daily.all() ==
+             %{
+               remaining: Decimal.from_float(612.0),
+               remaining_per_day: Decimal.div(Decimal.from_float(612.0), days_left)
+             }
   end
 end

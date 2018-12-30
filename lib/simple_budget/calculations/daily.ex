@@ -33,7 +33,7 @@ defmodule SimpleBudget.Calculations.Daily do
     if days_left == 0 do
       remaining
     else
-      Decimal.div(remaining, Decimal.new(days_left))
+      Decimal.div(remaining, days_left)
     end
   end
 
@@ -45,7 +45,7 @@ defmodule SimpleBudget.Calculations.Daily do
         select: sum(a.balance)
       )
 
-    credits = credits_query |> Repo.one()
+    credits = credits_query |> Repo.one() |> zero_or_decimal()
 
     adjustments_query =
       from(
@@ -56,9 +56,9 @@ defmodule SimpleBudget.Calculations.Daily do
         select: sum(adjustments.total)
       )
 
-    adjustments = adjustments_query |> Repo.one()
+    adjustments = adjustments_query |> Repo.one() |> zero_or_decimal()
 
-    Decimal.add(credits || Decimal.new(0), adjustments || Decimal.new(0))
+    Decimal.add(credits, adjustments)
   end
 
   defp debts do
@@ -69,7 +69,7 @@ defmodule SimpleBudget.Calculations.Daily do
         select: sum(a.balance)
       )
 
-    debts = debts_query |> Repo.one()
+    debts = debts_query |> Repo.one() |> zero_or_decimal()
 
     adjustments_query =
       from(
@@ -80,9 +80,9 @@ defmodule SimpleBudget.Calculations.Daily do
         select: sum(adjustments.total)
       )
 
-    adjustments = adjustments_query |> Repo.one()
+    adjustments = adjustments_query |> Repo.one() |> zero_or_decimal()
 
-    Decimal.add(debts || Decimal.new(0), adjustments || Decimal.new(0))
+    Decimal.add(debts, adjustments)
   end
 
   defp savings do
@@ -92,9 +92,19 @@ defmodule SimpleBudget.Calculations.Daily do
         select: sum(a.amount)
       )
 
-    savings = savings_query |> Repo.one()
+    savings_query |> Repo.one() |> zero_or_decimal()
+  end
 
-    Decimal.new(savings || Decimal.new(0))
+  defp zero_or_decimal(input) when is_nil(input) do
+    0.0 |> Decimal.from_float()
+  end
+
+  defp zero_or_decimal(input) when is_float(input) do
+    input |> Decimal.from_float()
+  end
+
+  defp zero_or_decimal(input) do
+    input |> Decimal.round(1)
   end
 
   defp goals do
@@ -107,10 +117,6 @@ defmodule SimpleBudget.Calculations.Daily do
           )
       )
 
-    goals =
-      goals_query
-      |> Repo.one()
-
-    Decimal.new(goals || Decimal.new(0))
+    goals_query |> Repo.one() |> zero_or_decimal()
   end
 end

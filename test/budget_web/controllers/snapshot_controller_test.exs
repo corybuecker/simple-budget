@@ -48,7 +48,7 @@ defmodule SimpleBudgetWeb.SnapshotControllerTest do
       snapshots = Accounts.list_snapshots()
       assert length(snapshots) == 1
       [snapshot | []] = snapshots
-      assert snapshot.after == Decimal.new("500.00")
+      assert {:ok, snapshot.after} == Decimal.parse("500.00")
 
       conn = get(conn, Routes.account_snapshot_path(conn, :index, account))
 

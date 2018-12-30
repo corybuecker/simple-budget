@@ -43,7 +43,7 @@ defmodule SimpleBudget.GoalsTest do
       assert {:ok, %Goal{} = goal} = Goals.create_goal(@valid_attrs)
       assert goal.end_date == ~D[2010-04-17]
       assert goal.start_date == ~D[2010-04-17]
-      assert goal.target == Decimal.new(120.54)
+      assert goal.target == Decimal.from_float(120.54)
       assert goal.title == "some title"
     end
 
@@ -57,7 +57,7 @@ defmodule SimpleBudget.GoalsTest do
       assert %Goal{} = goal
       assert goal.end_date == ~D[2011-05-18]
       assert goal.start_date == ~D[2011-05-18]
-      assert goal.target == Decimal.new(456.72)
+      assert goal.target == Decimal.from_float(456.72)
       assert goal.title == "some updated title"
     end
 

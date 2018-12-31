@@ -9,7 +9,7 @@ import List exposing (map)
 import List.Extra exposing (greedyGroupsOf)
 
 
-editView : Account -> Html Accounts.Messages.Msg
+editView : Account -> Html Msg
 editView model =
     div []
         [ input [ type_ "text", value model.name, onInput Accounts.Messages.NameUpdated ] []

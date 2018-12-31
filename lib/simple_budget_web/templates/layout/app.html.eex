@@ -12,8 +12,25 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
   </head>
   <body>
-    <main role="main" class="container" id="main">
-      <%=render @view_module, @view_template, assigns %>
-    </main>
+    <header class="navbar navbar-expand-lg navbar-light bg-light">
+      <%= link "Simple Budget", to: "/home", class: "navbar-brand" %>
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <%= link "Accounts", to: "/accounts", class: "nav-link" %>
+        </li>
+        <li class="nav-item">
+          <%= link "Goals", to: "/goals", class: "nav-link" %>
+        </li>
+        <li class="nav-item">
+          <%= link "Savings", to: "/savings", class: "nav-link" %>
+        </li>
+      </ul>
+    </header>
+    <div class="container-fluid">
+      <div class="row flex-xl-nowrap"></div>
+      <main role="main" id="main">
+        <%=render @view_module, @view_template, assigns %>
+      </main>
+    </div>    
   </body>
 </html>

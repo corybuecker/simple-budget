@@ -19,7 +19,7 @@ import Url.Builder as Url
 
 
 main =
-    Browser.document
+    Browser.element
         { init = init
         , update = update
         , subscriptions = subscriptions
@@ -140,26 +140,13 @@ modalView model =
             div [] []
 
 
-view : Model -> Browser.Document Msg
+view : Model -> Html Msg
 view model =
-    { title = "Simple Budget"
-    , body =
-        [ header [ class "navbar navbar-expand-lg navbar-light bg-light" ]
-            [ a [ class "navbar-brand", href "/home" ] [ text "Simple Budget" ]
-            , ul [ class "navbar-nav mr-auto" ]
-                [ li [ class "nav-item" ] [ a [ class "nav-link", href "/goals" ] [ text "Goals" ] ]
-                , li [ class "nav-item" ] [ a [ class "nav-link", href "/goals" ] [ text "Goals" ] ]
-                , li [ class "nav-item" ] [ a [ class "nav-link", href "/savings" ] [ text "Savings" ] ]
-                ]
-            ]
-        , div [ class "container-fluid" ]
-            [ div [ class "row flex-xl-nowrap" ] []
-            , div [] [ renderGoals model.goals ]
-            , div [] [ modalView model ]
-            , p [] [ text (errorMessage model.error) ]
-            ]
+    div []
+        [ div [] [ renderGoals model.goals ]
+        , div [] [ modalView model ]
+        , p [] [ text (errorMessage model.error) ]
         ]
-    }
 
 
 errorMessage : Maybe Http.Error -> String

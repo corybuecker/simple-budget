@@ -14,6 +14,7 @@ Once the containers have started, just browse to localhost:4000 in your browser.
 
 - [ ] Make authentication more user-friendly
 - [ ] Setup demo site
+- [ ] Associate accounts, goals, etc. to user records
 - [ ] Add instructions for running locally without Docker
 - [ ] Add user guide and definitions
 - [ ] Make editor UI more user-friendly

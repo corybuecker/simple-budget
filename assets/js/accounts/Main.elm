@@ -20,7 +20,7 @@ import Url.Builder as Url
 
 
 main =
-    Browser.document
+    Browser.element
         { init = init
         , update = update
         , subscriptions = subscriptions
@@ -114,14 +114,14 @@ update msg model =
             ( { model | modalOpen = "adjustment", activeAdjustment = Just adjustment }, Cmd.none )
 
         CreateAccount ->
-            ( { model | activeAccount = Just Accounts.Models.newAccount }, Cmd.none )
+            ( { model | modalOpen = "account", activeAccount = Just newAccount }, Cmd.none )
 
         CreateAdjustment account ->
             let
                 newAdjustment =
                     Adjustment account.id 0 "" 0.0
             in
-            ( { model | activeAdjustment = Just newAdjustment }, Cmd.none )
+            ( { model | modalOpen = "adjustment", activeAdjustment = Just newAdjustment }, Cmd.none )
 
         ToggleDebt ->
             case model.activeAccount of
@@ -209,26 +209,13 @@ modalView model =
             div [] []
 
 
-view : Model -> Browser.Document Msg
+view : Model -> Html Msg
 view model =
-    { title = "Simple Budget"
-    , body =
-        [ header [ class "navbar navbar-expand-lg navbar-light bg-light" ]
-            [ a [ class "navbar-brand", href "/home" ] [ text "Simple Budget" ]
-            , ul [ class "navbar-nav mr-auto" ]
-                [ li [ class "nav-item" ] [ a [ class "nav-link", href "/accounts" ] [ text "Accounts" ] ]
-                , li [ class "nav-item" ] [ a [ class "nav-link", href "/goals" ] [ text "Goals" ] ]
-                , li [ class "nav-item" ] [ a [ class "nav-link", href "/savings" ] [ text "Savings" ] ]
-                ]
-            ]
-        , div [ class "container-fluid" ]
-            [ div [ class "row flex-xl-nowrap" ] []
-            , div [] [ renderAccounts model.accounts ]
-            , div [] [ modalView model ]
-            , p [] [ text (errorMessage model.error) ]
-            ]
+    div []
+        [ div [] [ renderAccounts model.accounts ]
+        , div [] [ modalView model ]
+        , p [] [ text (errorMessage model.error) ]
         ]
-    }
 
 
 errorMessage : Maybe Http.Error -> String

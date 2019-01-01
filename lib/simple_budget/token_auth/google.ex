@@ -1,6 +1,12 @@
-defmodule SimpleBudget.Token do
-  @moduledoc false
+defmodule SimpleBudget.TokenAuth.Google do
+  @behaviour SimpleBudget.TokenAuth
+  # @moduledoc false
   use Joken.Config
+
+  @impl SimpleBudget.TokenAuth
+  def config do
+    token_config()
+  end
 
   alias SimpleBudget.Users
 
@@ -14,6 +20,7 @@ defmodule SimpleBudget.Token do
     |> add_claim("email", nil, &valid_user/1)
   end
 
+  @impl SimpleBudget.TokenAuth
   def valid_user(email) do
     case Users.get_user!(email) do
       %{email: ^email} -> true

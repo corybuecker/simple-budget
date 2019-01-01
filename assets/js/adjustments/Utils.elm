@@ -1,45 +1,45 @@
 module Adjustments.Utils exposing (adjustmentDecoder, adjustmentUpdatedDecoder, adjustmentsDecoder, encode, id, title, total)
 
-import Accounts.Models exposing (Adjustment)
+import Accounts.Models
 import Json.Decode
 import Json.Decode.Pipeline
-import Json.Encode as Encode exposing (Value, int, object, string)
+import Json.Encode
 
 
-adjustmentsDecoder : Json.Decode.Decoder (List Adjustment)
+adjustmentsDecoder : Json.Decode.Decoder (List Accounts.Models.Adjustment)
 adjustmentsDecoder =
     Json.Decode.field "data" (Json.Decode.list adjustmentDecoder)
 
 
-adjustmentDecoder : Json.Decode.Decoder Adjustment
+adjustmentDecoder : Json.Decode.Decoder Accounts.Models.Adjustment
 adjustmentDecoder =
-    Json.Decode.succeed Adjustment
+    Json.Decode.succeed Accounts.Models.Adjustment
         |> Json.Decode.Pipeline.required "account_id" Json.Decode.int
         |> Json.Decode.Pipeline.required "id" Json.Decode.int
         |> Json.Decode.Pipeline.required "title" Json.Decode.string
         |> Json.Decode.Pipeline.required "total" Json.Decode.float
 
 
-adjustmentUpdatedDecoder : Json.Decode.Decoder Adjustment
+adjustmentUpdatedDecoder : Json.Decode.Decoder Accounts.Models.Adjustment
 adjustmentUpdatedDecoder =
     Json.Decode.field "data" adjustmentDecoder
 
 
-id : Int -> ( String, Encode.Value )
+id : Int -> ( String, Json.Encode.Value )
 id value =
-    ( "id", Encode.int value )
+    ( "id", Json.Encode.int value )
 
 
-title : String -> ( String, Encode.Value )
+title : String -> ( String, Json.Encode.Value )
 title value =
-    ( "title", Encode.string value )
+    ( "title", Json.Encode.string value )
 
 
-total : Float -> ( String, Encode.Value )
+total : Float -> ( String, Json.Encode.Value )
 total value =
-    ( "total", Encode.float value )
+    ( "total", Json.Encode.float value )
 
 
-encode : Adjustment -> Encode.Value
+encode : Accounts.Models.Adjustment -> Json.Encode.Value
 encode schema =
-    Encode.object [ ( "adjustment", Encode.object [ id schema.id, title schema.title, total schema.total ] ) ]
+    Json.Encode.object [ ( "adjustment", Json.Encode.object [ id schema.id, title schema.title, total schema.total ] ) ]

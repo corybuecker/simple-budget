@@ -22,3 +22,4 @@ Once the containers have started, just browse to localhost:4000 in your browser.
 - [ ] Add back authentication in the local environment, probably replacing the token fetcher with another implementation
 - [ ] Add visualizations for daily reporting
 - [ ] Move elixir tests to doc-based and document modules
+- [ ] Refactor Elm code to conventions, e.g. pipes, imports, etc.

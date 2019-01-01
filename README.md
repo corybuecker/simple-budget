@@ -18,3 +18,5 @@ Once the containers have started, just browse to localhost:4000 in your browser.
 - [ ] Add instructions for running locally without Docker
 - [ ] Add user guide and definitions
 - [ ] Make editor UI more user-friendly
+- [ ] Import transactions with Spectre or Plaid
+- [ ] Add back authentication in the local environment, probably replacing the token fetcher with another implementation

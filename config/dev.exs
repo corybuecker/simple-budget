@@ -74,4 +74,16 @@ config :simple_budget, SimpleBudget.Repo,
   hostname: System.get_env("HOSTNAME") || "localhost",
   pool_size: 10
 
-config :simple_budget, skip_auth: true
+config :simple_budget, authentication: :dummy
+
+config :simple_budget, SimpleBudgetWeb.Endpoint,
+  http: [port: 4000],
+  https: [
+    port: 4001,
+    cipher_suite: :strong,
+    certfile: "priv/cert/selfsigned.pem",
+    keyfile: "priv/cert/selfsigned_key.pem"
+  ]
+
+config :simple_budget, SimpleBudget.Endpoint,
+  force_ssl: [rewrite_on: [:x_forwarded_proto], host: nil]

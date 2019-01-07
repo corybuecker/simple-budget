@@ -75,3 +75,6 @@ config :simple_budget, SimpleBudget.Repo,
   database: "simple_budget_prod",
   hostname: System.get_env("HOSTNAME"),
   pool_size: 5
+
+config :simple_budget, SimpleBudget.Endpoint,
+  force_ssl: [hsts: true, rewrite_on: [:x_forwarded_proto], host: nil]

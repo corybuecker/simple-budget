@@ -24,6 +24,7 @@ defmodule SimpleBudgetWeb.Router do
   end
 
   forward("/healthcheck", SimpleBudgetWeb.HealthcheckRouter)
+  post("/token", SimpleBudgetWeb.TokenController, :create)
 
   scope "/", SimpleBudgetWeb do
     pipe_through :browser

@@ -15,6 +15,7 @@ defmodule SimpleBudgetWeb.TokenController do
 
       _ ->
         conn
+        |> put_resp_header("content-type", "application/json")
         |> send_resp(401, "{}")
         |> halt()
     end

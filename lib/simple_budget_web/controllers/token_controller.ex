@@ -7,7 +7,10 @@ defmodule SimpleBudgetWeb.TokenController do
     case Application.get_env(:simple_budget, :authentication) do
       :dummy ->
         signer = Joken.Signer.create("HS256", "development-use-only")
-        {:ok, token, _claims} = SimpleBudget.TokenAuth.Dummy.generate_and_sign(params, signer)
+        config = Joken.Config.default_claims()
+
+        {:ok, token, _claims} = Joken.generate_and_sign(config, params, signer)
+
         render(conn, "create.json", token: token)
 
       _ ->

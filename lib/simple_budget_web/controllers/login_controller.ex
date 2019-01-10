@@ -18,7 +18,6 @@ defmodule SimpleBudgetWeb.LoginController do
         |> send_resp(:created, "")
 
       {:error, r} ->
-        IO.inspect(r)
         conn |> send_resp(:unauthorized, "")
     end
   end

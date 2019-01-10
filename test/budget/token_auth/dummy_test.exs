@@ -21,12 +21,25 @@ defmodule SimpleBudget.TokenAuth.DummyTest do
     end
   end
 
-  describe "valid token without matching user" do
+  describe "valid token without email claim" do
     test "returns error" do
       signer = Joken.Signer.create("HS256", "development-use-only")
       config = Joken.Config.default_claims()
 
       {:ok, token, _claims} = Joken.generate_and_sign(config, %{}, signer)
+
+      {:error, message} = Dummy.verify_and_validate_token(token)
+
+      assert message == "unknown error"
+    end
+  end
+
+  describe "valid token with unknown user" do
+    test "returns error" do
+      signer = Joken.Signer.create("HS256", "development-use-only")
+      config = Joken.Config.default_claims()
+
+      {:ok, token, _claims} = Joken.generate_and_sign(config, %{email: "test@user.com"}, signer)
 
       {:error, message} = Dummy.verify_and_validate_token(token)
 

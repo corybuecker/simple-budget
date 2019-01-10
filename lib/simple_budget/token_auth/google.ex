@@ -12,19 +12,27 @@ defmodule SimpleBudget.TokenAuth.Google do
       aud: "77675101516-vhivh2hl3b52h8906hmuvs47fd1vbhup.apps.googleusercontent.com",
       iss: "accounts.google.com"
     )
-    |> add_claim("email", nil, &user_valid?/1)
   end
 
   @impl SimpleBudget.TokenAuth
   def verify_and_validate_token(token) do
-    verify_and_validate(token)
+    case verify_and_validate(token) do
+      {:ok, %{"email" => email}} ->
+        user_valid?(email)
+
+      {:error, error} ->
+        {:error, error}
+
+      _ ->
+        {:error, "unknown error"}
+    end
   end
 
   @impl SimpleBudget.TokenAuth
   def user_valid?(email) do
     case Users.get_user!(email) do
-      %{email: ^email} -> true
-      _ -> false
+      %{email: ^email} -> {:ok, email}
+      _ -> {:error, "could not validate user"}
     end
   end
 end

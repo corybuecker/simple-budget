@@ -15,7 +15,7 @@ defmodule SimpleBudget.TokenAuth.Dummy do
         {:error, error}
 
       _ ->
-        {:error, "could not validate user"}
+        {:error, "unknown error"}
     end
   end
 

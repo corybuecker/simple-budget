@@ -1,8 +1,8 @@
 defmodule SimpleBudgetWeb.LoginController do
   use SimpleBudgetWeb, :controller
 
-  alias SimpleBudget.TokenAuth.Google
   alias SimpleBudget.TokenAuth.Dummy
+  alias SimpleBudget.TokenAuth.Google
 
   action_fallback SimpleBudgetWeb.FallbackController
 

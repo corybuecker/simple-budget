@@ -1,35 +1,30 @@
 defmodule SimpleBudgetWeb.Router do
   use SimpleBudgetWeb, :router
-  import SimpleBudgetWeb.Auth, only: [check_google_session: 2, check_google_session_api: 2]
+
+  import SimpleBudgetWeb.Auth,
+    only: [check_authenticated_session: 2, check_authenticated_api_session: 2]
 
   @csp "default-src 'self'; script-src 'self' 'nonce-7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0='; frame-src 'self' https://accounts.google.com; object-src 'none'; style-src 'self' https://stackpath.bootstrapcdn.com 'unsafe-inline'; connect-src 'self'"
 
   pipeline :browser do
-    if Application.get_env(:simple_budget, :env) == :prod do
-      plug Plug.SSL, rewrite_on: [:x_forwarded_proto], hsts: true
-    end
-
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
-    plug :protect_from_forgery
+    # plug :protect_from_forgery
     plug :put_secure_browser_headers, %{"content-security-policy" => @csp}
-    plug :check_google_session
+    plug :check_authenticated_session
   end
 
   pipeline :api do
-    if Application.get_env(:simple_budget, :env) == :prod do
-      plug Plug.SSL, rewrite_on: [:x_forwarded_proto], hsts: true
-    end
-
     plug :accepts, ["json"]
     plug :fetch_session
     plug :protect_from_forgery
     plug :put_secure_browser_headers, %{"content-security-policy" => @csp}
-    plug :check_google_session_api
+    plug :check_authenticated_api_session
   end
 
   forward("/healthcheck", SimpleBudgetWeb.HealthcheckRouter)
+  post("/token", SimpleBudgetWeb.TokenController, :create)
 
   scope "/", SimpleBudgetWeb do
     pipe_through :browser

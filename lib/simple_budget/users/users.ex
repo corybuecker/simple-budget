@@ -15,4 +15,10 @@ defmodule SimpleBudget.Users do
     |> first()
     |> Repo.one()
   end
+
+  def create_user(attrs \\ %{}) do
+    %User{}
+    |> User.changeset(attrs)
+    |> Repo.insert()
+  end
 end

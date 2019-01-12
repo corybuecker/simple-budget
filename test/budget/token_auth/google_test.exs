@@ -1,12 +1,12 @@
-defmodule SimpleBudget.TokenTest do
+defmodule SimpleBudget.TokenAuth.GoogleTest do
   use SimpleBudget.DataCase
 
-  alias SimpleBudget.Token
+  alias SimpleBudget.TokenAuth.Google
 
   describe "invalid token" do
     test "returns error" do
       {:error, message} =
-        Token.verify_and_validate(
+        Google.verify_and_validate(
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
         )
 

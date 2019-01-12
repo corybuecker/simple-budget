@@ -1,8 +1,8 @@
 {
   "skip_files": [
-    "lib/budget_web.ex",
-    "lib/budget_web/views/error_helpers.ex",
     "test/support",
-    "lib/budget/application.ex"
+    "lib/simple_budget/repo.ex",
+    "lib/simple_budget_web/views/error_helpers.ex",
+    "lib/simple_budget_web.ex"
   ]
 }

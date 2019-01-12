@@ -1,6 +1,8 @@
 defmodule SimpleBudgetWeb.LoginController do
   use SimpleBudgetWeb, :controller
 
+  require Logger
+
   alias SimpleBudget.TokenAuth.Dummy
   alias SimpleBudget.TokenAuth.Google
 
@@ -17,7 +19,8 @@ defmodule SimpleBudgetWeb.LoginController do
         |> put_session(:token, token)
         |> send_resp(:created, "")
 
-      {:error, _} ->
+      {:error, error} ->
+        Logger.error(error)
         conn |> send_resp(:unauthorized, "")
     end
   end

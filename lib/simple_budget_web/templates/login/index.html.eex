@@ -1,39 +1,57 @@
-<script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=" src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
-<div class="g-signin2" data-onsuccess="onSignIn"></div>
 <script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
-(function (xhr) {
-  let node, token;
-  let originalOpen = xhr.open;
+  (function (xhr) {
+    var originalOpen = xhr.open;
+    var node = document.head.querySelector('meta[name="csrf"]');
+    var token = node.content;
 
-  node = document.head.querySelector('meta[name="csrf"]')
-  token = node.content;
+    xhr.open = function (method, url) {
+      var originalResult = originalOpen.apply(this, arguments);
+      this.setRequestHeader("X-CSRF-Token", token);
 
-  xhr.open = function (method, url) {
-    let originalResult = originalOpen.apply(this, arguments);
-    this.setRequestHeader("X-CSRF-Token", token);
-    return originalResult;
-  }
-
-})(XMLHttpRequest.prototype);
-
-function onSignIn(googleUser) {
-    var id_token = googleUser.getAuthResponse().id_token;
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/login');
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onload = function() {
-        console.log('Signed in as: ' + xhr.responseText);
+      return originalResult;
     };
-    xhr.send('{ "idtoken": "' + id_token + '"}');
-}
+  })(XMLHttpRequest.prototype);
 </script>
-<a href="#" onclick="signOut();">Sign out</a>
-<script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
-  function signOut() {
-    var auth2 = gapi.auth2.getAuthInstance();
-    auth2.signOut().then(function () {
-      console.log('User signed out.');
-    });
+
+<%= if Application.get_env(:simple_budget, :authentication) == :dummy do %>
+  <div class="g-signin2">Sign in</div>
+  <script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
+    function login(token) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/login');
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.send(JSON.stringify(token));
+    }
+    var element = document.querySelector('.g-signin2');
+    element.addEventListener("click", function(e) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/token');
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onload = function() {
+        var token = JSON.parse(xhr.responseText);
+        login(token);
+      };
+      xhr.send(JSON.stringify({"email": "test@user.com"}));
+    }, false);
+  </script>
+<% end %>
+
+<%= if Application.get_env(:simple_budget, :authentication) == :google do %>
+  <script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=" src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
+
+  <div class="g-signin2" data-onsuccess="onSignIn"></div>
+  
+  <script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
+  function onSignIn(googleUser) {
+      var id_token = googleUser.getAuthResponse().id_token;
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/login');
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onload = function() {
+          console.log('Signed in as: ' + xhr.responseText);
+      };
+      xhr.send('{ "idtoken": "' + id_token + '"}');
   }
-</script>
+  </script>
+<% end %>

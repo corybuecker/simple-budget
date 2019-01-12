@@ -1,5 +1,8 @@
 defmodule SimpleBudget.TokenAuth.Google do
-  @behaviour SimpleBudget.TokenAuth
+  @moduledoc false
+
+  @callback user_valid?(String.t()) :: boolean
+  @callback verify_and_validate_token(String.t()) :: {:ok, any} | {:error, any}
 
   use Joken.Config
 
@@ -14,7 +17,6 @@ defmodule SimpleBudget.TokenAuth.Google do
     )
   end
 
-  @impl SimpleBudget.TokenAuth
   def verify_and_validate_token(token) do
     case verify_and_validate(token) do
       {:ok, %{"email" => email}} ->
@@ -28,7 +30,6 @@ defmodule SimpleBudget.TokenAuth.Google do
     end
   end
 
-  @impl SimpleBudget.TokenAuth
   def user_valid?(email) do
     case Users.get_user!(email) do
       %{email: ^email} -> {:ok, email}

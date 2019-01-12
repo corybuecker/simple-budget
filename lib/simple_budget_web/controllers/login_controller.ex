@@ -17,7 +17,7 @@ defmodule SimpleBudgetWeb.LoginController do
         |> put_session(:token, token)
         |> send_resp(:created, "")
 
-      {:error, r} ->
+      {:error, _} ->
         conn |> send_resp(:unauthorized, "")
     end
   end

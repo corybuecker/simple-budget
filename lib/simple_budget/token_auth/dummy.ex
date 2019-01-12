@@ -1,7 +1,9 @@
 defmodule SimpleBudget.TokenAuth.Dummy do
-  @behaviour SimpleBudget.TokenAuth
+  @moduledoc false
 
-  @impl SimpleBudget.TokenAuth
+  @behaviour SimpleBudget.TokenAuth.Google
+
+  @impl SimpleBudget.TokenAuth.Google
   def verify_and_validate_token(token) do
     signer = Joken.Signer.create("HS256", "development-use-only")
 
@@ -19,7 +21,7 @@ defmodule SimpleBudget.TokenAuth.Dummy do
     end
   end
 
-  @impl SimpleBudget.TokenAuth
+  @impl SimpleBudget.TokenAuth.Google
   def user_valid?(email) do
     case SimpleBudget.Users.get_user!(email) do
       %{email: ^email} -> {:ok, email}

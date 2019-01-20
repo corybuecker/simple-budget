@@ -40,22 +40,22 @@ defmodule SimpleBudget.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.4.0"},
-      {:phoenix_pubsub, "~> 1.1"},
-      {:phoenix_ecto, "~> 4.0"},
-      {:ecto_sql, "~> 3.0"},
-      {:postgrex, ">= 0.0.0"},
-      {:gettext, "~> 0.11"},
-      {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"},
-      {:poison, "~> 3.1"},
-      {:timex, "~> 3.1"},
+      {:phoenix, "1.4.0"},
+      {:phoenix_pubsub, "1.1.1"},
+      {:phoenix_ecto, "4.0.0"},
+      {:ecto_sql, "3.0.4"},
+      {:postgrex, "0.14.1"},
+      {:gettext, "0.16.1"},
+      {:jason, "1.1.2"},
+      {:plug_cowboy, "2.0.1"},
+      {:poison, "3.1.0"},
+      {:timex, "3.4.2"},
       {:joken_jwks, git: "https://github.com/victorolinasc/joken_jwks"},
-      {:mox, "~> 0.4", only: :test},
-      {:excoveralls, "~> 0.10", only: :test},
-      {:phoenix_html, "~> 2.11"},
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false}
+      {:mox, "0.4.0", only: :test},
+      {:excoveralls, "0.10.3", only: :test},
+      {:phoenix_html, "2.13.0"},
+      {:phoenix_live_reload, "1.2.0", only: :dev},
+      {:credo, "1.0.0", only: [:dev, :test], runtime: false}
     ]
   end
 

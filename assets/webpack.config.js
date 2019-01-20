@@ -16,7 +16,8 @@ module.exports = (env, options) => ({
   entry: {
     accounts: "./js/accounts",
     goals: "./js/goals",
-    savings: "./js/savings"
+    savings: "./js/savings",
+    login: "./js/login"
   },
   output: {
     path: path.resolve(__dirname, '../priv/static/js')

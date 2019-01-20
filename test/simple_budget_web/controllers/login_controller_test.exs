@@ -3,6 +3,6 @@ defmodule SimpleBudgetWeb.LoginControllerTest do
 
   test "GET /", %{conn: conn} do
     conn = get(conn, "/login")
-    assert html_response(conn, 200) =~ "googleUser.getAuthResponse"
+    assert html_response(conn, 200) =~ "new Login"
   end
 end

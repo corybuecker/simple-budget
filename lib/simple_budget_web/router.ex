@@ -4,7 +4,7 @@ defmodule SimpleBudgetWeb.Router do
   import SimpleBudgetWeb.Auth,
     only: [check_authenticated_session: 2, check_authenticated_api_session: 2]
 
-  @csp "default-src 'self'; script-src 'self' 'nonce-7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0='; frame-src 'self' https://accounts.google.com; object-src 'none'; style-src 'self' https://stackpath.bootstrapcdn.com 'unsafe-inline'; connect-src 'self'"
+  @csp "default-src 'self'; script-src 'self' 'unsafe-eval' 'nonce-7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0='; frame-src 'self' https://accounts.google.com; object-src 'none'; style-src 'self' https://stackpath.bootstrapcdn.com 'unsafe-inline'; connect-src 'self'"
 
   pipeline :browser do
     plug :accepts, ["html"]

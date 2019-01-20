@@ -1,19 +1,17 @@
-<script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
-  (function (xhr) {
-    var originalOpen = xhr.open;
-    var node = document.head.querySelector('meta[name="csrf"]');
-    var token = node.content;
+<script src="<%= Routes.static_path(@conn, "/js/login.js") %>"></script>
 
-    xhr.open = function (method, url) {
-      var originalResult = originalOpen.apply(this, arguments);
-      this.setRequestHeader("X-CSRF-Token", token);
+<div class="login" />
 
-      return originalResult;
-    };
-  })(XMLHttpRequest.prototype);
+<script defer type="application/javascript" nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
+  var loginView = new Login({'type': '<%= Application.get_env(:simple_budget, :authentication) %>'});
+  
+  loginView.render();
 </script>
 
-<%= if Application.get_env(:simple_budget, :authentication) == :dummy do %>
+
+<%# 
+  <input type="text" name="username"></input>
+  <button>Log in</button>
   <div class="g-signin2">Sign in</div>
   <script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
     function login(token) {
@@ -34,9 +32,7 @@
       xhr.send(JSON.stringify({"email": "test@user.com"}));
     }, false);
   </script>
-<% end %>
 
-<%= if Application.get_env(:simple_budget, :authentication) == :google do %>
   <script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=" src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
 
   <div class="g-signin2" data-onsuccess="onSignIn"></div>
@@ -54,4 +50,4 @@
       xhr.send('{ "idtoken": "' + id_token + '"}');
   }
   </script>
-<% end %>
+%>

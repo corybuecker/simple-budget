@@ -1,5 +1,4 @@
 import { View } from 'backbone'
-import $ from 'jquery'
 import { template } from 'underscore'
 
 import '../csrf'
@@ -22,7 +21,7 @@ const usernameReadonly = () => {
   return template(`
     <label for='username'>
       Username:
-      <input required readonly='true' autocapitalize='off' autocomplete='off' aria-invalid='false' minlength='3' type='text' name='username'></input>
+      <input required readonly='true' autocapitalize='off' autocomplete='off' aria-readonly='false' aria-invalid='false' minlength='3' type='text' name='username'></input>
     </label>
   `)
 }

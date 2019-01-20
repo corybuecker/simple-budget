@@ -1,5 +1,5 @@
 const path = require('path');
-const glob = require('glob');
+const webpack = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
@@ -59,6 +59,9 @@ module.exports = (env, options) => ({
   plugins: [
     new MiniCssExtractPlugin({ filename: '../css/app.css' }),
     new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
-    new ElmMinify.WebpackPlugin()
+    new ElmMinify.WebpackPlugin(),
+    new webpack.ProvidePlugin({
+      $: 'jquery'
+    })
   ]
 });

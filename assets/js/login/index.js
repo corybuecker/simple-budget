@@ -37,7 +37,7 @@ const password = () => {
 
 const fakePassword = () => {
   return template(`
-    <input name='password' autocomplete='current-password' tabindex='-1' type='password' aria-hidden='true' hidden='true'></input>
+    <input name='password' tabindex='-1' type='password' aria-hidden='true' hidden='true'></input>
   `)
 }
 

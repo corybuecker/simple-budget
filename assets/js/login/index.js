@@ -30,14 +30,14 @@ const password = () => {
   return template(`
     <label for='password'>
       Password:
-      <input name='password' type='password' minlength='4' required='true' aria-invalid='false' autofocus></input>
+      <input name='password' autocomplete='current-password' type='password' minlength='4' required='true' aria-invalid='false' autofocus='true'></input>
     </label>
   `)
 }
 
 const fakePassword = () => {
   return template(`
-    <input name='password' tabindex='-1' type='password' aria-hidden='true' hidden></input>
+    <input name='password' autocomplete='current-password' tabindex='-1' type='password' aria-hidden='true' hidden='true'></input>
   `)
 }
 

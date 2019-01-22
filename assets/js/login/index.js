@@ -5,7 +5,7 @@ import '../csrf'
 import './index.css'
 
 const form = () => {
-  return template(`<form novalidate class='login-form'></form>`)
+  return template(`<form></form>`)
 }
 
 const usernameInput = () => {

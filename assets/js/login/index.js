@@ -12,7 +12,7 @@ const usernameInput = () => {
   return template(`
     <label for='username'>
       Username:
-      <input required autocapitalize='off' autocomplete='off' minlength='3' aria-invalid='false' type='text' name='username'></input>
+      <input required autocapitalize='off' autocomplete='username' minlength='3' aria-invalid='false' type='text' name='username'></input>
     </label>
   `)
 }

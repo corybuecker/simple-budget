@@ -12,23 +12,17 @@ defmodule SimpleBudgetWeb.LoginController do
     render(conn, "index.html")
   end
 
-  # def create(conn, %{"idtoken" => token}) do
-  #   case authentication_method().(token) do
-  #     {:ok, _} ->
-  #       conn
-  #       |> put_session(:token, token)
-  #       |> send_resp(:created, "")
+  def create(conn, %{"idtoken" => token}) do
+    case authentication_method().(token) do
+      {:ok, _} ->
+        conn
+        |> put_session(:token, token)
+        |> send_resp(:created, "")
 
-  #     {:error, error} ->
-  #       Logger.error(error)
-  #       conn |> send_resp(:unauthorized, "")
-  #   end
-  # end
-
-  def create(conn, %{"username" => username}) do
-    conn
-    |> put_session(:token, username)
-    |> send_resp(:no_content, "")
+      {:error, error} ->
+        Logger.error(error)
+        conn |> send_resp(:unauthorized, "")
+    end
   end
 
   defp authentication_method do

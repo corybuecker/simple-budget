@@ -1,53 +1,8 @@
 <script src="<%= Routes.static_path(@conn, "/js/login.js") %>"></script>
 
-<div class="login" />
+<div id="login" />
 
 <script defer type="application/javascript" nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
   var loginView = new Login({'type': '<%= Application.get_env(:simple_budget, :authentication) %>'});
-  
   loginView.render();
 </script>
-
-
-<%# 
-  <input type="text" name="username"></input>
-  <button>Log in</button>
-  <div class="g-signin2">Sign in</div>
-  <script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
-    function login(token) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', '/login');
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.send(JSON.stringify(token));
-    }
-    var element = document.querySelector('.g-signin2');
-    element.addEventListener("click", function(e) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', '/token');
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.onload = function() {
-        var token = JSON.parse(xhr.responseText);
-        login(token);
-      };
-      xhr.send(JSON.stringify({"email": "test@user.com"}));
-    }, false);
-  </script>
-
-  <script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=" src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
-
-  <div class="g-signin2" data-onsuccess="onSignIn"></div>
-  
-  <script nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
-  function onSignIn(googleUser) {
-      var id_token = googleUser.getAuthResponse().id_token;
-
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', '/login');
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.onload = function() {
-          console.log('Signed in as: ' + xhr.responseText);
-      };
-      xhr.send('{ "idtoken": "' + id_token + '"}');
-  }
-  </script>
-%>

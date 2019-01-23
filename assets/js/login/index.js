@@ -10,8 +10,8 @@ const form = () => {
 
 const usernameInput = () => {
   return template(`
-    <label for='username'>
-      Username:
+    <label>
+      Email:
       <input required autocapitalize='off' autocomplete='username' minlength='3' aria-invalid='false' type='text' name='username'></input>
     </label>
   `)
@@ -19,8 +19,8 @@ const usernameInput = () => {
 
 const usernameReadonly = () => {
   return template(`
-    <label for='username'>
-      Username:
+    <label>
+      Email:
       <input required readonly='true' autocapitalize='off' autocomplete='off' aria-readonly='true' aria-invalid='false' minlength='3' type='text' name='username'></input>
     </label>
   `)
@@ -28,7 +28,7 @@ const usernameReadonly = () => {
 
 const password = () => {
   return template(`
-    <label for='password'>
+    <label>
       Password:
       <input name='password' autocomplete='current-password' type='password' aria-required='true' minlength='4' required='true' aria-invalid='false' autofocus='true'></input>
     </label>
@@ -37,7 +37,7 @@ const password = () => {
 
 const fakePassword = () => {
   return template(`
-    <input name='password' tabindex='-1' type='password' aria-hidden='true' hidden='true'></input>
+    <input name='password' autocomplete='current-password' tabindex='-1' type='password' aria-hidden='true' hidden='true'></input>
   `)
 }
 

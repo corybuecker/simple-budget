@@ -9,12 +9,13 @@ type alias Account =
     , debt : Bool
     , balance : Float
     , adjustments : List Adjustment
+    , adjustmentsVisible : Bool
     }
 
 
 newAccount : Account
 newAccount =
-    Account 0 "" False 0.0 []
+    Account 0 "" False 0.0 [] False
 
 
 type alias Model =

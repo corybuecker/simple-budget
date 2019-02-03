@@ -49,13 +49,13 @@ defmodule SimpleBudget.MixProject do
       {:jason, "1.1.2"},
       {:plug_cowboy, "2.0.1"},
       {:poison, "3.1.0"},
-      {:timex, "3.4.2"},
+      {:timex, "3.5.0"},
       {:joken_jwks, git: "https://github.com/victorolinasc/joken_jwks"},
-      {:mox, "0.4.0", only: :test},
-      {:excoveralls, "0.10.3", only: :test},
-      {:phoenix_html, "2.13.0"},
+      {:mox, "0.5.0", only: :test},
+      {:excoveralls, "0.10.5", only: :test},
+      {:phoenix_html, "2.13.1"},
       {:phoenix_live_reload, "1.2.0", only: :dev},
-      {:credo, "1.0.0", only: [:dev, :test], runtime: false}
+      {:credo, "1.0.2", only: [:dev, :test], runtime: false}
     ]
   end
 

@@ -1,12 +1,11 @@
-module Accounts.Views exposing (adjustmentEditView, editView, renderAccount, renderAccountGroup, renderAccounts, renderAdjustment)
+module Accounts.Views exposing (adjustmentEditView, editView, renderAccount, renderAccounts, renderAdjustment)
 
 import Accounts.Messages exposing (..)
 import Accounts.Models exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import List exposing (map)
-import List.Extra exposing (greedyGroupsOf)
+import List
 
 
 editView : Account -> Html Msg
@@ -16,54 +15,79 @@ editView model =
         , input [ type_ "checkbox", checked model.debt, onClick Accounts.Messages.ToggleDebt ] []
         , input [ type_ "text", value (String.fromFloat model.balance), onInput Accounts.Messages.BalanceUpdated ] []
         , button [ onClick Accounts.Messages.SaveAccount, class "button" ] [ text "Save" ]
-        , button [ onClick Accounts.Messages.DeleteAccount ] [ text "Delete" ]
         ]
 
 
 renderAccounts : List Account -> Html Msg
 renderAccounts accounts =
     div []
-        [ button [ class "btn btn-primary", onClick CreateAccount ] [ text "New Account" ]
-        , div [] (map renderAccountGroup (greedyGroupsOf 2 accounts))
-        ]
-
-
-renderAccountGroup : List Account -> Html Msg
-renderAccountGroup group =
-    div [ class "row" ] (map renderAccount group)
-
-
-renderAccount : Account -> Html Msg
-renderAccount account =
-    div [ class "col-sm-6" ]
-        [ div [ class "card" ]
-            [ div [ class "card-body" ]
-                (List.concat
-                    [ [ h5 [ class "card-title", onClick (OpenAccountEditor account) ] [ text account.name ]
-                      , div [] [ text (String.fromFloat account.balance) ]
-                      , div []
-                            [ text
-                                (if account.debt then
-                                    "True"
-
-                                 else
-                                    "False"
-                                )
-                            ]
-                      , div [ onClick (CreateAdjustment account), class "button" ] [ text "Adjustment" ]
-                      ]
-                    , List.map renderAdjustment account.adjustments
+        [ table []
+            [ thead []
+                [ tr []
+                    [ th [] [ text "Name" ]
+                    , th [] [ text "Balance" ]
+                    , th [] [ text "Debt?" ]
+                    , th [] [ text "Adjustments" ]
+                    , th [] []
                     ]
-                )
+                ]
+            , tbody [] (List.concat (List.map renderAccount accounts))
             ]
+        , button [ class "btn btn-primary", onClick CreateAccount ] [ text "New Account" ]
         ]
+
+
+renderAccount : Account -> List (Html Msg)
+renderAccount account =
+    List.concat
+        [ [ tr []
+                [ td [] [ text account.name ]
+                , td [] [ text (String.fromFloat account.balance) ]
+                , td []
+                    [ text
+                        (if account.debt then
+                            "Yes"
+
+                         else
+                            "No"
+                        )
+                    ]
+                , td [ onClick (ToggleAdjustmentsFor account) ] [ text (account.adjustments |> adjustmentTotal |> String.fromFloat) ]
+                , td []
+                    [ span [ onClick (OpenAccountEditor account) ] [ text "Edit" ]
+                    , span [ onClick (DeleteAccount account) ] [ text "Delete" ]
+                    ]
+                ]
+          ]
+        , renderAdjustmentsForAccount account
+        ]
+
+
+adjustmentTotal : List Adjustment -> Float
+adjustmentTotal adjustments =
+    List.foldl (+) 0.0 (List.map (\a -> a.total) adjustments)
+
+
+renderAdjustmentsForAccount : Account -> List (Html Msg)
+renderAdjustmentsForAccount account =
+    case account.adjustmentsVisible of
+        True ->
+            List.map renderAdjustment account.adjustments
+
+        False ->
+            [ tr [] [ td [ colspan 5 ] [] ] ]
 
 
 renderAdjustment : Adjustment -> Html Msg
 renderAdjustment adjustment =
-    div []
-        [ div [ onClick (OpenAdjustmentEditor adjustment), class "button" ] [ text adjustment.title ]
-        , div [] [ text (String.fromFloat adjustment.total) ]
+    tr []
+        [ td [ colspan 3, onClick (OpenAdjustmentEditor adjustment) ] [ text adjustment.title ]
+        , td []
+            [ text (String.fromFloat adjustment.total) ]
+        , td []
+            [ span [ onClick (OpenAdjustmentEditor adjustment) ] [ text "Edit" ]
+            , span [ onClick (DeleteAdjustment adjustment) ] [ text "Delete" ]
+            ]
         ]
 
 
@@ -73,5 +97,4 @@ adjustmentEditView model =
         [ input [ type_ "text", value model.title, onInput TitleUpdated ] []
         , input [ type_ "text", value (String.fromFloat model.total), onInput TotalUpdated ] []
         , button [ onClick SaveAdjustment ] [ text "Save" ]
-        , button [ onClick DeleteAdjustment ] [ text "Delete" ]
         ]

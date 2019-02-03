@@ -19,6 +19,7 @@ accountDecoder =
         |> Json.Decode.Pipeline.required "debt" Json.Decode.bool
         |> Json.Decode.Pipeline.required "balance" Json.Decode.float
         |> Json.Decode.Pipeline.required "adjustments" (Json.Decode.list adjustmentDecoder)
+        |> Json.Decode.Pipeline.hardcoded False
 
 
 accountUpdatedDecoder : Json.Decode.Decoder Accounts.Models.Account

@@ -99,13 +99,8 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        DeleteAdjustment ->
-            case model.activeAdjustment of
-                Just oldActiveAdjustment ->
-                    ( model, deleteAdjustmentAndRefreshAdjustments oldActiveAdjustment )
-
-                Nothing ->
-                    ( model, Cmd.none )
+        DeleteAdjustment adjustment ->
+            ( { model | activeAdjustment = Nothing }, deleteAdjustmentAndRefreshAdjustments adjustment )
 
         OpenAccountEditor account ->
             ( { model | modalOpen = "account", activeAccount = Just account }, Cmd.none )
@@ -172,13 +167,29 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        DeleteAccount ->
-            case model.activeAccount of
-                Just oldActiveAccount ->
-                    ( model, deleteAccountAndRefreshAccount oldActiveAccount )
+        DeleteAccount account ->
+            ( { model | activeAccount = Nothing }, deleteAccountAndRefreshAccount account )
 
-                Nothing ->
-                    ( model, Cmd.none )
+        ToggleAdjustmentsFor account ->
+            let
+                newAccount =
+                    { account | adjustmentsVisible = not account.adjustmentsVisible }
+            in
+            ( { model | accounts = updateNestedAccount newAccount model.accounts }, Cmd.none )
+
+
+updateNestedAccount : Account -> List Account -> List Account
+updateNestedAccount account accounts =
+    List.map (updateById account) accounts
+
+
+updateById : Account -> Account -> Account
+updateById newAccount account =
+    if newAccount.id == account.id then
+        newAccount
+
+    else
+        account
 
 
 subscriptions : Model -> Sub Msg

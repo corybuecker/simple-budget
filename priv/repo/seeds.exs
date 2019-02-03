@@ -30,6 +30,12 @@ SimpleBudget.Repo.insert!(%SimpleBudget.Accounts.Adjustment{
   title: "Birthday Present"
 })
 
+SimpleBudget.Repo.insert!(%SimpleBudget.Accounts.Adjustment{
+  account_id: checking.id,
+  total: 230.12,
+  title: "Work Reimbursement"
+})
+
 SimpleBudget.Accounts.update_account(credit_card, %{balance: 845.24})
 
 SimpleBudget.Repo.insert!(%SimpleBudget.Goals.Goal{

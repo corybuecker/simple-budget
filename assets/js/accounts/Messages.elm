@@ -9,7 +9,8 @@ type Msg
     | ToggleDebt
     | BalanceUpdated String
     | SaveAccount
-    | DeleteAccount
+    | DeleteAccount Account
+    | ToggleAdjustmentsFor Account
     | AccountsFetched (Result Http.Error (List Account))
     | AdjustmentsFetched (Result Http.Error (List Adjustment))
     | OpenAccountEditor Account
@@ -19,4 +20,4 @@ type Msg
     | TitleUpdated String
     | TotalUpdated String
     | SaveAdjustment
-    | DeleteAdjustment
+    | DeleteAdjustment Adjustment

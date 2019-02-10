@@ -6,6 +6,7 @@ defmodule SimpleBudget.Users.User do
 
   schema "users" do
     field(:email, :string)
+    field(:password, :string)
 
     timestamps()
   end
@@ -13,7 +14,7 @@ defmodule SimpleBudget.Users.User do
   @doc false
   def changeset(%User{} = user, attrs) do
     user
-    |> cast(attrs, [:email])
-    |> validate_required([:email])
+    |> cast(attrs, [:email, :password])
+    |> validate_required([:email, :password])
   end
 end

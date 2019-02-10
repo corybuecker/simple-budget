@@ -51,5 +51,6 @@ SimpleBudget.Repo.insert!(%SimpleBudget.Savings.Saving{
 })
 
 SimpleBudget.Repo.insert!(%SimpleBudget.Users.User{
-  email: "test@user.com"
+  email: "test@user.com",
+  password: Argon2.hash_pwd_salt("password")
 })

@@ -5,14 +5,17 @@ import { Elm } from './Main.elm'
 
 class Login {
   constructor({ type }) {
-    this.useDummy = type == 'dummy'
+    this.type = type
+    console.log(type)
   }
 
   render() {
-    Elm.Main.init({
-      node: document.getElementById('login'),
-      flags: this.useDummy
-    })
+    if (this.type == 'email') {
+      Elm.Main.init({
+        node: document.getElementById('login'),
+        flags: this.useEmail
+      })
+    }
   }
 }
 

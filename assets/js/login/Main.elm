@@ -14,8 +14,7 @@ import Url.Builder as Url
 
 
 type alias Model =
-    { useDummy : Bool
-    , username : String
+    { username : String
     , password : String
     }
 
@@ -36,9 +35,9 @@ main =
         }
 
 
-init : Bool -> ( Model, Cmd Msg )
-init useDummy =
-    ( Model useDummy "" "", Cmd.none )
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( Model "" "", Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

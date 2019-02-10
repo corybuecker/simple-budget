@@ -3,7 +3,7 @@ defmodule SimpleBudgetWeb.LoginController do
 
   require Logger
 
-  alias SimpleBudget.TokenAuth.Dummy
+  alias SimpleBudget.TokenAuth.Email
   alias SimpleBudget.TokenAuth.Google
 
   action_fallback SimpleBudgetWeb.FallbackController
@@ -27,8 +27,8 @@ defmodule SimpleBudgetWeb.LoginController do
 
   defp authentication_method do
     case Application.get_env(:simple_budget, :authentication) do
-      :dummy ->
-        fn t -> Dummy.verify_and_validate_token(t) end
+      :email ->
+        fn t -> Email.verify_and_validate_token(t) end
 
       _ ->
         fn t -> Google.verify_and_validate_token(t) end

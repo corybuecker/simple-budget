@@ -1,7 +1,7 @@
-defmodule SimpleBudget.TokenAuth.DummyTest do
+defmodule SimpleBudget.TokenAuth.EmailTest do
   use SimpleBudget.DataCase
 
-  alias SimpleBudget.TokenAuth.Dummy
+  alias SimpleBudget.TokenAuth.Email
   alias SimpleBudget.Users
 
   def user_fixture(attrs \\ %{}) do
@@ -13,7 +13,7 @@ defmodule SimpleBudget.TokenAuth.DummyTest do
   describe "invalid token" do
     test "returns error" do
       {:error, message} =
-        Dummy.verify_and_validate_token(
+        Email.verify_and_validate_token(
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
         )
 
@@ -28,7 +28,7 @@ defmodule SimpleBudget.TokenAuth.DummyTest do
 
       {:ok, token, _claims} = Joken.generate_and_sign(config, %{}, signer)
 
-      {:error, message} = Dummy.verify_and_validate_token(token)
+      {:error, message} = Email.verify_and_validate_token(token)
 
       assert message == "unknown error"
     end
@@ -41,7 +41,7 @@ defmodule SimpleBudget.TokenAuth.DummyTest do
 
       {:ok, token, _claims} = Joken.generate_and_sign(config, %{email: "test@user.com"}, signer)
 
-      {:error, message} = Dummy.verify_and_validate_token(token)
+      {:error, message} = Email.verify_and_validate_token(token)
 
       assert message == "could not validate user"
     end
@@ -49,12 +49,12 @@ defmodule SimpleBudget.TokenAuth.DummyTest do
 
   describe "valid token with matching user" do
     test "returns error" do
-      user_fixture(%{email: "test@user.com"})
+      user_fixture(%{email: "test@user.com", password: Argon2.hash_pwd_salt("password")})
       signer = Joken.Signer.create("HS256", "development-use-only")
       config = Joken.Config.default_claims()
 
       {:ok, token, _claims} = Joken.generate_and_sign(config, %{email: "test@user.com"}, signer)
-      {:ok, email} = Dummy.verify_and_validate_token(token)
+      {:ok, email} = Email.verify_and_validate_token(token)
       assert email == "test@user.com"
     end
   end

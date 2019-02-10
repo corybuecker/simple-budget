@@ -1,11 +1,11 @@
-defmodule SimpleBudget.TokenAuth.Dummy do
+defmodule SimpleBudget.TokenAuth.Email do
   @moduledoc false
 
   @behaviour SimpleBudget.TokenAuth.Google
 
   @impl SimpleBudget.TokenAuth.Google
   def verify_and_validate_token(token) do
-    signer = Joken.Signer.create("HS256", "development-use-only")
+    signer = Joken.Signer.create("HS256", Application.get_env(:simple_budget, :token_key))
 
     config = Joken.Config.default_claims()
 

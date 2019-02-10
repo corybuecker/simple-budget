@@ -5,7 +5,10 @@ defmodule SimpleBudget.UsersTest do
   alias SimpleBudget.Users.User
 
   describe "users" do
-    @valid_attrs %{email: "test@user.com"}
+    @valid_attrs %{
+      email: "test@user.com",
+      password: Argon2.hash_pwd_salt("password")
+    }
 
     def user_fixture do
       {:ok, user} =

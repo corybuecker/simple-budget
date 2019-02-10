@@ -22,8 +22,8 @@ defmodule SimpleBudget.Users do
         where: u.email == ^email
       )
 
-    case email_query |> first() |> Repo.one() |> Map.get(:password) do
-      password when is_bitstring(password) -> {:ok, password}
+    case email_query |> first() |> Repo.one() do
+      %User{password: password} = user -> {:ok, password}
       _ -> {:error, "missing user"}
     end
   end

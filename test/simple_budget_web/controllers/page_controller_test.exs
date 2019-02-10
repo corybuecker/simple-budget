@@ -26,6 +26,12 @@ defmodule SimpleBudgetWeb.PageControllerTest do
     assert redirected_to(conn, 302) =~ "/login"
   end
 
+  test "unauthorized GET /api", %{conn: conn} do
+    conn = conn |> put_req_header("accept", "application/json") |> get("/api/accounts")
+
+    assert json_response(conn, 401)
+  end
+
   test "not found", %{conn: conn} do
     assert_raise Phoenix.Router.NoRouteError, fn ->
       get(conn, "/unknown")

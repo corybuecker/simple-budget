@@ -25,6 +25,8 @@ defmodule SimpleBudgetWeb.Router do
 
   forward("/healthcheck", SimpleBudgetWeb.HealthcheckRouter)
   post("/token", SimpleBudgetWeb.TokenController, :create)
+  get("/login", SimpleBudgetWeb.LoginController, :index)
+  post("/login", SimpleBudgetWeb.LoginController, :create)
 
   scope "/", SimpleBudgetWeb do
     pipe_through :browser
@@ -33,9 +35,6 @@ defmodule SimpleBudgetWeb.Router do
     get("/accounts", PageController, :accounts)
     get("/goals", PageController, :goals)
     get("/savings", PageController, :savings)
-
-    get("/login", LoginController, :index)
-    post("/login", LoginController, :create)
   end
 
   scope "/api", SimpleBudgetWeb do

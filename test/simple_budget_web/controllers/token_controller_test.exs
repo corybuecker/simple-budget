@@ -21,6 +21,18 @@ defmodule SimpleBudgetWeb.TokenControllerTest do
     assert Map.has_key?(response, "idtoken")
   end
 
+  test "create token with email configuration but missing user", %{conn: conn} do
+    Application.put_env(:simple_budget, :authentication, :email)
+    user_fixture(%{email: "test@user.com", password: Argon2.hash_pwd_salt("password")})
+
+    conn =
+      conn
+      |> put_req_header("content-type", "application/json")
+      |> post(Routes.token_path(conn, :create), email: "test@users.com", password: "password")
+
+    response = json_response(conn, 401)
+  end
+
   test "create token with non-email configuration", %{conn: conn} do
     Application.put_env(:simple_budget, :authentication, :google)
 

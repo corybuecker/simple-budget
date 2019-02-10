@@ -59,9 +59,6 @@ module.exports = (env, options) => ({
   plugins: [
     new MiniCssExtractPlugin({ filename: '../css/app.css' }),
     new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
-    new ElmMinify.WebpackPlugin(),
-    new webpack.ProvidePlugin({
-      $: 'jquery'
-    })
+    new ElmMinify.WebpackPlugin()
   ]
 });

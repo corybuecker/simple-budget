@@ -1,21 +1,21 @@
-module Main exposing (errorMessage, init, main, subscriptions, update, view)
+module Main exposing (Model)
 
 import Browser
+import Browser.Navigation
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Http exposing (get, jsonBody, post, toTask)
+import Http
 import Json.Decode
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import Json.Encode
-import Task exposing (Task)
-import Url exposing (Url)
-import Url.Builder as Url
 
 
 type alias Model =
     { username : String
     , password : String
+    , token : String
+    , invalid : Bool
     }
 
 
@@ -23,6 +23,8 @@ type Msg
     = UsernameUpdated String
     | PasswordUpdated String
     | Login
+    | TokenFetched (Result Http.Error String)
+    | LoggedIn (Result Http.Error ())
     | NoOperation
 
 
@@ -37,20 +39,40 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model "" "", Cmd.none )
+    ( Model "" "" "" False, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UsernameUpdated username ->
-            ( { model | username = username }, Cmd.none )
+            ( { model | username = username, invalid = False }, Cmd.none )
 
         PasswordUpdated password ->
-            ( { model | password = password }, Cmd.none )
+            ( { model | password = password, invalid = False }, Cmd.none )
 
         Login ->
-            ( model, Cmd.none )
+            ( model, createToken model )
+
+        TokenFetched result ->
+            case result of
+                Ok token ->
+                    let
+                        newModel =
+                            { model | token = token }
+                    in
+                    ( newModel, createLogin newModel )
+
+                Err _ ->
+                    ( { model | token = "", invalid = True }, Cmd.none )
+
+        LoggedIn result ->
+            case result of
+                Ok _ ->
+                    ( model, Browser.Navigation.load "/accounts" )
+
+                Err _ ->
+                    ( { model | invalid = True }, Cmd.none )
 
         NoOperation ->
             ( model, Cmd.none )
@@ -80,7 +102,8 @@ view model =
             , div [ class "input-wrapper" ]
                 [ label [ for "password" ] [ text "Password" ]
                 , input
-                    [ property "type" (Json.Encode.string "password")
+                    [ attribute "aria-label" "Password"
+                    , property "type" (Json.Encode.string "password")
                     , name "password"
                     , id "password"
                     , value model.password
@@ -93,31 +116,60 @@ view model =
                 , onClick Login
                 ]
                 [ text "Log in" ]
+            , showErrorStatus model
             ]
         ]
 
 
-errorMessage : Maybe Http.Error -> String
-errorMessage error =
-    case error of
-        Nothing ->
-            ""
+showErrorStatus : Model -> Html Msg
+showErrorStatus model =
+    case model.invalid of
+        True ->
+            div [] [ text "Cannot authenticate" ]
 
-        Just (Http.BadPayload message _) ->
-            message
-
-        _ ->
-            "Unknown"
+        False ->
+            div [] []
 
 
-put : String -> Http.Body -> Json.Decode.Decoder a -> Http.Request a
-put url body decoder =
+createLogin : Model -> Cmd Msg
+createLogin model =
+    let
+        login =
+            Json.Encode.object
+                [ ( "idtoken", Json.Encode.string model.token )
+                ]
+    in
     Http.request
-        { method = "PUT"
+        { method = "POST"
         , headers = []
-        , url = url
-        , body = body
-        , expect = Http.expectJson decoder
+        , url = "/login"
+        , body = Http.jsonBody login
+        , expect = Http.expectWhatever LoggedIn
         , timeout = Nothing
-        , withCredentials = False
+        , tracker = Nothing
         }
+
+
+createToken : Model -> Cmd Msg
+createToken model =
+    let
+        login =
+            Json.Encode.object
+                [ ( "email", Json.Encode.string model.username )
+                , ( "password", Json.Encode.string model.password )
+                ]
+    in
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = "/token"
+        , body = Http.jsonBody login
+        , expect = Http.expectJson TokenFetched tokenDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+tokenDecoder : Json.Decode.Decoder String
+tokenDecoder =
+    Json.Decode.field "idtoken" Json.Decode.string

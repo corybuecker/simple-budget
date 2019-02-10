@@ -14,9 +14,9 @@ module.exports = (env, options) => ({
     ]
   },
   entry: {
-    accounts: "./js/accounts",
-    goals: "./js/goals",
-    savings: "./js/savings",
+    // accounts: "./js/accounts",
+    // goals: "./js/goals",
+    // savings: "./js/savings",
     login: "./js/login"
   },
   output: {

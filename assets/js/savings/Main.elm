@@ -4,7 +4,7 @@ import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Http exposing (get, jsonBody, post, toTask)
+import Http exposing (get, jsonBody, post)
 import Json.Decode
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import List exposing (..)
@@ -100,6 +100,12 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
+        DeleteCompleted result ->
+            ( model, fetchSavings )
+
+        SavingSaved result ->
+            ( model, fetchSavings )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -131,7 +137,7 @@ errorMessage error =
         Nothing ->
             ""
 
-        Just (Http.BadPayload message _) ->
+        Just (Http.BadBody message) ->
             message
 
         _ ->
@@ -140,42 +146,42 @@ errorMessage error =
 
 deleteSavingAndRefreshSaving : Saving -> Cmd Msg
 deleteSavingAndRefreshSaving model =
-    Task.attempt SavingsFetched (Task.andThen refreshSavingsTask (deleteSavingTask model))
+    deleteSavingTask model
 
 
 fetchSavings : Cmd Msg
 fetchSavings =
-    Http.send SavingsFetched (get savingsUrl savingsDecoder)
+    get savingsUrl SavingsFetched savingsDecoder
 
 
 saveSavingAndRefreshSavings : Saving -> Cmd Msg
 saveSavingAndRefreshSavings model =
     case model.id of
         0 ->
-            Task.attempt SavingsFetched (Task.andThen refreshSavingsTask (saveNewSavingTask model))
+            saveNewSavingTask model
 
         _ ->
-            Task.attempt SavingsFetched (Task.andThen refreshSavingsTask (saveSavingTask model))
+            saveSavingTask model
 
 
-saveNewSavingTask : Saving -> Task Http.Error Saving
+saveNewSavingTask : Saving -> Cmd Msg
 saveNewSavingTask model =
-    toTask (post savingsUrl (jsonBody (Savings.Utils.encode model)) savingUpdatedDecoder)
+    post savingsUrl (jsonBody (Savings.Utils.encode model)) SavingSaved savingUpdatedDecoder
 
 
-refreshSavingsTask : a -> Task Http.Error (List Saving)
+refreshSavingsTask : a -> Cmd Msg
 refreshSavingsTask _ =
-    toTask (get savingsUrl savingsDecoder)
+    get savingsUrl SavingsFetched savingsDecoder
 
 
-saveSavingTask : Saving -> Task Http.Error Saving
+saveSavingTask : Saving -> Cmd Msg
 saveSavingTask model =
-    toTask (put (savingUrl model.id) (jsonBody (Savings.Utils.encode model)) savingUpdatedDecoder)
+    put (savingUrl model.id) (jsonBody (Savings.Utils.encode model)) SavingSaved savingUpdatedDecoder
 
 
-deleteSavingTask : Saving -> Task Http.Error String
+deleteSavingTask : Saving -> Cmd Msg
 deleteSavingTask model =
-    toTask (delete (savingUrl model.id))
+    delete (savingUrl model.id)
 
 
 savingsUrl : String
@@ -192,27 +198,53 @@ savingUrl id =
         []
 
 
-put : String -> Http.Body -> Json.Decode.Decoder a -> Http.Request a
-put url body decoder =
+get : String -> (Result Http.Error a -> Msg) -> Json.Decode.Decoder a -> Cmd Msg
+get url msg decoder =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = url
+        , body = Http.emptyBody
+        , expect = Http.expectJson msg decoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+put : String -> Http.Body -> (Result Http.Error a -> Msg) -> Json.Decode.Decoder a -> Cmd Msg
+put url body msg decoder =
     Http.request
         { method = "PUT"
         , headers = []
         , url = url
         , body = body
-        , expect = Http.expectJson decoder
+        , expect = Http.expectJson msg decoder
         , timeout = Nothing
-        , withCredentials = False
+        , tracker = Nothing
         }
 
 
-delete : String -> Http.Request String
+post : String -> Http.Body -> (Result Http.Error a -> Msg) -> Json.Decode.Decoder a -> Cmd Msg
+post url body msg decoder =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = url
+        , body = body
+        , expect = Http.expectJson msg decoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+delete : String -> Cmd Msg
 delete url =
     Http.request
         { method = "DELETE"
         , headers = []
         , url = url
         , body = Http.emptyBody
-        , expect = Http.expectString
+        , expect = Http.expectWhatever DeleteCompleted
         , timeout = Nothing
-        , withCredentials = False
+        , tracker = Nothing
         }

@@ -8,7 +8,7 @@ import Goals.Views exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Http exposing (get, jsonBody, post, toTask)
+import Http exposing (get, jsonBody, post)
 import Json.Decode
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import List exposing (..)
@@ -124,6 +124,12 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
+        DeleteCompleted result ->
+            ( model, fetchGoals )
+
+        GoalSaved result ->
+            ( model, fetchGoals )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -155,7 +161,7 @@ errorMessage error =
         Nothing ->
             ""
 
-        Just (Http.BadPayload message _) ->
+        Just (Http.BadBody message) ->
             message
 
         _ ->
@@ -164,42 +170,42 @@ errorMessage error =
 
 deleteGoalAndRefreshGoal : Goal -> Cmd Msg
 deleteGoalAndRefreshGoal model =
-    Task.attempt GoalsFetched (Task.andThen refreshGoalsTask (deleteGoalTask model))
+    deleteGoalTask model
 
 
 fetchGoals : Cmd Msg
 fetchGoals =
-    Http.send GoalsFetched (get goalsUrl goalsDecoder)
+    get goalsUrl GoalsFetched goalsDecoder
 
 
 saveGoalAndRefreshGoals : Goal -> Cmd Msg
 saveGoalAndRefreshGoals model =
     case model.id of
         0 ->
-            Task.attempt GoalsFetched (Task.andThen refreshGoalsTask (saveNewGoalTask model))
+            saveNewGoalTask model
 
         _ ->
-            Task.attempt GoalsFetched (Task.andThen refreshGoalsTask (saveGoalTask model))
+            saveGoalTask model
 
 
-saveNewGoalTask : Goal -> Task Http.Error Goal
+saveNewGoalTask : Goal -> Cmd Msg
 saveNewGoalTask model =
-    toTask (post goalsUrl (jsonBody (Goals.Utils.encode model)) goalUpdatedDecoder)
+    post goalsUrl (jsonBody (Goals.Utils.encode model)) GoalSaved goalUpdatedDecoder
 
 
-refreshGoalsTask : a -> Task Http.Error (List Goal)
+refreshGoalsTask : a -> Cmd Msg
 refreshGoalsTask _ =
-    toTask (get goalsUrl goalsDecoder)
+    get goalsUrl GoalsFetched goalsDecoder
 
 
-saveGoalTask : Goal -> Task Http.Error Goal
+saveGoalTask : Goal -> Cmd Msg
 saveGoalTask model =
-    toTask (put (goalUrl model.id) (jsonBody (Goals.Utils.encode model)) goalUpdatedDecoder)
+    put (goalUrl model.id) (jsonBody (Goals.Utils.encode model)) GoalSaved goalUpdatedDecoder
 
 
-deleteGoalTask : Goal -> Task Http.Error String
+deleteGoalTask : Goal -> Cmd Msg
 deleteGoalTask model =
-    toTask (delete (goalUrl model.id))
+    delete (goalUrl model.id)
 
 
 goalsUrl : String
@@ -216,27 +222,53 @@ goalUrl id =
         []
 
 
-put : String -> Http.Body -> Json.Decode.Decoder a -> Http.Request a
-put url body decoder =
+get : String -> (Result Http.Error a -> Msg) -> Json.Decode.Decoder a -> Cmd Msg
+get url msg decoder =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = url
+        , body = Http.emptyBody
+        , expect = Http.expectJson msg decoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+put : String -> Http.Body -> (Result Http.Error a -> Msg) -> Json.Decode.Decoder a -> Cmd Msg
+put url body msg decoder =
     Http.request
         { method = "PUT"
         , headers = []
         , url = url
         , body = body
-        , expect = Http.expectJson decoder
+        , expect = Http.expectJson msg decoder
         , timeout = Nothing
-        , withCredentials = False
+        , tracker = Nothing
         }
 
 
-delete : String -> Http.Request String
+post : String -> Http.Body -> (Result Http.Error a -> Msg) -> Json.Decode.Decoder a -> Cmd Msg
+post url body msg decoder =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = url
+        , body = body
+        , expect = Http.expectJson msg decoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+delete : String -> Cmd Msg
 delete url =
     Http.request
         { method = "DELETE"
         , headers = []
         , url = url
         , body = Http.emptyBody
-        , expect = Http.expectString
+        , expect = Http.expectWhatever DeleteCompleted
         , timeout = Nothing
-        , withCredentials = False
+        , tracker = Nothing
         }

@@ -12,3 +12,5 @@ type Msg
     | CreateSaving
     | OpenSavingEditor Saving
     | SavingsFetched (Result Http.Error (List Saving))
+    | DeleteCompleted (Result Http.Error ())
+    | SavingSaved (Result Http.Error Saving)

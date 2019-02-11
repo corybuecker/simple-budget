@@ -14,3 +14,5 @@ type Msg
     | CreateGoal
     | OpenGoalEditor Goal
     | GoalsFetched (Result Http.Error (List Goal))
+    | DeleteCompleted (Result Http.Error ())
+    | GoalSaved (Result Http.Error Goal)

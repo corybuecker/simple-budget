@@ -21,3 +21,6 @@ type Msg
     | TotalUpdated String
     | SaveAdjustment
     | DeleteAdjustment Adjustment
+    | DeleteCompleted (Result Http.Error ())
+    | AccountSaved (Result Http.Error Account)
+    | AdjustmentSaved (Result Http.Error Adjustment)

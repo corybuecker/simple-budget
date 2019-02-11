@@ -16,6 +16,7 @@ defmodule SimpleBudgetWeb.LoginController do
     case authentication_method().(token) do
       {:ok, _} ->
         conn
+        |> fetch_session()
         |> put_session(:token, token)
         |> send_resp(:created, "")
 

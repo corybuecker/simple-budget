@@ -1,15 +1,14 @@
-module Main exposing (errorMessage, init, main, subscriptions, update, view)
+module Main exposing (main)
 
 import Accounts.Messages exposing (..)
 import Accounts.Models exposing (..)
 import Accounts.Utils exposing (..)
 import Accounts.Views exposing (..)
-import Adjustments.Utils exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Http exposing (get, jsonBody, post, toTask)
+import Http exposing (get, jsonBody, post)
 import Json.Decode
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import List exposing (..)
@@ -94,13 +93,13 @@ update msg model =
         SaveAdjustment ->
             case model.activeAdjustment of
                 Just oldActiveAdjustment ->
-                    ( model, saveAdjustmentAndRefreshAdjustments oldActiveAdjustment )
+                    ( model, saveOrCreateAdjustment oldActiveAdjustment )
 
                 Nothing ->
                     ( model, Cmd.none )
 
         DeleteAdjustment adjustment ->
-            ( { model | activeAdjustment = Nothing }, deleteAdjustmentAndRefreshAdjustments adjustment )
+            ( { model | activeAdjustment = Nothing }, deleteAdjustment adjustment )
 
         OpenAccountEditor account ->
             ( { model | modalOpen = "account", activeAccount = Just account }, Cmd.none )
@@ -162,13 +161,16 @@ update msg model =
         SaveAccount ->
             case model.activeAccount of
                 Just oldActiveAccount ->
-                    ( model, saveAccountAndRefreshAccounts oldActiveAccount )
+                    ( model, saveOrCreateAccount oldActiveAccount )
 
                 Nothing ->
                     ( model, Cmd.none )
 
         DeleteAccount account ->
-            ( { model | activeAccount = Nothing }, deleteAccountAndRefreshAccount account )
+            ( { model | activeAccount = Nothing }, deleteAccount account )
+
+        DeleteCompleted _ ->
+            ( model, refreshAccounts )
 
         ToggleAdjustmentsFor account ->
             let
@@ -176,6 +178,12 @@ update msg model =
                     { account | adjustmentsVisible = not account.adjustmentsVisible }
             in
             ( { model | accounts = updateNestedAccount newAccount model.accounts }, Cmd.none )
+
+        AccountSaved result ->
+            ( model, fetchAccounts )
+
+        AdjustmentSaved result ->
+            ( model, fetchAccounts )
 
 
 updateNestedAccount : Account -> List Account -> List Account
@@ -235,51 +243,82 @@ errorMessage error =
         Nothing ->
             ""
 
-        Just (Http.BadPayload message _) ->
+        Just (Http.BadBody message) ->
             message
 
         _ ->
             "Unknown"
 
 
-deleteAccountAndRefreshAccount : Account -> Cmd Msg
-deleteAccountAndRefreshAccount model =
-    Task.attempt AccountsFetched (Task.andThen refreshAccountsTask (deleteAccountTask model))
+deleteAccount : Account -> Cmd Msg
+deleteAccount model =
+    delete (accountUrl model.id)
 
 
 fetchAccounts : Cmd Msg
 fetchAccounts =
-    Http.send AccountsFetched (get accountsUrl accountsDecoder)
+    get accountsUrl AccountsFetched accountsDecoder
 
 
-saveAccountAndRefreshAccounts : Account -> Cmd Msg
-saveAccountAndRefreshAccounts model =
+saveOrCreateAccount : Account -> Cmd Msg
+saveOrCreateAccount model =
     case model.id of
         0 ->
-            Task.attempt AccountsFetched (Task.andThen refreshAccountsTask (saveNewAccountTask model))
+            saveNewAccount model
 
         _ ->
-            Task.attempt AccountsFetched (Task.andThen refreshAccountsTask (saveAccountTask model))
+            saveAccount model
 
 
-saveNewAccountTask : Account -> Task Http.Error Account
-saveNewAccountTask model =
-    toTask (post accountsUrl (jsonBody (Accounts.Utils.encode model)) accountUpdatedDecoder)
+saveNewAccount : Account -> Cmd Msg
+saveNewAccount model =
+    let
+        url =
+            accountsUrl
+
+        body =
+            jsonBody (Accounts.Utils.encode model)
+
+        msg =
+            AccountSaved
+
+        decoder =
+            accountUpdatedDecoder
+    in
+    post url body msg decoder
 
 
-refreshAccountsTask : a -> Task Http.Error (List Account)
-refreshAccountsTask _ =
-    toTask (get accountsUrl accountsDecoder)
+refreshAccounts : Cmd Msg
+refreshAccounts =
+    let
+        url =
+            accountsUrl
+
+        msg =
+            AccountsFetched
+
+        decoder =
+            accountsDecoder
+    in
+    get url msg decoder
 
 
-saveAccountTask : Account -> Task Http.Error Account
-saveAccountTask model =
-    toTask (put (accountUrl model.id) (jsonBody (Accounts.Utils.encode model)) accountUpdatedDecoder)
+saveAccount : Account -> Cmd Msg
+saveAccount model =
+    let
+        url =
+            accountUrl model.id
 
+        body =
+            jsonBody (Accounts.Utils.encode model)
 
-deleteAccountTask : Account -> Task Http.Error String
-deleteAccountTask model =
-    toTask (delete (accountUrl model.id))
+        msg =
+            AccountSaved
+
+        decoder =
+            accountUpdatedDecoder
+    in
+    put url body msg decoder
 
 
 accountsUrl : String
@@ -296,67 +335,95 @@ accountUrl id =
         []
 
 
-put : String -> Http.Body -> Json.Decode.Decoder a -> Http.Request a
-put url body decoder =
+get : String -> (Result Http.Error a -> Msg) -> Json.Decode.Decoder a -> Cmd Msg
+get url msg decoder =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = url
+        , body = Http.emptyBody
+        , expect = Http.expectJson msg decoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+put : String -> Http.Body -> (Result Http.Error a -> Msg) -> Json.Decode.Decoder a -> Cmd Msg
+put url body msg decoder =
     Http.request
         { method = "PUT"
         , headers = []
         , url = url
         , body = body
-        , expect = Http.expectJson decoder
+        , expect = Http.expectJson msg decoder
         , timeout = Nothing
-        , withCredentials = False
+        , tracker = Nothing
         }
 
 
-delete : String -> Http.Request String
+post : String -> Http.Body -> (Result Http.Error a -> Msg) -> Json.Decode.Decoder a -> Cmd Msg
+post url body msg decoder =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = url
+        , body = body
+        , expect = Http.expectJson msg decoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+delete : String -> Cmd Msg
 delete url =
     Http.request
         { method = "DELETE"
         , headers = []
         , url = url
         , body = Http.emptyBody
-        , expect = Http.expectString
+        , expect = Http.expectWhatever DeleteCompleted
         , timeout = Nothing
-        , withCredentials = False
+        , tracker = Nothing
         }
 
 
-deleteAdjustmentAndRefreshAdjustments : Adjustment -> Cmd Msg
-deleteAdjustmentAndRefreshAdjustments model =
-    Task.attempt AccountsFetched (Task.andThen refreshAccountsTask (deleteAdjustmentTask model))
+deleteAdjustment : Adjustment -> Cmd Msg
+deleteAdjustment model =
+    delete (adjustmentUrl model.accountId model.id)
 
 
-saveAdjustmentAndRefreshAdjustments : Adjustment -> Cmd Msg
-saveAdjustmentAndRefreshAdjustments model =
+saveOrCreateAdjustment : Adjustment -> Cmd Msg
+saveOrCreateAdjustment model =
     case model.id of
         0 ->
-            Task.attempt AccountsFetched (Task.andThen refreshAccountsTask (saveNewAdjustmentTask model))
+            saveAdjustment model
 
         _ ->
-            Task.attempt AccountsFetched (Task.andThen refreshAccountsTask (saveAdjustmentTask model))
+            createAdjustment model
 
 
-saveAdjustmentTask : Adjustment -> Task Http.Error Adjustment
-saveAdjustmentTask model =
+saveAdjustment : Adjustment -> Cmd Msg
+saveAdjustment model =
+    let
+        url =
+            adjustmentsUrl model.accountId
+
+        body =
+            jsonBody (adjustmentEncode model)
+    in
+    post url body AdjustmentSaved adjustmentUpdatedDecoder
+
+
+createAdjustment : Adjustment -> Cmd Msg
+createAdjustment model =
     let
         url =
             adjustmentUrl model.accountId model.id
 
         body =
-            jsonBody (Adjustments.Utils.encode model)
+            jsonBody (adjustmentEncode model)
     in
-    toTask (put url body adjustmentUpdatedDecoder)
-
-
-deleteAdjustmentTask : Adjustment -> Task Http.Error String
-deleteAdjustmentTask model =
-    toTask (delete (adjustmentUrl model.accountId model.id))
-
-
-saveNewAdjustmentTask : Adjustment -> Task Http.Error Adjustment
-saveNewAdjustmentTask model =
-    toTask (post (adjustmentsUrl model.accountId) (jsonBody (Adjustments.Utils.encode model)) adjustmentUpdatedDecoder)
+    put url body AdjustmentSaved adjustmentUpdatedDecoder
 
 
 adjustmentsUrl : Int -> String

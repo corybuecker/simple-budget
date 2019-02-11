@@ -1,4 +1,4 @@
-module Accounts.Utils exposing (accountDecoder, accountUpdatedDecoder, accountsDecoder, adjustmentDecoder, balance, encode, id, name)
+module Accounts.Utils exposing (accountDecoder, accountUpdatedDecoder, accountsDecoder, adjustmentDecoder, adjustmentEncode, adjustmentId, adjustmentUpdatedDecoder, adjustmentsDecoder, balance, debt, encode, id, name, title, total)
 
 import Accounts.Models
 import Json.Decode
@@ -59,3 +59,33 @@ debt value =
 encode : Accounts.Models.Account -> Json.Encode.Value
 encode schema =
     Json.Encode.object [ ( "account", Json.Encode.object [ id schema.id, name schema.name, debt schema.debt, balance schema.balance ] ) ]
+
+
+adjustmentsDecoder : Json.Decode.Decoder (List Accounts.Models.Adjustment)
+adjustmentsDecoder =
+    Json.Decode.field "data" (Json.Decode.list adjustmentDecoder)
+
+
+adjustmentUpdatedDecoder : Json.Decode.Decoder Accounts.Models.Adjustment
+adjustmentUpdatedDecoder =
+    Json.Decode.field "data" adjustmentDecoder
+
+
+adjustmentId : Int -> ( String, Json.Encode.Value )
+adjustmentId value =
+    ( "id", Json.Encode.int value )
+
+
+title : String -> ( String, Json.Encode.Value )
+title value =
+    ( "title", Json.Encode.string value )
+
+
+total : Float -> ( String, Json.Encode.Value )
+total value =
+    ( "total", Json.Encode.float value )
+
+
+adjustmentEncode : Accounts.Models.Adjustment -> Json.Encode.Value
+adjustmentEncode schema =
+    Json.Encode.object [ ( "adjustment", Json.Encode.object [ adjustmentId schema.id, title schema.title, total schema.total ] ) ]

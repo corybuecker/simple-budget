@@ -6,7 +6,6 @@ import { Elm } from './Main.elm'
 class Login {
   constructor({ type }) {
     this.type = type
-    console.log(type)
   }
 
   render() {

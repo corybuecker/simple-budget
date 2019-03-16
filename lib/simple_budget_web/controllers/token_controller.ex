@@ -5,8 +5,7 @@ defmodule SimpleBudgetWeb.TokenController do
   action_fallback SimpleBudgetWeb.FallbackController
 
   def create(conn, params) do
-    with :email <- Application.get_env(:simple_budget, :authentication),
-         {:ok, password} <- Users.get_password(params["email"]),
+    with {:ok, password} <- Users.get_password(params["email"]),
          true <- Argon2.verify_pass(params["password"], password) do
       signer = Joken.Signer.create("HS256", Application.get_env(:simple_budget, :token_key))
       config = Joken.Config.default_claims()

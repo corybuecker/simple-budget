@@ -40,8 +40,8 @@ defmodule SimpleBudget.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "1.4.0"},
-      {:phoenix_pubsub, "1.1.1"},
+      {:phoenix, "1.4.2"},
+      {:phoenix_pubsub, "1.1.2"},
       {:phoenix_ecto, "4.0.0"},
       {:phoenix_html, "2.13.1"},
       {:ecto_sql, "3.0.5"},
@@ -51,12 +51,12 @@ defmodule SimpleBudget.MixProject do
       {:plug_cowboy, "2.0.1"},
       {:poison, "3.1.0"},
       {:timex, "3.5.0"},
-      {:argon2_elixir, "1.3.3"},
+      {:argon2_elixir, "2.0.1"},
       {:joken_jwks, git: "https://github.com/victorolinasc/joken_jwks"},
       {:mox, "0.5.0", only: :test},
-      {:excoveralls, "0.10.5", only: :test},
+      {:excoveralls, "0.10.6", only: :test},
       {:phoenix_live_reload, "1.2.0", only: :dev},
-      {:credo, "1.0.2", only: [:dev, :test], runtime: false}
+      {:credo, "1.0.3", only: [:dev, :test], runtime: false}
     ]
   end
 

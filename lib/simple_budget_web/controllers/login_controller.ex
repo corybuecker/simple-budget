@@ -13,7 +13,7 @@ defmodule SimpleBudgetWeb.LoginController do
   end
 
   def create(conn, %{"idtoken" => token}) do
-    case authentication_method().(token) do
+    case Google.verify_and_validate_token(token) do
       {:ok, _} ->
         conn
         |> fetch_session()
@@ -26,13 +26,17 @@ defmodule SimpleBudgetWeb.LoginController do
     end
   end
 
-  defp authentication_method do
-    case Application.get_env(:simple_budget, :authentication) do
-      :email ->
-        fn t -> Email.verify_and_validate_token(t) end
+  def create(conn, %{"localtoken" => token}) do
+    case Email.verify_and_validate_token(token) do
+      {:ok, _} ->
+        conn
+        |> fetch_session()
+        |> put_session(:token, token)
+        |> send_resp(:created, "")
 
-      _ ->
-        fn t -> Google.verify_and_validate_token(t) end
+      {:error, error} ->
+        Logger.error(error)
+        conn |> send_resp(:unauthorized, "")
     end
   end
 end

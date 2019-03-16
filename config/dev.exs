@@ -75,8 +75,9 @@ config :simple_budget, SimpleBudget.Repo,
   pool_size: 10
 
 config :simple_budget,
-  authentication: :email,
-  token_key: "must_be_set_in_envrionment_outside_development"
+  token_key: "must_be_set_in_envrionment_outside_development",
+  google_client_id: nil,
+  sso_enabled: false
 
 config :simple_budget, SimpleBudgetWeb.Endpoint,
   http: [port: 4000],

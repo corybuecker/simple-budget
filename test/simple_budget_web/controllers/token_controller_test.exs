@@ -18,7 +18,7 @@ defmodule SimpleBudgetWeb.TokenControllerTest do
       |> post(Routes.token_path(conn, :create), email: "test@user.com", password: "password")
 
     response = json_response(conn, 200)
-    assert Map.has_key?(response, "idtoken")
+    assert Map.has_key?(response, "localtoken")
   end
 
   test "create token with email configuration but missing user", %{conn: conn} do

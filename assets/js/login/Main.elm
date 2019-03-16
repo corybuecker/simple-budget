@@ -37,8 +37,8 @@ main =
         }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
+init : Bool -> ( Model, Cmd Msg )
+init ssoEnabled =
     ( Model "" "" "" False, Cmd.none )
 
 
@@ -52,7 +52,7 @@ update msg model =
             ( { model | password = password, invalid = False }, Cmd.none )
 
         Login ->
-            ( model, createToken model )
+            ( { model | invalid = False }, createToken model )
 
         TokenFetched result ->
             case result of
@@ -136,7 +136,7 @@ createLogin model =
     let
         login =
             Json.Encode.object
-                [ ( "idtoken", Json.Encode.string model.token )
+                [ ( "localtoken", Json.Encode.string model.token )
                 ]
     in
     Http.request
@@ -172,4 +172,4 @@ createToken model =
 
 tokenDecoder : Json.Decode.Decoder String
 tokenDecoder =
-    Json.Decode.field "idtoken" Json.Decode.string
+    Json.Decode.field "localtoken" Json.Decode.string

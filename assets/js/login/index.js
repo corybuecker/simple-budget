@@ -4,17 +4,15 @@ import './index.scss'
 import { Elm } from './Main.elm'
 
 class Login {
-  constructor({ type }) {
-    this.type = type
+  constructor({ ssoEnabled }) {
+    this.ssoEnabled = ssoEnabled == true
   }
 
   render() {
-    if (this.type == 'email') {
-      Elm.Main.init({
-        node: document.getElementById('login'),
-        flags: this.useEmail
-      })
-    }
+    Elm.Main.init({
+      node: document.getElementById('login'),
+      flags: this.ssoEnabled
+    })
   }
 }
 

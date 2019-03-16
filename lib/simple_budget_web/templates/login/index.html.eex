@@ -3,6 +3,6 @@
 <div id="login" />
 
 <script defer type="application/javascript" nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
-  var loginView = new Login({'type': '<%= Application.get_env(:simple_budget, :authentication) %>'});
+  var loginView = new Login({'ssoEnabled': '<%= Application.get_env(:simple_budget, :sso_enabled) %>'});
   loginView.render();
 </script>

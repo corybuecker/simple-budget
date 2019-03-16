@@ -12,7 +12,7 @@ defmodule SimpleBudget.TokenAuth.Google do
 
   def token_config do
     default_claims(
-      aud: "77675101516-vhivh2hl3b52h8906hmuvs47fd1vbhup.apps.googleusercontent.com",
+      aud: Application.fetch_env!(:simple_budget, :google_client_id),
       iss: "accounts.google.com"
     )
   end

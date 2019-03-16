@@ -26,8 +26,9 @@ config :logger, :console,
 config :simple_budget, env: Mix.env()
 
 config :simple_budget,
-  authentication: :google_token,
-  token_key: System.get_env("TOKEN_KEY")
+  token_key: System.get_env("TOKEN_KEY"),
+  google_client_id: System.get_env("GOOGLE_CLIENT_ID"),
+  sso_enabled: true
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

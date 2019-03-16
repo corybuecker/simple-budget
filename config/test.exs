@@ -20,4 +20,5 @@ config :simple_budget, SimpleBudget.Repo,
 config :argon2_elixir, t_cost: 2, m_cost: 8
 
 config :simple_budget,
-  token_key: "development-use-only"
+  token_key: "development-use-only",
+  google_client_id: "test"

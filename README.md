@@ -12,7 +12,7 @@ Once the containers have started, just browse to localhost:4000 in your browser.
 
 ### TODOs
 
-- [ ] Make authentication more user-friendly
+- [X] Make authentication more user-friendly
 - [ ] Setup demo site
 - [ ] Associate accounts, goals, etc. to user records
 - [ ] Add instructions for running locally without Docker

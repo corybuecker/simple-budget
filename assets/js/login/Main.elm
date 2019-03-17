@@ -9,12 +9,14 @@ import Http
 import Json.Decode
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import Json.Encode
+import Login.Google
 
 
 type alias Model =
     { username : String
     , password : String
     , token : String
+    , googleToken : String
     , invalid : Bool
     }
 
@@ -25,6 +27,8 @@ type Msg
     | Login
     | TokenFetched (Result Http.Error String)
     | LoggedIn (Result Http.Error ())
+    | GoogleLogin
+    | GoogleTokenFetched (Result Json.Decode.Error String)
     | NoOperation
 
 
@@ -39,7 +43,7 @@ main =
 
 init : Bool -> ( Model, Cmd Msg )
 init ssoEnabled =
-    ( Model "" "" "" False, Cmd.none )
+    ( Model "" "" "" "" False, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -66,6 +70,18 @@ update msg model =
                 Err _ ->
                     ( { model | token = "", invalid = True }, Cmd.none )
 
+        GoogleTokenFetched result ->
+            case result of
+                Ok token ->
+                    let
+                        newModel =
+                            { model | googleToken = token }
+                    in
+                    ( newModel, createGoogleLogin newModel )
+
+                Err _ ->
+                    ( { model | token = "", invalid = True }, Cmd.none )
+
         LoggedIn result ->
             case result of
                 Ok _ ->
@@ -74,13 +90,21 @@ update msg model =
                 Err _ ->
                     ( { model | invalid = True }, Cmd.none )
 
+        GoogleLogin ->
+            ( model, Login.Google.login () )
+
         NoOperation ->
             ( model, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Login.Google.useIdToken decodeToken
+
+
+decodeToken : Json.Encode.Value -> Msg
+decodeToken x =
+    GoogleTokenFetched (Json.Decode.decodeValue Json.Decode.string x)
 
 
 view : Model -> Html Msg
@@ -116,6 +140,8 @@ view model =
                 , onClick Login
                 ]
                 [ text "Log in" ]
+            , br [] []
+            , img [ src "/images/google.png", onClick GoogleLogin ] []
             , showErrorStatus model
             ]
         ]
@@ -142,7 +168,26 @@ createLogin model =
     Http.request
         { method = "POST"
         , headers = []
-        , url = "/login"
+        , url = "/auth/login"
+        , body = Http.jsonBody login
+        , expect = Http.expectWhatever LoggedIn
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+createGoogleLogin : Model -> Cmd Msg
+createGoogleLogin model =
+    let
+        login =
+            Json.Encode.object
+                [ ( "idtoken", Json.Encode.string model.googleToken )
+                ]
+    in
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = "/auth/login"
         , body = Http.jsonBody login
         , expect = Http.expectWhatever LoggedIn
         , timeout = Nothing
@@ -162,7 +207,7 @@ createToken model =
     Http.request
         { method = "POST"
         , headers = []
-        , url = "/token"
+        , url = "/auth/token"
         , body = Http.jsonBody login
         , expect = Http.expectJson TokenFetched tokenDecoder
         , timeout = Nothing

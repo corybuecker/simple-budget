@@ -9,7 +9,7 @@ defmodule SimpleBudgetWeb.Auth do
         conn
 
       _ ->
-        conn |> redirect(to: "/login") |> halt()
+        conn |> redirect(to: "/auth/login") |> halt()
     end
   end
 

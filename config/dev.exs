@@ -76,8 +76,7 @@ config :simple_budget, SimpleBudget.Repo,
 
 config :simple_budget,
   token_key: "must_be_set_in_envrionment_outside_development",
-  google_client_id: nil,
-  sso_enabled: false
+  sso_enabled: System.get_env("SSO_ENABLED") || false
 
 config :simple_budget, SimpleBudgetWeb.Endpoint,
   http: [port: 4000],

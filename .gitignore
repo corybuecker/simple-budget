@@ -36,3 +36,4 @@ npm-debug.log
 
 .DS_Store
 /assets/js/elm-stuff
+.env

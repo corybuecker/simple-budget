@@ -31,8 +31,10 @@ defmodule SimpleBudgetWeb.Router do
     pipe_through :browser
 
     post("/token", TokenController, :create)
+
     get("/login", LoginController, :index)
     post("/login", LoginController, :create)
+    get("/logout", LoginController, :logout)
   end
 
   scope "/api", SimpleBudgetWeb do

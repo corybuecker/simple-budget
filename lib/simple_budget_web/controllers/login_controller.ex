@@ -9,7 +9,9 @@ defmodule SimpleBudgetWeb.LoginController do
   action_fallback SimpleBudgetWeb.FallbackController
 
   def index(conn, _params) do
-    render(conn, "index.html")
+    conn
+    |> put_resp_header("cache-control", "no-store, private")
+    |> render("index.html")
   end
 
   def create(conn, %{"idtoken" => token}) do
@@ -38,5 +40,12 @@ defmodule SimpleBudgetWeb.LoginController do
         Logger.error(error)
         conn |> send_resp(:unauthorized, "")
     end
+  end
+
+  def logout(conn, _params) do
+    conn
+    |> clear_session()
+    |> put_resp_header("cache-control", "no-store, private")
+    |> render("delete.html")
   end
 end

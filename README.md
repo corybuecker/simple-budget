@@ -13,6 +13,7 @@ Once the containers have started, just browse to localhost:4000 in your browser.
 ### TODOs
 
 - [X] Make authentication more user-friendly
+- [ ] Document how to set up locally with Google and/or seeds
 - [ ] Setup demo site
 - [ ] Associate accounts, goals, etc. to user records
 - [ ] Add instructions for running locally without Docker

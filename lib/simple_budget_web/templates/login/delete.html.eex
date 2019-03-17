@@ -7,7 +7,7 @@
         client_id: '<%= Application.get_env(:simple_budget, :google_client_id) %>'
       }).then(function() {
         var googleAuth = gapi.auth2.getAuthInstance();
-        window.c = googleAuth
+
         if (googleAuth.isSignedIn.get()){
           googleAuth.signOut().then(function () {
             window.location = "/auth/login";

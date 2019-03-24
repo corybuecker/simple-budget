@@ -1,4 +1,4 @@
-# Simple Budget [![CircleCI](https://circleci.com/gh/corybuecker/simple-budget/tree/master.svg?style=svg)](https://circleci.com/gh/corybuecker/simple-budget/tree/master) [![Coverage Status](https://coveralls.io/repos/github/corybuecker/simple-budget/badge.svg?branch=master)](https://coveralls.io/github/corybuecker/simple-budget?branch=master)
+# Simple Budget [![CircleCI](https://circleci.com/gh/corybuecker/simple-budget/tree/master.svg?style=svg)](https://circleci.com/gh/corybuecker/simple-budget/tree/master) [![Coverage Status](https://coveralls.io/repos/github/corybuecker/simple-budget/badge.svg?branch=master)](https://coveralls.io/github/corybuecker/simple-budget?branch=master) [![GitHub](https://img.shields.io/github/license/corybuecker/simple-budget.svg)]
 
 Simple budget is a very simple, and opinionated, budgeting tool. I use it for my personal finances. It is based on the concept of envelope saving, but with more automation. I practice a "daily" budget, where money for long-term goals is amortized and removed from my remaining funds on a daily basis.
 

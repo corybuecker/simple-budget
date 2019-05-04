@@ -55,8 +55,8 @@ defmodule SimpleBudgetWeb.SnapshotControllerTest do
       assert json_response(conn, 200)["data"] == [
                %{
                  "account_id" => snapshot.account_id,
-                 "after" => "500.00",
-                 "before" => "1000.00",
+                 "after" => 500.0,
+                 "before" => 1000.0,
                  "id" => snapshot.id
                }
              ]

@@ -10,8 +10,8 @@ defmodule SimpleBudgetWeb.SnapshotView do
     %{
       id: snapshot.id,
       account_id: snapshot.account_id,
-      before: snapshot.before,
-      after: snapshot.after
+      before: Decimal.to_float(snapshot.before),
+      after: Decimal.to_float(snapshot.after)
     }
   end
 end

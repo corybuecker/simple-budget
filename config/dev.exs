@@ -75,8 +75,7 @@ config :simple_budget, SimpleBudget.Repo,
   pool_size: 10
 
 config :simple_budget,
-  token_key: "must_be_set_in_envrionment_outside_development",
-  sso_enabled: System.get_env("SSO_ENABLED") || false
+  token_key: "must_be_set_in_envrionment_outside_development"
 
 config :simple_budget, SimpleBudgetWeb.Endpoint,
   http: [port: 4000],

@@ -27,7 +27,9 @@ config :simple_budget, env: Mix.env()
 config :simple_budget,
   token_key: System.get_env("TOKEN_KEY"),
   google_client_id: System.get_env("GOOGLE_CLIENT_ID"),
-  sso_enabled: true
+  sso_enabled: true,
+  cookie_signing_salt: "dev",
+  cookie_encryption_salt: "dev"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

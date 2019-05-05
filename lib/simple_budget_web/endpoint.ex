@@ -41,7 +41,8 @@ defmodule SimpleBudgetWeb.Endpoint do
     store: :cookie,
     key: "_simple_budget_key",
     secure: Application.get_env(:simple_budget, :env) == :prod,
-    signing_salt: "yiLOUw9l"
+    signing_salt: Application.get_env(:simple_budget, :cookie_signing_salt),
+    encryption_salt: Application.get_env(:simple_budget, :cookie_encryption_salt)
 
   plug SimpleBudgetWeb.Router
 end

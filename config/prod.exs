@@ -13,3 +13,7 @@ config :simple_budget, SimpleBudgetWeb.Endpoint,
   url: [scheme: "https", host: "budget.bueckered.com", port: 443],
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
   cache_static_manifest: "priv/static/cache_manifest.json"
+
+config :simple_budget,
+  cookie_signing_salt: System.get_env("COOKIE_SIGNING_SALT"),
+  cookie_encryption_salt: System.get_env("COOKIE_ENCRYPTION_SALT")

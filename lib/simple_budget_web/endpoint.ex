@@ -42,7 +42,8 @@ defmodule SimpleBudgetWeb.Endpoint do
     key: "_simple_budget_key",
     secure: Application.get_env(:simple_budget, :env) == :prod,
     signing_salt: Application.get_env(:simple_budget, :cookie_signing_salt),
-    encryption_salt: Application.get_env(:simple_budget, :cookie_encryption_salt)
+    encryption_salt: Application.get_env(:simple_budget, :cookie_encryption_salt),
+    max_age: 3600
 
   plug SimpleBudgetWeb.Router
 end

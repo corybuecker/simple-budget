@@ -11,7 +11,7 @@
   </head>
   <body>
     <header class="navbar navbar-expand-lg navbar-light bg-light">
-      <%= link "Simple Budget", to: "/home", class: "navbar-brand" %>
+      <%= link "Simple Budget", to: "/calculations", class: "navbar-brand" %>
       <ul class="navbar-nav mr-auto">
         <li class="nav-item">
           <%= link "Accounts", to: "/accounts", class: "nav-link" %>

@@ -16,4 +16,8 @@ defmodule SimpleBudgetWeb.PageController do
   def savings(conn, _params) do
     render(conn, "savings.html")
   end
+
+  def calculations(conn, _params) do
+    render(conn, "calculations.html")
+  end
 end

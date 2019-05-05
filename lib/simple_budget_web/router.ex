@@ -57,5 +57,6 @@ defmodule SimpleBudgetWeb.Router do
     get("/accounts", PageController, :accounts)
     get("/goals", PageController, :goals)
     get("/savings", PageController, :savings)
+    get("/calculations", PageController, :calculations)
   end
 end

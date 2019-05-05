@@ -16,7 +16,8 @@ module.exports = (env, options) => ({
     accounts: "./js/Accounts",
     goals: "./js/Goals",
     savings: "./js/Savings",
-    login: "./js/Login"
+    login: "./js/Login",
+    calculations: "./js/Calculations"
   },
   output: {
     path: path.resolve(__dirname, '../priv/static/js')
@@ -47,7 +48,8 @@ module.exports = (env, options) => ({
         exclude: [/elm-stuff/, /node_modules/],
         loader: "elm-webpack-loader",
         options: {
-          cwd: path.resolve(__dirname, "js")
+          cwd: path.resolve(__dirname, "js"),
+          optimize: true
         }
       }
     ]

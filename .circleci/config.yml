@@ -1,12 +1,14 @@
-version: 2
-jobs:
+version: 2.1
+orbs:
+  heroku: circleci/heroku@0.0.6
+jobs:  
   build:
     parallelism: 1
     docker:
       - image: circleci/elixir:1.8.1
         environment:
           MIX_ENV: test
-      - image: circleci/postgres:9.6-alpine  # database image
+      - image: circleci/postgres:9.6-alpine
 
     working_directory: ~/app
 
@@ -33,3 +35,17 @@ jobs:
       - run: mix credo --strict
 
       - run: mix coveralls.circle
+  deploy:
+    executor: heroku/default
+    steps:
+      - checkout
+      - heroku/install
+      - heroku/deploy-via-git:
+          only-branch: master
+workflows:
+  build-deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build

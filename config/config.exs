@@ -12,7 +12,6 @@ config :simple_budget,
 
 # Configures the endpoint
 config :simple_budget, SimpleBudgetWeb.Endpoint,
-  url: [host: "localhost"],
   secret_key_base:
     "must_be_set_in_envrionment_outside_developmentmust_be_set_in_envrionment_outside_development",
   render_errors: [view: SimpleBudgetWeb.ErrorView, accepts: ~w(html json)],

@@ -23,7 +23,7 @@ defmodule SimpleBudget.Users do
       )
 
     case email_query |> first() |> Repo.one() do
-      %User{password: password} = user -> {:ok, password}
+      %User{password: password} -> {:ok, password}
       _ -> {:error, "missing user"}
     end
   end

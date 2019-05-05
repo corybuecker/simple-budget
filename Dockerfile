@@ -1,32 +1,30 @@
-FROM elixir:1.7.4-alpine AS builder
-RUN apk update && apk add git
+FROM elixir:1.8.1-alpine AS builder
+RUN apk update && apk add git make build-base
 COPY mix.exs mix.lock /app/
 WORKDIR /app
 ENV MIX_ENV=prod
 RUN mix local.hex --force && \
-    mix local.rebar --force
+  mix local.rebar --force
 RUN mix deps.get && \
-    mix deps.compile
+  mix deps.compile
+RUN apk del make build-base && \
+  rm -f /var/cache/apk/*
 
-FROM node:11.1 AS assets
+FROM node:11.6 AS assets
 COPY assets /assets
 WORKDIR /assets
 RUN npm install
 COPY --from=builder /app/deps /deps
-RUN mv /assets/js/accounts /assets/js/Accounts && \
-    mv /assets/js/adjustments /assets/js/Adjustments && \
-    mv /assets/js/goals /assets/js/Goals && \
-    mv /assets/js/savings /assets/js/Savings && \
-    npm run deploy
+RUN npm run deploy
 
 FROM builder
 COPY config /app/config
 COPY lib /app/lib
 COPY priv /app/priv
 COPY --from=assets /priv/static /app/priv/static
-ENV MIX_ENV=prod PORT=4001
+ENV MIX_ENV=prod COOKIE_SIGNING_SALT=justneedassets
 RUN mix compile && \
-    mix phx.digest
+  mix phx.digest
 
 CMD ["mix", "phx.server"]
 

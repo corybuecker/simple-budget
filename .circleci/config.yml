@@ -1,6 +1,4 @@
 version: 2.1
-orbs:
-  heroku: circleci/heroku@0.0.6
 jobs:  
   build:
     parallelism: 1
@@ -35,17 +33,3 @@ jobs:
       - run: mix credo --strict
 
       - run: mix coveralls.circle
-  deploy:
-    executor: heroku/default
-    steps:
-      - checkout
-      - heroku/install
-      - heroku/deploy-via-git:
-          only-branch: master
-workflows:
-  build-deploy:
-    jobs:
-      - build
-      - deploy:
-          requires:
-            - build

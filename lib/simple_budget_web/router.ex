@@ -11,6 +11,11 @@ defmodule SimpleBudgetWeb.Router do
     plug :fetch_session
     plug :fetch_flash
     plug :protect_from_forgery
+
+    if Mix.env() == :prod do
+      plug Plug.SSL, rewrite_on: [:x_forwarded_proto], hsts: true
+    end
+
     plug :put_secure_browser_headers, %{"content-security-policy" => @csp}
   end
 
@@ -22,6 +27,11 @@ defmodule SimpleBudgetWeb.Router do
     plug :accepts, ["json"]
     plug :fetch_session
     plug :protect_from_forgery
+
+    if Mix.env() == :prod do
+      plug Plug.SSL, rewrite_on: [:x_forwarded_proto], hsts: true
+    end
+
     plug :check_authenticated_api_session
   end
 

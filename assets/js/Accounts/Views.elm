@@ -56,6 +56,7 @@ renderAccount account =
                 , td []
                     [ span [ onClick (OpenAccountEditor account) ] [ text "Edit" ]
                     , span [ onClick (DeleteAccount account) ] [ text "Delete" ]
+                    , span [ onClick (CreateAdjustment account) ] [ text "Adjust" ]
                     ]
                 ]
           ]

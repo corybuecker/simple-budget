@@ -4,60 +4,51 @@ $color3: rgba(238, 238, 238, 1);
 $color4: rgba(92, 164, 169, 1);
 $color5: rgba(227, 151, 116, 1);
 
-* {
-    font-family: -apple-system, sans-serif;
-}
+.login-form {
+    .input-wrapper {
+        margin-bottom: 1.25rem;
+        width: 20rem;
+        height: 3.75rem;
+        border: 1px #A1A1A1 solid;
+        border-radius: 0.25rem;
+        padding-bottom: 1px;
 
-form {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-}
+        label {
+            line-height: 1.25rem;
+            height: 1.25rem;
+            display: block;
+            margin-left: 1rem;
+            padding-top: 0.25em;
+            color: #565656;
+        }
 
-.input-wrapper {
-    margin-bottom: 1.25rem;
-    width: 20rem;
-    height: 3.75rem;
-    border: 1px #A1A1A1 solid;
-    border-radius: 0.25rem;
-    padding-bottom: 1px;
+        input {
+            border: none;
+            height: 2.25rem;
+            outline: 0;
+            padding: 0;
+            margin: 0;
+            margin-left: 1rem;
+            display: block;
+            width: 18rem;
+            line-height: 1rem;
+        }
 
-    label {
-        line-height: 1.25rem;
-        height: 1.25rem;
-        display: block;
-        margin-left: 1rem;
-        padding-top: 0.25em;
-        color: #565656;
+        input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0px 1000px white inset;
+            box-shadow: 0 0 0px 1000px white inset;
+        }
     }
 
-    input {
-        border: none;
-        height: 2.25rem;
-        outline: 0;
-        padding: 0;
-        margin: 0;
-        margin-left: 1rem;
-        display: block;
-        width: 18rem;
-        line-height: 1rem;
+    button {
+        width: 20rem;
+        height: 3.75rem;
+        color: #ffffff;
+        background-color: $color2;
+        font-weight: 600;
+        font-size: 1.5rem;
+        border: 1px #565656 solid;
+        border-radius: 0.25rem;
+        cursor: pointer;
     }
-
-    input:-webkit-autofill {
-        -webkit-box-shadow: 0 0 0px 1000px white inset;
-        box-shadow: 0 0 0px 1000px white inset;
-    }
-}
-
-button {
-    width: 20rem;
-    height: 3.75rem;
-    color: #ffffff;
-    background-color: $color2;
-    font-weight: 600;
-    font-size: 1.5rem;
-    border: 1px #565656 solid;
-    border-radius: 0.25rem;
-    cursor: pointer;
 }

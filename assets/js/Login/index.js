@@ -1,5 +1,5 @@
 import '../csrf'
-import '../normalize.css'
+import '../app.scss'
 import './index.scss'
 import { Elm } from './Main.elm'
 

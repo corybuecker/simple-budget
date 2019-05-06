@@ -109,7 +109,7 @@ decodeToken x =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ class "login-form" ]
         [ Html.form [ onSubmit NoOperation ]
             [ div [ class "input-wrapper" ]
                 [ label [ for "email" ] [ text "Email" ]

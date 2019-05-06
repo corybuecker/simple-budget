@@ -85,6 +85,3 @@ config :simple_budget, SimpleBudgetWeb.Endpoint,
     certfile: "priv/cert/selfsigned.pem",
     keyfile: "priv/cert/selfsigned_key.pem"
   ]
-
-config :simple_budget, SimpleBudget.Endpoint,
-  force_ssl: [rewrite_on: [:x_forwarded_proto], host: nil]

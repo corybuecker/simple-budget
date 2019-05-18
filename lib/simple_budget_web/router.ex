@@ -4,8 +4,6 @@ defmodule SimpleBudgetWeb.Router do
   import SimpleBudgetWeb.Auth,
     only: [check_authenticated_session: 2, check_authenticated_api_session: 2]
 
-  @csp "default-src 'self'; script-src 'self' 'unsafe-eval' 'nonce-7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0='; frame-src 'self' https://accounts.google.com; object-src 'none'; style-src 'self' 'unsafe-inline'; connect-src 'self'"
-
   forward("/healthcheck", SimpleBudgetWeb.HealthcheckRouter)
 
   pipeline :browser do
@@ -15,7 +13,11 @@ defmodule SimpleBudgetWeb.Router do
     plug :fetch_session
     plug :fetch_flash
     plug :protect_from_forgery
-    plug :put_secure_browser_headers, %{"content-security-policy" => @csp}
+
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" =>
+        "default-src 'none'; script-src 'self' 'nonce-54a168223faae85076894ce271860de9'; style-src 'self'; img-src 'self'; frame-src 'self' https://accounts.google.com; connect-src 'self';"
+    }
   end
 
   pipeline :authenticated_browser do
@@ -29,6 +31,7 @@ defmodule SimpleBudgetWeb.Router do
     plug :fetch_session
     plug :protect_from_forgery
     plug :check_authenticated_api_session
+    plug :put_secure_browser_headers, %{"content-security-policy" => "default-src 'none';"}
   end
 
   scope "/auth", SimpleBudgetWeb do

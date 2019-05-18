@@ -1,6 +1,6 @@
-<script src="https://apis.google.com/js/platform.js?onload=logOutOfGoogle" async defer nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0="></script>
+<script src="https://apis.google.com/js/platform.js?onload=logOutOfGoogle" async defer></script>
 
-<script type="application/javascript" nonce="7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0=">
+<script type="application/javascript">
   function logOutOfGoogle() {
     gapi.load('auth2', function() {
       gapi.auth2.init({

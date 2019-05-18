@@ -32,14 +32,6 @@ defmodule SimpleBudgetWeb.SavingControllerTest do
     test "renders saving when data is valid", %{conn: conn} do
       conn = post(conn, Routes.saving_path(conn, :create), saving: @create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
-
-      conn = get(conn, Routes.saving_path(conn, :show, id))
-
-      assert json_response(conn, 200)["data"] == %{
-               "id" => id,
-               "amount" => 120.50,
-               "title" => "some title"
-             }
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -54,14 +46,6 @@ defmodule SimpleBudgetWeb.SavingControllerTest do
     test "renders saving when data is valid", %{conn: conn, saving: %Saving{id: id} = saving} do
       conn = put(conn, Routes.saving_path(conn, :update, saving), saving: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
-
-      conn = get(conn, Routes.saving_path(conn, :show, id))
-
-      assert json_response(conn, 200)["data"] == %{
-               "id" => id,
-               "amount" => 456.70,
-               "title" => "some updated title"
-             }
     end
 
     test "renders errors when data is invalid", %{conn: conn, saving: saving} do
@@ -76,10 +60,6 @@ defmodule SimpleBudgetWeb.SavingControllerTest do
     test "deletes chosen saving", %{conn: conn, saving: saving} do
       conn = delete(conn, Routes.saving_path(conn, :delete, saving))
       assert response(conn, 204)
-
-      assert_error_sent(404, fn ->
-        get(conn, Routes.saving_path(conn, :show, saving))
-      end)
     end
   end
 

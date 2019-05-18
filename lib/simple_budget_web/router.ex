@@ -9,6 +9,8 @@ defmodule SimpleBudgetWeb.Router do
   forward("/healthcheck", SimpleBudgetWeb.HealthcheckRouter)
 
   pipeline :browser do
+    plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
+
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
@@ -21,6 +23,8 @@ defmodule SimpleBudgetWeb.Router do
   end
 
   pipeline :api do
+    plug Plug.SSL, rewrite_on: [:x_forwarded_proto]
+
     plug :accepts, ["json"]
     plug :fetch_session
     plug :protect_from_forgery

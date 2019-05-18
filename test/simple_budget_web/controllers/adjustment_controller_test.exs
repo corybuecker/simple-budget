@@ -42,15 +42,6 @@ defmodule SimpleBudgetWeb.AdjustmentControllerTest do
         )
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
-
-      conn = get(conn, Routes.account_adjustment_path(conn, :show, account, id))
-
-      assert json_response(conn, 200)["data"] == %{
-               "id" => id,
-               "title" => "test",
-               "total" => 120.5,
-               "account_id" => account.id
-             }
     end
 
     test "renders errors when data is invalid", %{conn: conn, account: account} do
@@ -81,15 +72,6 @@ defmodule SimpleBudgetWeb.AdjustmentControllerTest do
         )
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
-
-      conn = get(conn, Routes.account_adjustment_path(conn, :show, account, id))
-
-      assert json_response(conn, 200)["data"] == %{
-               "id" => id,
-               "title" => "test",
-               "total" => 456.7,
-               "account_id" => @account_id
-             }
     end
 
     test "renders errors when data is invalid", %{
@@ -114,10 +96,6 @@ defmodule SimpleBudgetWeb.AdjustmentControllerTest do
     test "deletes chosen adjustments", %{conn: conn, adjustment: adjustment, account: account} do
       conn = delete(conn, Routes.account_adjustment_path(conn, :delete, account, adjustment))
       assert response(conn, 204)
-
-      assert_error_sent(404, fn ->
-        get(conn, Routes.account_adjustment_path(conn, :show, account, adjustment))
-      end)
     end
   end
 

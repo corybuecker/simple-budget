@@ -42,16 +42,6 @@ defmodule SimpleBudgetWeb.GoalControllerTest do
     test "renders goal when data is valid", %{conn: conn} do
       conn = post(conn, Routes.goal_path(conn, :create), goal: @create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
-
-      conn = get(conn, Routes.goal_path(conn, :show, id))
-
-      assert json_response(conn, 200)["data"] == %{
-               "id" => id,
-               "end_date" => "2010-04-17",
-               "start_date" => "2010-04-17",
-               "target" => 120.50,
-               "title" => "some title"
-             }
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -66,16 +56,6 @@ defmodule SimpleBudgetWeb.GoalControllerTest do
     test "renders goal when data is valid", %{conn: conn, goal: %Goal{id: id} = goal} do
       conn = put(conn, Routes.goal_path(conn, :update, goal), goal: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
-
-      conn = get(conn, Routes.goal_path(conn, :show, id))
-
-      assert json_response(conn, 200)["data"] == %{
-               "id" => id,
-               "end_date" => "2011-05-18",
-               "start_date" => "2011-05-18",
-               "target" => 456.70,
-               "title" => "some updated title"
-             }
     end
 
     test "renders errors when data is invalid", %{conn: conn, goal: goal} do
@@ -90,10 +70,6 @@ defmodule SimpleBudgetWeb.GoalControllerTest do
     test "deletes chosen goal", %{conn: conn, goal: goal} do
       conn = delete(conn, Routes.goal_path(conn, :delete, goal))
       assert response(conn, 204)
-
-      assert_error_sent(404, fn ->
-        get(conn, Routes.goal_path(conn, :show, goal))
-      end)
     end
   end
 

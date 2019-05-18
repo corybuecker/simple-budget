@@ -35,6 +35,7 @@ defmodule SimpleBudgetWeb.ConnCase do
       Sandbox.mode(SimpleBudget.Repo, {:shared, self()})
     end
 
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    {:ok,
+     conn: Phoenix.ConnTest.build_conn() |> Plug.Conn.put_req_header("x-forwarded-proto", "https")}
   end
 end

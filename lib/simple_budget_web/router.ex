@@ -6,16 +6,13 @@ defmodule SimpleBudgetWeb.Router do
 
   @csp "default-src 'self'; script-src 'self' 'unsafe-eval' 'nonce-7q1w9Jiyp2Kf0xrGOGtdQGaW3IljYiEQXzOe/ftW9Q0='; frame-src 'self' https://accounts.google.com; object-src 'none'; style-src 'self' 'unsafe-inline'; connect-src 'self'"
 
+  forward("/healthcheck", SimpleBudgetWeb.HealthcheckRouter)
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
     plug :protect_from_forgery
-
-    if Mix.env() == :prod do
-      plug Plug.SSL, rewrite_on: [:x_forwarded_proto], hsts: true
-    end
-
     plug :put_secure_browser_headers, %{"content-security-policy" => @csp}
   end
 
@@ -27,15 +24,8 @@ defmodule SimpleBudgetWeb.Router do
     plug :accepts, ["json"]
     plug :fetch_session
     plug :protect_from_forgery
-
-    if Mix.env() == :prod do
-      plug Plug.SSL, rewrite_on: [:x_forwarded_proto], hsts: true
-    end
-
     plug :check_authenticated_api_session
   end
-
-  forward("/healthcheck", SimpleBudgetWeb.HealthcheckRouter)
 
   scope "/auth", SimpleBudgetWeb do
     pipe_through :browser

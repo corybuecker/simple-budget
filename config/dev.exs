@@ -66,22 +66,14 @@ config :phoenix, :stacktrace_depth, 20
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
-# Configure your database
-config :simple_budget, SimpleBudget.Repo,
-  username: "postgres",
-  password: "postgres",
-  database: "simple_budget_dev",
-  hostname: System.get_env("HOSTNAME") || "localhost",
-  pool_size: 10
-
-config :simple_budget,
-  token_key: "must_be_set_in_envrionment_outside_development"
-
 config :simple_budget, SimpleBudgetWeb.Endpoint,
-  http: [port: 4000],
   https: [
     port: 4001,
     cipher_suite: :strong,
     certfile: "priv/cert/selfsigned.pem",
     keyfile: "priv/cert/selfsigned_key.pem"
   ]
+
+config :simple_budget, SimpleBudget.Repo,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: 6

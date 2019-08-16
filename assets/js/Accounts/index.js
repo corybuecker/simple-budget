@@ -1,4 +1,3 @@
-import "phoenix_html"
 import "../csrf"
 
 import { Elm } from './Main.elm'

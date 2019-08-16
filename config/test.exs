@@ -13,10 +13,7 @@ config :logger, level: :warn
 
 # Configure your database
 config :simple_budget, SimpleBudget.Repo,
-  username: "postgres",
-  password: "postgres",
-  database: "simple_budget_test",
-  hostname: "localhost",
+  url: System.get_env("TEST_DATABASE_URL"),
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :argon2_elixir, t_cost: 2, m_cost: 8

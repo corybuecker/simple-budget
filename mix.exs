@@ -5,7 +5,7 @@ defmodule SimpleBudget.MixProject do
     [
       app: :simple_budget,
       version: "1.0.0",
-      elixir: "1.8.1",
+      elixir: "1.9.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -40,23 +40,23 @@ defmodule SimpleBudget.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "1.4.4"},
+      {:phoenix, "1.4.9"},
       {:phoenix_pubsub, "1.1.2"},
       {:phoenix_ecto, "4.0.0"},
-      {:phoenix_html, "2.13.2"},
-      {:ecto_sql, "3.1.1"},
-      {:postgrex, "0.14.2"},
-      {:gettext, "0.16.1"},
+      {:phoenix_html, "2.13.3"},
+      {:ecto_sql, "3.1.6"},
+      {:postgrex, "0.15.0"},
+      {:gettext, "0.17.0"},
       {:jason, "1.1.2"},
-      {:plug_cowboy, "2.0.2"},
+      {:plug_cowboy, "2.1.0"},
       {:poison, "3.1.0"},
-      {:timex, "3.5.0"},
-      {:argon2_elixir, "2.0.4"},
-      {:joken_jwks, git: "https://github.com/victorolinasc/joken_jwks"},
-      {:mox, "0.5.0", only: :test},
-      {:excoveralls, "0.11.0", only: :test},
-      {:phoenix_live_reload, "1.2.0", only: :dev},
-      {:credo, "1.0.5", only: [:dev, :test], runtime: false}
+      {:timex, "3.6.1"},
+      {:argon2_elixir, "2.0.5"},
+      {:joken_jwks, "1.1.0"},
+      {:mox, "0.5.1", only: :test},
+      {:excoveralls, "0.11.1", only: :test},
+      {:phoenix_live_reload, "1.2.1", only: :dev},
+      {:credo, "1.1.2", only: [:dev, :test], runtime: false}
     ]
   end
 

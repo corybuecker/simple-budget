@@ -1,4 +1,12 @@
 defmodule SimpleBudget.TokenAuth.Google do
+  defmodule Strategy do
+    use JokenJwks.DefaultStrategyTemplate
+
+    def init_opts(opts) do
+      Keyword.merge(opts, jwks_url: "https://www.googleapis.com/oauth2/v3/certs")
+    end
+  end
+
   @moduledoc false
 
   @callback user_valid?(String.t()) :: boolean
@@ -8,7 +16,7 @@ defmodule SimpleBudget.TokenAuth.Google do
 
   alias SimpleBudget.Users
 
-  add_hook(JokenJwks, jwks_url: "https://www.googleapis.com/oauth2/v3/certs")
+  add_hook(JokenJwks, strategy: Strategy)
 
   def token_config do
     default_claims(

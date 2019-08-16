@@ -1,4 +1,4 @@
-FROM elixir:1.8.1-alpine AS builder
+FROM elixir:1.9.0-alpine AS builder
 RUN apk update && apk add git make build-base
 COPY mix.exs mix.lock /app/
 WORKDIR /app

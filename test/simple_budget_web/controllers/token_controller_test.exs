@@ -30,7 +30,7 @@ defmodule SimpleBudgetWeb.TokenControllerTest do
       |> put_req_header("content-type", "application/json")
       |> post(Routes.token_path(conn, :create), email: "test@users.com", password: "password")
 
-    response = json_response(conn, 401)
+    assert json_response(conn, 401)
   end
 
   test "create token with non-email configuration", %{conn: conn} do

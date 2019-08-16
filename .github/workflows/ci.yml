@@ -27,3 +27,17 @@ jobs:
       run: |
         mix test
         mix credo --strict
+  frontend:
+    runs-on: ubuntu-latest
+    container: node:11.15.0
+    steps:
+    - uses: actions/checkout@master
+    - name: Install Dependencies
+      run: |
+        cd assets
+        npm install elm
+        npm install
+    - name: Compile Assets
+      run: |
+        cd assets
+        npm run deploy

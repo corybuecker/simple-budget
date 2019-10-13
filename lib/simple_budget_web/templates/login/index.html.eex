@@ -1,23 +1,2 @@
-<script src="<%= Routes.static_path(@conn, "/js/login.js") %>"></script>
-
 <div id="login" />
-
-<script defer type="application/javascript" nonce="54a168223faae85076894ce271860de9">
-  var loginView = new Login({'ssoEnabled': '<%= Application.get_env(:simple_budget, :sso_enabled) %>'});
-  loginView.render();
-</script>
-
-<script src="https://apis.google.com/js/platform.js?onload=init" async defer nonce="54a168223faae85076894ce271860de9"></script>
-
-<script type="application/javascript" nonce="54a168223faae85076894ce271860de9">
-  function init() {
-    gapi.load('auth2', function() {
-      gapi.auth2.init({
-        client_id: '<%= Application.get_env(:simple_budget, :google_client_id) %>',
-        ux_mode: "redirect"
-      }).then(function() {
-        loginView.renderGoogleAuth();
-      });
-    });
-  }
-</script>
+<script async src="<%= Routes.static_path(@conn, "/js/login.js") %>"></script>

@@ -1,15 +1,20 @@
 defmodule SimpleBudgetWeb.AccountControllerTest do
   use SimpleBudgetWeb.ConnCase
-
+  use Plug.Test
   alias SimpleBudget.Accounts
   alias SimpleBudget.Accounts.Account
 
   @create_attrs %{name: "some name", balance: 123, debt: false}
   @update_attrs %{name: "some updated name", balance: 345, debt: true}
   @invalid_attrs %{name: nil}
+  def user_fixture do
+    {:ok, user} = %{email: "test@test.com", password: "test"} |> SimpleBudget.Users.create_user()
+
+    %{user_id: user.id}
+  end
 
   def fixture(:account) do
-    {:ok, account} = Accounts.create_account(@create_attrs)
+    {:ok, account} = Accounts.create_account(@create_attrs |> Enum.into(user_fixture()))
     account
   end
 

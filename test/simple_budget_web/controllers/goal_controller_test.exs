@@ -1,6 +1,6 @@
 defmodule SimpleBudgetWeb.GoalControllerTest do
   use SimpleBudgetWeb.ConnCase
-
+  use Plug.Test
   alias SimpleBudget.Goals
   alias SimpleBudget.Goals.Goal
 

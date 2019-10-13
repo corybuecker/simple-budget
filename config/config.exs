@@ -12,8 +12,9 @@ config :simple_budget,
 
 # Configures the endpoint
 config :simple_budget, SimpleBudgetWeb.Endpoint,
-  http: [port: 4000],
-  secret_key_base: System.get_env("SECRET_KEY_BASE"),
+  url: [host: "localhost"],
+  secret_key_base:
+    "SECRETKEYBASE_SECRETKEYBASE_SECRETKEYBASE_SECRETKEYBASE_SECRETKEYBASE_SECRETKEYBASE_SECRETKEYBASE_SECRETKEYBASE_SECRETKEYBASE_SECRETKEYBASE",
   render_errors: [view: SimpleBudgetWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: SimpleBudget.PubSub, adapter: Phoenix.PubSub.PG2]
 
@@ -22,16 +23,12 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-config :simple_budget, env: Mix.env()
+# Use Jason for JSON parsing in Phoenix
+config :phoenix, :json_library, Jason
 
 config :simple_budget,
-  token_key: System.get_env("TOKEN_KEY"),
-  google_client_id: System.get_env("GOOGLE_CLIENT_ID"),
-  sso_enabled: true
-
-config :simple_budget,
-  cookie_signing_salt: System.get_env("COOKIE_SIGNING_SALT"),
-  cookie_encryption_salt: System.get_env("COOKIE_ENCRYPTION_SALT")
+  token_key:
+    "TOKENSECRET_TOKENSECRET_TOKENSECRET_TOKENSECRET_TOKENSECRET_TOKENSECRET_TOKENSECRET_TOKENSECRET_TOKENSECRET_TOKENSECRET"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

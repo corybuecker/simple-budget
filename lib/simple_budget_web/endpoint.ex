@@ -12,7 +12,7 @@ defmodule SimpleBudgetWeb.Endpoint do
   plug Plug.Static,
     at: "/",
     from: :simple_budget,
-    gzip: true,
+    gzip: false,
     only: ~w(css fonts images js favicon.ico robots.txt)
 
   # Code reloading can be explicitly enabled under the
@@ -24,7 +24,7 @@ defmodule SimpleBudgetWeb.Endpoint do
   end
 
   plug Plug.RequestId
-  plug Plug.Logger
+  plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
@@ -40,10 +40,7 @@ defmodule SimpleBudgetWeb.Endpoint do
   plug Plug.Session,
     store: :cookie,
     key: "_simple_budget_key",
-    secure: Application.get_env(:simple_budget, :env) == :prod,
-    signing_salt: Application.get_env(:simple_budget, :cookie_signing_salt),
-    encryption_salt: Application.get_env(:simple_budget, :cookie_encryption_salt),
-    max_age: 3600
+    signing_salt: "iLsSqM8N"
 
   plug SimpleBudgetWeb.Router
 end

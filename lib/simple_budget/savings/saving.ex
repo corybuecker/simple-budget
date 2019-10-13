@@ -3,11 +3,12 @@ defmodule SimpleBudget.Savings.Saving do
   use Ecto.Schema
   import Ecto.Changeset
   alias SimpleBudget.Savings.Saving
+  alias SimpleBudget.Users.User
 
   schema "savings" do
     field(:amount, :decimal, scale: 8, precision: 2)
     field(:title, :string)
-
+    belongs_to :user, User
     timestamps()
   end
 
@@ -15,6 +16,6 @@ defmodule SimpleBudget.Savings.Saving do
   def changeset(%Saving{} = saving, attrs) do
     saving
     |> cast(attrs, [:title, :amount])
-    |> validate_required([:title, :amount])
+    |> validate_required([:title, :amount, :user])
   end
 end

@@ -7,6 +7,7 @@ defmodule SimpleBudget.Savings do
   alias SimpleBudget.Repo
 
   alias SimpleBudget.Savings.Saving
+  alias SimpleBudget.Users.User
 
   @doc """
   Returns the list of savings.
@@ -17,8 +18,9 @@ defmodule SimpleBudget.Savings do
       [%Saving{}, ...]
 
   """
-  def list_savings do
-    Repo.all(Saving)
+  def list_savings(user) do
+    query = from s in Saving, where: s.user_id == ^user.id
+    query |> Repo.all() |> Repo.preload(:user)
   end
 
   @doc """
@@ -35,7 +37,10 @@ defmodule SimpleBudget.Savings do
       ** (Ecto.NoResultsError)
 
   """
-  def get_saving!(id), do: Repo.get!(Saving, id)
+  def get_saving!(user, id) do
+    query = from s in Saving, where: s.user_id == ^user.id, where: s.id == ^id
+    query |> Repo.one!() |> Repo.preload(:user)
+  end
 
   @doc """
   Creates a saving.
@@ -49,10 +54,8 @@ defmodule SimpleBudget.Savings do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_saving(attrs \\ %{}) do
-    %Saving{}
-    |> Saving.changeset(attrs)
-    |> Repo.insert()
+  def create_saving(attrs \\ %{}, %User{} = user) do
+    %Saving{user: user} |> Saving.changeset(attrs) |> Repo.insert()
   end
 
   @doc """

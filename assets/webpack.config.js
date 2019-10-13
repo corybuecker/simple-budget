@@ -1,9 +1,9 @@
 const path = require('path');
+const glob = require('glob');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const ElmMinify = require('elm-minify');
 
 module.exports = (env, options) => ({
   optimization: {
@@ -13,25 +13,14 @@ module.exports = (env, options) => ({
     ]
   },
   entry: {
-    accounts: "./js/Accounts",
-    goals: "./js/Goals",
-    savings: "./js/Savings",
-    login: "./js/Login",
-    calculations: "./js/Calculations"
+    app: glob.sync('./vendor/**/*.js').concat(['./js/app.js']),
+    login: ['./js/login']
   },
   output: {
     path: path.resolve(__dirname, '../priv/static/js')
   },
   module: {
     rules: [
-      {
-        test: /\.scss$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          "css-loader",
-          "sass-loader"
-        ]
-      },
       {
         test: /\.js$/,
         exclude: /node_modules/,
@@ -42,22 +31,11 @@ module.exports = (env, options) => ({
       {
         test: /\.css$/,
         use: [MiniCssExtractPlugin.loader, 'css-loader']
-      },
-      {
-        test: /\.elm$/,
-        exclude: [/elm-stuff/, /node_modules/],
-        loader: "elm-webpack-loader",
-        options: {
-          cwd: path.resolve(__dirname, "js"),
-          optimize: true
-        }
       }
     ]
   },
-  devtool: 'none',
   plugins: [
     new MiniCssExtractPlugin({ filename: '../css/app.css' }),
-    new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
-    new ElmMinify.WebpackPlugin()
+    new CopyWebpackPlugin([{ from: 'static/', to: '../' }])
   ]
 });

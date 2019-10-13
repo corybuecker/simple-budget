@@ -11,8 +11,7 @@ defmodule SimpleBudget.Application do
       # Start the Ecto repository
       SimpleBudget.Repo,
       # Start the endpoint when the application starts
-      SimpleBudgetWeb.Endpoint,
-      {SimpleBudget.TokenAuth.Google.Strategy, first_fetch_sync: true}
+      SimpleBudgetWeb.Endpoint
       # Starts a worker by calling: SimpleBudget.Worker.start_link(arg)
       # {SimpleBudget.Worker, arg},
     ]

@@ -9,19 +9,26 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
+user =
+  SimpleBudget.Repo.insert!(%SimpleBudget.Users.User{
+    email: "test@user.com",
+    password: Argon2.hash_pwd_salt("password")
+  })
 
 credit_card =
   SimpleBudget.Repo.insert!(%SimpleBudget.Accounts.Account{
     name: "Credit Card",
     balance: 1000.0,
-    debt: true
+    debt: true,
+    user: user
   })
 
 checking =
   SimpleBudget.Repo.insert!(%SimpleBudget.Accounts.Account{
     name: "Checking",
     balance: 1000.0,
-    debt: false
+    debt: false,
+    user: user
   })
 
 SimpleBudget.Repo.insert!(%SimpleBudget.Accounts.Adjustment{
@@ -42,15 +49,12 @@ SimpleBudget.Repo.insert!(%SimpleBudget.Goals.Goal{
   title: "New Laptop",
   target: 2352.52,
   start_date: Timex.shift(Timex.today(), months: -1),
-  end_date: Timex.shift(Timex.today(), months: 1)
+  end_date: Timex.shift(Timex.today(), months: 1),
+  user: user
 })
 
 SimpleBudget.Repo.insert!(%SimpleBudget.Savings.Saving{
   title: "Checking Account Buffer",
-  amount: 250
-})
-
-SimpleBudget.Repo.insert!(%SimpleBudget.Users.User{
-  email: "test@user.com",
-  password: Argon2.hash_pwd_salt("password")
+  amount: 250,
+  user: user
 })

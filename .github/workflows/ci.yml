@@ -3,16 +3,18 @@ on: push
 jobs:
   backend:
     runs-on: ubuntu-latest
-    container: elixir:1.9.0
+    container: elixir:1.9.1
     services:
       postgres:
-        image: postgres:11-alpine
+        image: postgres:10-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
         ports:
         - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
     - uses: actions/checkout@master
-    - name: Install Dependencies
+    - name: Install BE dependencies
       env:
         MIX_ENV: test
       run: |
@@ -20,10 +22,10 @@ jobs:
         mix local.hex --force
         mix deps.get
         mix deps.compile
-    - name: Run Tests
+    - name: Run tests
       env:
         MIX_ENV: test
-        TEST_DATABASE_URL: postgres://postgres@postgres:5432/simple_budget_test
+        TEST_DATABASE_URL: ecto://postgres:postgres@postgres:5432/simple_budget_test
       run: |
         mix test
         mix credo --strict
@@ -35,7 +37,6 @@ jobs:
     - name: Install Dependencies
       run: |
         cd assets
-        npm install elm
         npm install
     - name: Compile Assets
       run: |

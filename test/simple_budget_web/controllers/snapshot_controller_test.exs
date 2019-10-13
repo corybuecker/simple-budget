@@ -1,6 +1,6 @@
 defmodule SimpleBudgetWeb.SnapshotControllerTest do
   use SimpleBudgetWeb.ConnCase
-
+  use Plug.Test
   alias SimpleBudget.Accounts
 
   @account_id 42

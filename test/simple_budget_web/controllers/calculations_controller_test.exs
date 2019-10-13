@@ -1,5 +1,6 @@
 defmodule SimpleBudgetWeb.CalculationsControllerTest do
   use SimpleBudgetWeb.ConnCase
+  use Plug.Test
 
   setup %{conn: conn} do
     {:ok,

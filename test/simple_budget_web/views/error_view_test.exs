@@ -8,12 +8,7 @@ defmodule SimpleBudgetWeb.ErrorViewTest do
     assert render_to_string(SimpleBudgetWeb.ErrorView, "404.html", []) == "Not Found"
   end
 
-  test "render 500.html" do
+  test "renders 500.html" do
     assert render_to_string(SimpleBudgetWeb.ErrorView, "500.html", []) == "Internal Server Error"
-  end
-
-  test "render any other" do
-    assert render_to_string(SimpleBudgetWeb.ErrorView, "505.html", []) ==
-             "HTTP Version Not Supported"
   end
 end

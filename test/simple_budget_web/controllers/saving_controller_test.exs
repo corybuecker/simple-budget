@@ -1,6 +1,6 @@
 defmodule SimpleBudgetWeb.SavingControllerTest do
   use SimpleBudgetWeb.ConnCase
-
+  use Plug.Test
   alias SimpleBudget.Savings
   alias SimpleBudget.Savings.Saving
 

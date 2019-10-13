@@ -4,20 +4,13 @@ defmodule SimpleBudget.MixProject do
   def project do
     [
       app: :simple_budget,
-      version: "1.0.0",
-      elixir: "1.9.0",
+      version: "0.1.0",
+      elixir: "1.9.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps(),
-      test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test
-      ]
+      deps: deps()
     ]
   end
 
@@ -40,23 +33,23 @@ defmodule SimpleBudget.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "1.4.9"},
-      {:phoenix_pubsub, "1.1.2"},
-      {:phoenix_ecto, "4.0.0"},
-      {:phoenix_html, "2.13.3"},
-      {:ecto_sql, "3.1.6"},
-      {:postgrex, "0.15.0"},
-      {:gettext, "0.17.0"},
-      {:jason, "1.1.2"},
-      {:plug_cowboy, "2.1.0"},
-      {:poison, "3.1.0"},
+      {:phoenix, "1.4.11"},
+      {:phoenix_pubsub, "~> 1.1"},
+      {:phoenix_ecto, "4.1.0"},
+      {:ecto_sql, "3.2.1"},
+      {:postgrex, ">= 0.0.0"},
+      {:phoenix_html, "~> 2.11"},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
+      {:gettext, "0.17.1"},
+      {:jason, "~> 1.0"},
+      {:plug_cowboy, "~> 2.0"},
+      {:poison, "~> 4.0"},
       {:timex, "3.6.1"},
-      {:argon2_elixir, "2.0.5"},
-      {:joken_jwks, "1.1.0"},
+      {:argon2_elixir, "2.1.2"},
+      {:joken_jwks, "1.2.0"},
       {:mox, "0.5.1", only: :test},
-      {:excoveralls, "0.11.1", only: :test},
-      {:phoenix_live_reload, "1.2.1", only: :dev},
-      {:credo, "1.1.2", only: [:dev, :test], runtime: false}
+      {:excoveralls, "0.12.0", only: :test},
+      {:credo, "~> 1.1", only: [:dev, :test], runtime: false}
     ]
   end
 

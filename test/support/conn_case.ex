@@ -20,7 +20,6 @@ defmodule SimpleBudgetWeb.ConnCase do
     quote do
       # Import conveniences for testing with connections
       use Phoenix.ConnTest
-      use Plug.Test
       alias SimpleBudgetWeb.Router.Helpers, as: Routes
 
       # The default endpoint for testing
@@ -35,7 +34,6 @@ defmodule SimpleBudgetWeb.ConnCase do
       Sandbox.mode(SimpleBudget.Repo, {:shared, self()})
     end
 
-    {:ok,
-     conn: Phoenix.ConnTest.build_conn() |> Plug.Conn.put_req_header("x-forwarded-proto", "https")}
+    {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

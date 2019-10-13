@@ -1,40 +1,9 @@
 defmodule SimpleBudgetWeb.PageControllerTest do
   use SimpleBudgetWeb.ConnCase
+  use Plug.Test
 
   test "GET /", %{conn: conn} do
-    conn = get(conn |> init_test_session(%{token: "validid"}), "/")
-    assert html_response(conn, 200) =~ "app\.js"
-  end
-
-  test "GET /accounts", %{conn: conn} do
-    conn = get(conn |> init_test_session(%{token: "validid"}), "/accounts")
-    assert html_response(conn, 200) =~ "accounts\.js"
-  end
-
-  test "GET /goals", %{conn: conn} do
-    conn = get(conn |> init_test_session(%{token: "validid"}), "/goals")
-    assert html_response(conn, 200) =~ "goals\.js"
-  end
-
-  test "GET /savings", %{conn: conn} do
-    conn = get(conn |> init_test_session(%{token: "validid"}), "/savings")
-    assert html_response(conn, 200) =~ "savings\.js"
-  end
-
-  test "unauthorized GET /", %{conn: conn} do
     conn = get(conn, "/")
-    assert redirected_to(conn, 302) =~ "/login"
-  end
-
-  test "unauthorized GET /api", %{conn: conn} do
-    conn = conn |> put_req_header("accept", "application/json") |> get("/api/accounts")
-
-    assert json_response(conn, 401)
-  end
-
-  test "not found", %{conn: conn} do
-    assert_raise Phoenix.Router.NoRouteError, fn ->
-      get(conn, "/unknown")
-    end
+    assert html_response(conn, 200) =~ "app.js"
   end
 end

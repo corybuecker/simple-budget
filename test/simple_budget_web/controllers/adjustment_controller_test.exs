@@ -1,6 +1,6 @@
 defmodule SimpleBudgetWeb.AdjustmentControllerTest do
   use SimpleBudgetWeb.ConnCase
-
+  use Plug.Test
   alias SimpleBudget.Accounts
   alias SimpleBudget.Accounts.Adjustment
 

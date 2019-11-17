@@ -5,6 +5,13 @@ defmodule SimpleBudget.Users do
 
   alias SimpleBudget.Users.User
 
+  def get_user(id) do
+    email_query = from u in User, where: u.id == ^id
+
+    email_query
+    |> Repo.one!()
+  end
+
   def get_user!(email) do
     email_query =
       from(u in User,

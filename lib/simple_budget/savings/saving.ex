@@ -15,7 +15,8 @@ defmodule SimpleBudget.Savings.Saving do
   @doc false
   def changeset(%Saving{} = saving, attrs) do
     saving
-    |> cast(attrs, [:title, :amount])
-    |> validate_required([:title, :amount, :user])
+    |> cast(attrs, [:title, :amount, :user_id])
+    |> validate_required([:title, :amount, :user_id])
+    |> assoc_constraint(:user)
   end
 end

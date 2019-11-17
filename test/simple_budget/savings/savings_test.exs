@@ -12,21 +12,18 @@ defmodule SimpleBudget.SavingsTest do
 
     def user_fixture do
       {:ok, user} = Users.create_user(%{email: "test@test.com", password: "Test"})
-      user
+      user.id
     end
 
     def saving_fixture(attrs \\ %{}) do
-      {:ok, saving} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Savings.create_saving(user_fixture())
-
-      saving
+      attrs
+      |> Enum.into(@valid_attrs)
+      |> Savings.create_saving!()
     end
 
     test "list_savings/1 returns all savings" do
-      saving = saving_fixture()
-      assert Savings.list_savings(saving.user) == [saving]
+      saving = saving_fixture(%{user_id: user_fixture()})
+      assert Savings.list_savings(saving.user_id) == [saving]
     end
 
     test "get_saving!/2 returns the saving with given id" do
@@ -35,7 +32,7 @@ defmodule SimpleBudget.SavingsTest do
     end
 
     test "create_saving/1 with valid data creates a saving" do
-      assert {:ok, %Saving{} = saving} = Savings.create_saving(@valid_attrs, user_fixture())
+      assert {:ok, %Saving{} = saving} = Savings.create_saving!(@valid_attrs, user_fixture())
 
       assert saving.amount == Decimal.from_float(120.55)
       assert saving.title == "some title"
@@ -61,8 +58,8 @@ defmodule SimpleBudget.SavingsTest do
     end
 
     test "update_saving/2 with invalid data returns error changeset" do
-      saving = saving_fixture()
-      update_changeset = %{amount: nil, user: saving.user}
+      saving = saving_fixture(%{user_id: user_fixture()})
+      update_changeset = %{amount: nil}
       assert {:error, %Ecto.Changeset{}} = Savings.update_saving(saving, update_changeset)
       assert saving == Savings.get_saving!(saving.user, saving.id)
     end

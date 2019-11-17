@@ -1,7 +1,8 @@
 [
   {
-    "key": "ctrl+shift+t",
+    "key": "shift+cmd+t",
     "command": "workbench.action.tasks.runTask",
-    "args": "mix test"
+    "args": "mix test",
+    "when": "editorTextFocus"
   }
 ]

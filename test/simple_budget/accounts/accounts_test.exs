@@ -15,33 +15,33 @@ defmodule SimpleBudget.AccountsTest do
       {:ok, user} =
         %{email: "test@test.com", password: "test"} |> SimpleBudget.Users.create_user()
 
-      %{user_id: user.id}
+      user.id
     end
 
     def account_fixture(attrs \\ %{}) do
       {:ok, account} =
         attrs
         |> Enum.into(@valid_attrs)
-        |> Enum.into(user_fixture())
         |> Accounts.create_account()
 
       account
     end
 
-    test "list_accounts/0 returns all accounts" do
-      account = account_fixture()
-      assert Accounts.list_accounts() == [account |> Repo.preload(:adjustments)]
+    test "list_accounts/1 returns all accounts" do
+      user_id = user_fixture()
+      account = account_fixture(%{user_id: user_id})
+      assert Accounts.list_accounts(user_id) == [account]
     end
 
     test "get_account!/1 returns the account with given id" do
-      account = account_fixture()
-      account_query = Accounts.get_account!(account.id)
+      account = account_fixture(%{user_id: user_fixture()})
+      account_query = Accounts.get_account!(account.user_id, account.id)
       assert account_query |> Repo.preload(:adjustments) == account
     end
 
     test "create_account/1 with valid data creates a account" do
       assert {:ok, %Account{} = account} =
-               Accounts.create_account(@valid_attrs |> Enum.into(user_fixture()))
+               Accounts.create_account(@valid_attrs |> Enum.into(%{user_id: user_fixture()}))
 
       assert account.name == "some name"
     end
@@ -51,14 +51,14 @@ defmodule SimpleBudget.AccountsTest do
     end
 
     test "update_account/2 with valid data updates the account" do
-      account = account_fixture()
+      account = account_fixture(%{user_id: user_fixture()})
       assert {:ok, account} = Accounts.update_account(account, @update_attrs)
       assert %Account{} = account
       assert account.name == "some updated name"
     end
 
     test "update_account/2 with valid data creates a snapshot" do
-      account = account_fixture()
+      account = account_fixture(%{user_id: user_fixture()})
       assert {:ok, account} = Accounts.update_account(account, @update_attrs)
       assert %Account{} = account
       assert account.name == "some updated name"
@@ -76,29 +76,32 @@ defmodule SimpleBudget.AccountsTest do
     end
 
     test "update_account/2 with invalid data returns error changeset" do
-      account = account_fixture()
+      account = account_fixture(%{user_id: user_fixture()})
       assert {:error, %Ecto.Changeset{}} = Accounts.update_account(account, @invalid_attrs)
-      account_query = Accounts.get_account!(account.id)
+      account_query = Accounts.get_account!(account.user_id, account.id)
       assert account == account_query |> Repo.preload(:adjustments)
     end
 
     test "update_account/2 with invalid data does not create a snapshot" do
-      account = account_fixture()
+      account = account_fixture(%{user_id: user_fixture()})
       assert {:error, %Ecto.Changeset{}} = Accounts.update_account(account, @invalid_attrs)
-      account_query = Accounts.get_account!(account.id)
+      account_query = Accounts.get_account!(account.user_id, account.id)
 
       assert account == account_query |> Repo.preload(:adjustments)
       assert [] = Accounts.list_snapshots()
     end
 
     test "delete_account/1 deletes the account" do
-      account = account_fixture()
+      account = account_fixture(%{user_id: user_fixture()})
       assert {:ok, %Account{}} = Accounts.delete_account(account)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_account!(account.id) end
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Accounts.get_account!(account.user_id, account.id)
+      end
     end
 
     test "change_account/1 returns a account changeset" do
-      account = account_fixture()
+      account = account_fixture(%{user_id: user_fixture()})
       assert %Ecto.Changeset{} = Accounts.change_account(account)
     end
   end

@@ -18,8 +18,8 @@ defmodule SimpleBudget.Savings do
       [%Saving{}, ...]
 
   """
-  def list_savings(user) do
-    query = from s in Saving, where: s.user_id == ^user.id
+  def list_savings(user_id) when is_integer(user_id) do
+    query = from s in Saving, where: s.user_id == ^user_id
     query |> Repo.all() |> Repo.preload(:user)
   end
 
@@ -54,8 +54,8 @@ defmodule SimpleBudget.Savings do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_saving(attrs \\ %{}, %User{} = user) do
-    %Saving{user: user} |> Saving.changeset(attrs) |> Repo.insert()
+  def create_saving!(attrs \\ %{}) do
+    %Saving{} |> Saving.changeset(attrs) |> Repo.insert!() |> Repo.preload(:user)
   end
 
   @doc """

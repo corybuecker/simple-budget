@@ -1,11 +1,14 @@
 defmodule SimpleBudgetWeb.Auth do
-  @moduledoc false
   import Plug.Conn
   import Phoenix.Controller, only: [redirect: 2]
+  def init(_), do: nil
 
-  def check_authenticated_session(conn, _) do
-    case get_session(conn, :token) do
-      token when byte_size(token) > 0 ->
+  def authenticated_session(conn, _) do
+    case get_session(conn, :user_id) do
+      user_id when is_integer(user_id) and user_id > 0 ->
+        user = SimpleBudget.Users.get_user(user_id)
+        conn = conn |> assign(:user, user)
+
         conn
 
       _ ->
@@ -13,9 +16,12 @@ defmodule SimpleBudgetWeb.Auth do
     end
   end
 
-  def check_authenticated_api_session(conn, _) do
-    case get_session(conn, :token) do
-      token when byte_size(token) > 0 ->
+  def authenticated_api_session(conn, _) do
+    case get_session(conn, :user_id) do
+      user_id when is_integer(user_id) and user_id > 0 ->
+        user = SimpleBudget.Users.get_user(user_id)
+        conn = conn |> assign(:user, user)
+
         conn
 
       _ ->

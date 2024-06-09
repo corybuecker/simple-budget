@@ -5,7 +5,7 @@ use mongodb::Client;
 use simple_logger::SimpleLogger;
 use std::{env, str::FromStr};
 use tera::Tera;
-
+mod api;
 #[derive(Clone)]
 struct SharedState {
     tera: Tera,
@@ -42,6 +42,7 @@ async fn main() {
 
     let app = Router::new()
         .nest("/authentication", authentication::authentication_router())
+        .nest("/api", api::api_router(shared_state.clone()))
         .route("/", get(root))
         .with_state(shared_state);
 

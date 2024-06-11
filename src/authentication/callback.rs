@@ -2,21 +2,21 @@ use crate::SharedState;
 use axum::{
     extract::State,
     http::StatusCode,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
     cookie::{Cookie, SameSite},
     Query, SignedCookieJar,
 };
-use chrono::{Date, DateTime, Days, Utc};
+use chrono::{DateTime, Days, Utc};
 use log::error;
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Uuid},
     Client, Collection,
 };
 use openidconnect::{
-    core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata},
-    AuthorizationCode, ClientId, ClientSecret, CsrfToken, IssuerUrl, Nonce, Scope, TokenResponse,
+    core::{CoreClient, CoreProviderMetadata},
+    AuthorizationCode, ClientId, ClientSecret, IssuerUrl, Nonce, TokenResponse,
 };
 use openidconnect::{reqwest::async_http_client, RedirectUrl};
 use serde::{Deserialize, Serialize};
@@ -29,20 +29,17 @@ pub struct GoogleCallback {
 
 #[derive(Deserialize, Serialize)]
 struct Session {
-    _id: ObjectId,
-
     #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     expiration: DateTime<Utc>,
-
     id: bson::Uuid,
 }
 
 #[derive(Deserialize, Serialize)]
 struct User {
-    _id: ObjectId,
     subject: String,
     email: String,
     sessions: Vec<Session>,
+    _id: ObjectId,
 }
 pub async fn callback(
     shared_state: State<SharedState>,
@@ -132,14 +129,13 @@ async fn create_session(
     };
     let expiration = Utc::now().checked_add_days(Days::new(1)).expect("msg");
     let session = Session {
-        _id: ObjectId::new(),
         id: Uuid::new(),
         expiration,
     };
     let result = user_collection
         .update_one(
-            doc! {"_id": user._id},
-            doc! {"$push": doc! {"sessions": doc! {"_id": session._id, "expiration": session.expiration, "id": session.id}}},
+            doc! {"subject": user.subject},
+            doc! {"$push": doc! {"sessions": doc! {"expiration": session.expiration, "id": session.id, "_id": ObjectId::new()}}},
             None,
         )
         .await;
@@ -182,8 +178,8 @@ async fn upsert_subject(
                 let user = User {
                     subject,
                     email,
-                    _id: ObjectId::new(),
                     sessions: Vec::new(),
+                    _id: ObjectId::new(),
                 };
                 let result = user_collection.insert_one(&user, None).await;
                 log::info!("{:?}", result);

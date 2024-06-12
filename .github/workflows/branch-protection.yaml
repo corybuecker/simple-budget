@@ -1,0 +1,22 @@
+name: branch-protection
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:5
+        ports:
+          - 27017:27017
+    env:
+      DATABASE_URL: mongodb://localhost:27017/simple_budget_test?connectTimeoutMS=1000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ./target
+          key: ${{ runner.os }}-target
+      - run: |
+          rustup update stable
+          rustup default stable
+      - run: cargo test

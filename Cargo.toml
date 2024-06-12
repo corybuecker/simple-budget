@@ -1,18 +1,3 @@
-[package]
-name = "simple-budget"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-axum = "^0.7.5"
-axum-extra = { version = "^0.9.3", features = ["cookie-signed", "query"] }
-chrono = "0.4.38"
-log = "0.4.21"
-mongodb = { version = "^2.8.2", features = ["bson-chrono-0_4"] }
-openidconnect = { version = "^3.5.0", features = ["reqwest"] }
-serde = "^1.0.203"
-simple_logger = "5.0.0"
-tera = { version = "^1.19.1" }
-tokio = { version = "^1.37.0", features = ["full"] }
+[workspace]
+members = ["backend", "frontend"]
+resolver = "2"

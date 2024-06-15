@@ -6,3 +6,4 @@ resolver = "2"
 
 [dependencies]
 yew = { git = "https://github.com/yewstack/yew/", features = ["csr"] }
+yew-router = { git = "https://github.com/yewstack/yew.git" }

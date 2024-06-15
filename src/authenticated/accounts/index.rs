@@ -1,4 +1,4 @@
-use crate::api::UserExtension;
+use crate::authenticated::UserExtension;
 use axum::Extension;
 
 pub async fn index(user: Extension<UserExtension>) -> &'static str {

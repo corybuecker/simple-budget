@@ -1,11 +1,17 @@
 mod authentication;
-use axum::{extract::FromRef, routing::get, Router};
+use axum::{
+    extract::{FromRef, State},
+    http::StatusCode,
+    response::{Html, IntoResponse, Response},
+    routing::get,
+    Router,
+};
 use axum_extra::extract::cookie::Key;
 use mongodb::Client;
 use simple_logger::SimpleLogger;
 use std::{env, str::FromStr};
-use tera::Tera;
-mod api;
+use tera::{Context, Tera};
+mod authenticated;
 
 #[derive(Clone)]
 struct SharedState {
@@ -20,8 +26,13 @@ impl FromRef<SharedState> for Key {
     }
 }
 
-async fn root() -> &'static str {
-    "Hello, World!"
+async fn root(shared_state: State<SharedState>) -> Response {
+    let context = Context::new();
+    let Ok(content) = shared_state.tera.render("dashboard.html", &context) else {
+        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    };
+
+    Html::from(content).into_response()
 }
 
 #[tokio::main]
@@ -39,7 +50,10 @@ async fn main() {
 
     let app = Router::new()
         .nest("/authentication", authentication::authentication_router())
-        .nest("/api", api::api_router(shared_state.clone()))
+        .nest(
+            "/",
+            authenticated::authenticated_router(shared_state.clone()),
+        )
         .route("/", get(root))
         .with_state(shared_state);
 
@@ -58,12 +72,6 @@ async fn mongo_client() -> Result<mongodb::Client, mongodb::error::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[tokio::test]
-    async fn root_returns() {
-        let result = root().await;
-        assert_eq!(result, "Hello, World!");
-    }
 
     #[tokio::test]
     async fn test_mongo_client() {

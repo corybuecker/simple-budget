@@ -68,7 +68,7 @@ async fn authenticated(
         StatusCode::FORBIDDEN.into_response()
     }
 }
-pub fn api_router(state: SharedState) -> Router<SharedState> {
+pub fn authenticated_router(state: SharedState) -> Router<SharedState> {
     Router::new()
         .nest("/accounts", accounts::accounts_router())
         .nest("/goals", goals::goals_router())

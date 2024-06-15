@@ -15,4 +15,4 @@ Cargo.lock
 
 .env
 
-frontend/dist
+/static

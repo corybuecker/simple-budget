@@ -24,11 +24,11 @@
     <link rel="modulepreload" href="https://ga.jspm.io/npm:@hotwired/turbo@8.0.4/dist/turbo.es2017-esm.js"
         integrity="sha384-9L4CKakr2dokVw57T+WxD+LWnad4+vw0qLlH1Y0+Sqva14nv7WvDrQqY6FlBVoIe" />
 
-    <link rel="stylesheet" href="/assets/app.css">
+    <link rel="stylesheet" href={{ digest_asset(file="app.css" ) }}>
 </head>
 
 <body>
-
+    {% block content %}{% endblock content %}
     <script type="module">
         import * as Turbo from "@hotwired/turbo"
     </script>

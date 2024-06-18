@@ -9,8 +9,9 @@ use axum::{
 use axum_extra::extract::cookie::Key;
 use mongodb::Client;
 use simple_logger::SimpleLogger;
-use std::{env, str::FromStr};
-use tera::{Context, Tera};
+use std::{collections::HashMap, env, str::FromStr, time::SystemTime};
+use tera::{Context, Function, Tera, Value};
+use tower_http::services::ServeDir;
 mod authenticated;
 
 #[derive(Clone)]
@@ -35,6 +36,43 @@ async fn root(shared_state: State<SharedState>) -> Response {
     Html::from(content).into_response()
 }
 
+// struct AssetDigests {}
+
+// impl tera::Function for AssetDigests {
+//     fn call(&self, args: &HashMap<String, Value>) -> tera::Result<Value> {
+//         Ok("test".to_string().into())
+//     }
+// }
+
+fn digest_asset() -> impl tera::Function {
+    let key = SystemTime::now();
+    let key = key
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .expect("could not generate asset timestamp");
+    let key = key.as_secs().to_string();
+
+    return move |args: &HashMap<String, tera::Value>| -> tera::Result<tera::Value> {
+        match args.get("file") {
+            Some(file) => {
+                let mut path = "/assets/".to_string();
+
+                let Some(file) = file.as_str() else {
+                    return Err("".to_string().into());
+                };
+
+                path.push_str(file);
+                path.push_str("?v=");
+                path.push_str(&key);
+
+                log::debug!("{:?}", path);
+
+                Ok(path.into())
+            }
+            None => Err("".to_string().into()),
+        }
+    };
+}
+
 #[tokio::main]
 async fn main() {
     let _ = SimpleLogger::new()
@@ -42,10 +80,14 @@ async fn main() {
         .init()
         .expect("could not initialize logging");
 
-    let tera = Tera::new("src/templates/**/*.html").expect("could not initialize Tera");
-    let mongo = mongo_client().await.expect("could not create Mongo client");
+    let mut tera = Tera::new("src/templates/**/*.html").expect("cannot initialize Tera");
+    tera.register_function("digest_asset", digest_asset());
 
-    let key = Key::generate();
+    let mongo = mongo_client().await.expect("cannot create Mongo client");
+
+    let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
+    let key = Key::from(secret_key.as_bytes());
+
     let shared_state = SharedState { tera, mongo, key };
 
     let app = Router::new()
@@ -55,6 +97,7 @@ async fn main() {
             authenticated::authenticated_router(shared_state.clone()),
         )
         .route("/", get(root))
+        .nest_service("/assets", ServeDir::new("static"))
         .with_state(shared_state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();

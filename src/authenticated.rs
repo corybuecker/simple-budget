@@ -14,8 +14,8 @@ use mongodb::{
 };
 use serde::{Deserialize, Serialize};
 mod accounts;
+mod envelopes;
 mod goals;
-mod savings;
 
 #[derive(Deserialize, Serialize, Debug)]
 struct Session {
@@ -72,6 +72,6 @@ pub fn authenticated_router(state: SharedState) -> Router<SharedState> {
     Router::new()
         .nest("/accounts", accounts::accounts_router())
         .nest("/goals", goals::goals_router())
-        .nest("/savings", savings::savings_router())
+        .nest("/envelopes", envelopes::envelopes_router())
         .route_layer(middleware::from_fn_with_state(state, authenticated))
 }

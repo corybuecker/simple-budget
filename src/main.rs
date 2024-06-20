@@ -8,11 +8,12 @@ use axum::{
 };
 use axum_extra::extract::cookie::Key;
 use mongodb::Client;
-use simple_logger::SimpleLogger;
 use std::{collections::HashMap, env, str::FromStr, time::SystemTime};
-use tera::{Context, Function, Tera, Value};
+use tera::{Context, Tera};
 use tower_http::services::ServeDir;
 mod authenticated;
+use tower_http::trace::{self, TraceLayer};
+use tracing::Level;
 
 #[derive(Clone)]
 struct SharedState {
@@ -75,10 +76,10 @@ fn digest_asset() -> impl tera::Function {
 
 #[tokio::main]
 async fn main() {
-    let _ = SimpleLogger::new()
-        .with_level(log::LevelFilter::Debug)
-        .init()
-        .expect("could not initialize logging");
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .compact()
+        .init();
 
     let mut tera = Tera::new("src/templates/**/*.html").expect("cannot initialize Tera");
     tera.register_function("digest_asset", digest_asset());
@@ -98,7 +99,12 @@ async fn main() {
         )
         .route("/", get(root))
         .nest_service("/assets", ServeDir::new("static"))
-        .with_state(shared_state);
+        .with_state(shared_state)
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new().level(Level::DEBUG))
+                .on_response(trace::DefaultOnResponse::new().level(Level::DEBUG)),
+        );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
     axum::serve(listener, app).await.unwrap();

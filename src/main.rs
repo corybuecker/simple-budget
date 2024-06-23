@@ -77,8 +77,7 @@ fn digest_asset() -> impl tera::Function {
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
-        .with_target(false)
-        .compact()
+        .with_max_level(Level::DEBUG)
         .init();
 
     let mut tera = Tera::new("src/templates/**/*.html").expect("cannot initialize Tera");
@@ -102,8 +101,8 @@ async fn main() {
         .with_state(shared_state)
         .layer(
             TraceLayer::new_for_http()
-                .make_span_with(trace::DefaultMakeSpan::new().level(Level::DEBUG))
-                .on_response(trace::DefaultOnResponse::new().level(Level::DEBUG)),
+                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
         );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();

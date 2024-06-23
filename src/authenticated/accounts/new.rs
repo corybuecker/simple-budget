@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::State,
@@ -7,10 +5,7 @@ use axum::{
     response::{Html, IntoResponse, Response},
     Extension,
 };
-use mongodb::{
-    bson::{doc, oid::ObjectId, Bson},
-    Collection,
-};
+use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 use tera::Context;
 
@@ -26,7 +21,7 @@ pub async fn page(
 ) -> Result<Response, StatusCode> {
     log::debug!("{:?}", user);
 
-    let mut context = Context::new();
+    let context = Context::new();
     let Ok(content) = shared_state.tera.render("accounts/new.html", &context) else {
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };

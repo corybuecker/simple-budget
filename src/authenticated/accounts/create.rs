@@ -4,15 +4,14 @@ use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::State,
     http::StatusCode,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
     Extension, Form,
 };
 use mongodb::{
-    bson::{doc, oid::ObjectId, Bson},
+    bson::{doc, oid::ObjectId},
     Collection,
 };
 use serde::{Deserialize, Serialize};
-use tera::Context;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Account {
@@ -34,7 +33,8 @@ pub async fn page(
 ) -> Result<Response, StatusCode> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
-    let accountRecord = AccountRecord {
+
+    let account_record = AccountRecord {
         name: form.name.to_owned(),
         amount: form.amount.to_owned(),
         user_id: ObjectId::from_str(&user.id).unwrap(),
@@ -44,7 +44,7 @@ pub async fn page(
         .database("simple_budget")
         .collection("accounts");
 
-    accounts.insert_one(accountRecord, None).await;
+    let _ = accounts.insert_one(account_record, None).await;
 
     Ok(Redirect::to("/accounts").into_response())
 }

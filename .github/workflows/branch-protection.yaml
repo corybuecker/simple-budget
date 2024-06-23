@@ -14,9 +14,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
         with:
-          path: ./target
+          path: |
+            ~/.cargo
+            ./target
           key: ${{ runner.os }}-target
-      - run: |
-          rustup update stable
-          rustup default stable
       - run: cargo test

@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
 <p>Accounts</p>
-<form method="post" action="/accounts">
+<form method="put" action="/accounts/{{ id }}">
     <input name="name" value="{% if name %}{{ name }}{% endif %}" />
     <input name="amount" value="{% if amount %}{{ amount }}{% endif %}" />
     <input type="submit">Save</input>

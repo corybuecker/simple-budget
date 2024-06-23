@@ -8,7 +8,7 @@ use axum::{
     Extension,
 };
 use mongodb::{
-    bson::{doc, oid::ObjectId, Bson},
+    bson::{doc, oid::ObjectId},
     Collection,
 };
 use serde::{Deserialize, Serialize};
@@ -18,6 +18,14 @@ use tera::Context;
 struct Account {
     name: String,
     amount: f64,
+    _id: ObjectId,
+}
+
+#[derive(Serialize)]
+struct AccountRecord {
+    name: String,
+    amount: f64,
+    id: String,
 }
 
 pub async fn page(
@@ -35,14 +43,18 @@ pub async fn page(
         .collection("accounts");
 
     let mut context = Context::new();
-    let mut accounts: Vec<Account> = Vec::new();
+    let mut accounts: Vec<AccountRecord> = Vec::new();
 
     match collection.find(doc! {"user_id": &user_id}, None).await {
         Ok(mut cursor) => {
             while cursor.advance().await.unwrap() {
                 match cursor.deserialize_current() {
                     Ok(account) => {
-                        accounts.push(account);
+                        accounts.push(AccountRecord {
+                            name: account.name,
+                            amount: account.amount,
+                            id: account._id.to_string(),
+                        });
                     }
                     Err(e) => {
                         log::error!("{}", e);

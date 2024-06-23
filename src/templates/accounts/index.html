@@ -3,6 +3,11 @@
 <p>Accounts</p>
 <p><a href="/accounts/new">New account</a></p>
 {% for account in accounts %}
-{{loop.index}}. {{account.name}}
+<p>
+<a href="/accounts/{{account.id}}">{{account.name}}</a>
+<form method="delete" action="/accounts/{{account.id}}">
+  <input type="submit" value="Delete" />
+</form>
+</p>
 {% endfor %}
 {% endblock content %}

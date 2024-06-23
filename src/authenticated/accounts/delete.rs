@@ -2,17 +2,13 @@ use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{Html, IntoResponse, Redirect, Response},
-    Extension, Form,
+    response::{IntoResponse, Redirect, Response},
+    Extension,
 };
 use bson::serde_helpers::hex_string_as_object_id;
-use mongodb::{
-    bson::{doc, oid::ObjectId, Bson},
-    Collection,
-};
+use mongodb::bson::{doc, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use tera::Context;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AccountRecord {
@@ -39,11 +35,11 @@ pub async fn page(
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };
 
-    let Some(mut account) = account else {
+    let Some(_) = account else {
         return Err(StatusCode::NOT_FOUND);
     };
 
-    accounts.delete_one(filter, None).await;
+    let _ = accounts.delete_one(filter, None).await;
 
     Ok(Redirect::to("/accounts").into_response())
 }

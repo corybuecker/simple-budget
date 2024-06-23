@@ -2,17 +2,13 @@ use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
     Extension, Form,
 };
 use bson::serde_helpers::hex_string_as_object_id;
-use mongodb::{
-    bson::{doc, oid::ObjectId, Bson},
-    Collection,
-};
+use mongodb::bson::{doc, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use tera::Context;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Account {
@@ -54,7 +50,7 @@ pub async fn page(
     account.name = form.name.clone();
     account.amount = form.amount;
 
-    accounts.replace_one(filter, account, None).await;
+    let _ = accounts.replace_one(filter, account, None).await;
 
     Ok(Redirect::to("/accounts").into_response())
 }

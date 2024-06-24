@@ -1,9 +1,14 @@
 {% extends "layout.html" %}
 {% block content %}
-<p>Accounts</p>
+<h1>Accounts</h1>
+
 <form method="post" action="/accounts">
-    <input name="name" value="{% if name %}{{ name }}{% endif %}" />
-    <input name="amount" value="{% if amount %}{{ amount }}{% endif %}" />
-    <input type="submit">Save</input>
+  {% if errors %}
+  <p>{{errors}}</p>
+  {% endif %}
+  <input name="name" required value="{% if name %}{{ name }}{% endif %}" />
+  <input name="amount" required type="number" value="{% if amount %}{{ amount }}{% endif %}" />
+  <input name="debt" type="checkbox" {% if debt %}{{ "checked" }}{% endif %} value="true" />
+  <input type="submit" value="Save" />
 </form>
 {% endblock content %}

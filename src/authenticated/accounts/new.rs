@@ -8,11 +8,16 @@ use axum::{
 use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 use tera::Context;
+use validator::Validate;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Validate, Serialize, Deserialize)]
 struct Account {
+    #[validate(length(min = 1))]
     name: String,
+
+    #[validate(range(min = 0.0))]
     amount: f64,
+    debt: bool,
 }
 
 pub async fn page(

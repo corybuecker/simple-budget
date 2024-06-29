@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::State,
@@ -12,6 +10,7 @@ use mongodb::{
     Collection,
 };
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use tera::Context;
 
 #[derive(Serialize, Deserialize)]

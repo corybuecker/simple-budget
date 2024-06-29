@@ -1,8 +1,5 @@
-use std::str::FromStr;
-
 use crate::{authenticated::UserExtension, SharedState};
 use axum::{
-    body::Body,
     extract::State,
     http::StatusCode,
     response::{Html, IntoResponse, Redirect, Response},
@@ -13,6 +10,7 @@ use mongodb::{
     Collection,
 };
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
 

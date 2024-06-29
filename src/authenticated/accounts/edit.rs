@@ -19,6 +19,7 @@ struct Account {
     _id: String,
     name: String,
     amount: f64,
+    debt: bool,
     #[serde(with = "hex_string_as_object_id")]
     user_id: String,
 }

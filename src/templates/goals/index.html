@@ -1,4 +1,13 @@
 {% extends "layout.html" %}
 {% block content %}
 <p>Goals</p>
+<p><a href="/goals/new">New goal</a></p>
+{% for goal in goals %}
+<p>
+    <a href="/goals/{{goal.id}}">{{goal.name}}</a>
+<form method="delete" action="/goals/{{goal.id}}">
+    <input type="submit" value="Delete" />
+</form>
+</p>
+{% endfor %}
 {% endblock content %}

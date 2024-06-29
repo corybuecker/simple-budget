@@ -2,8 +2,12 @@
 {% block content %}
 <p>Accounts</p>
 <form method="put" action="/accounts/{{ id }}">
-    <input name="name" value="{% if name %}{{ name }}{% endif %}" />
-    <input name="amount" value="{% if amount %}{{ amount }}{% endif %}" />
+    {% if errors %}
+    <p>{{errors}}</p>
+    {% endif %}
+    <input name="name" required value="{% if name %}{{ name }}{% endif %}" />
+    <input name="amount" required type="number" value="{% if amount %}{{ amount }}{% endif %}" />
+    <input name="debt" type="checkbox" {% if debt %}{{ "checked" }}{% endif %} value="true" />
     <input type="submit">Save</input>
 </form>
 {% endblock content %}

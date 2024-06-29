@@ -28,12 +28,12 @@
 </head>
 
 <body>
-    <nav>
-        <ol>
-            <li><a href="/accounts">Accounts</a></li>
-            <li><a href="/envelopes">Envelopes</a></li>
-            <li><a href="/goals">Goals</a></li>
-        </ol>
+    <nav class="bg-gray-800">
+        <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+            <a class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" href="/accounts">Accounts</a>
+            <a class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" href="/envelopes">Envelopes</a>
+          <a class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" href="/goals">Goals</a>
+        </div>
     </nav>
     {% block content %}{% endblock content %}
     <script type="module">

@@ -1,5 +1,3 @@
-use std::{str::FromStr, time::SystemTime};
-
 use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::State,
@@ -8,9 +6,10 @@ use axum::{
     Extension, Form,
 };
 use bson::oid::ObjectId;
-use chrono::{NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{NaiveDateTime, NaiveTime, Utc};
 use mongodb::Collection;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
 

@@ -5,14 +5,30 @@ use axum::{
     response::{Html, IntoResponse, Response},
     Extension,
 };
+use serde::{Deserialize, Serialize};
 use tera::Context;
+use validator::Validate;
 
-pub async fn page(shared_state: State<SharedState>, user: Extension<UserExtension>) -> Response {
+#[derive(Validate, Serialize, Deserialize)]
+struct Envelope {
+    #[validate(length(min = 1))]
+    name: String,
+
+    #[validate(range(min = 0.0))]
+    amount: f64,
+    debt: bool,
+}
+
+pub async fn page(
+    shared_state: State<SharedState>,
+    user: Extension<UserExtension>,
+) -> Result<Response, StatusCode> {
     log::debug!("{:?}", user);
+
     let context = Context::new();
-    let Ok(content) = shared_state.tera.render("envelopes/index.html", &context) else {
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+    let Ok(content) = shared_state.tera.render("envelopes/new.html", &context) else {
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };
 
-    Html::from(content).into_response()
+    Ok(Html::from(content).into_response())
 }

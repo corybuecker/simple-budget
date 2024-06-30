@@ -1,4 +1,13 @@
 {% extends "layout.html" %}
 {% block content %}
 <p>Envelopes</p>
+<p><a href="/envelopes/new">New envelope</a></p>
+{% for envelope in envelopes %}
+<p>
+    <a href="/envelopes/{{envelope.id}}">{{envelope.name}}</a>
+<form method="delete" action="/envelopes/{{envelope.id}}">
+    <input type="submit" value="Delete" />
+</form>
+</p>
+{% endfor %}
 {% endblock content %}

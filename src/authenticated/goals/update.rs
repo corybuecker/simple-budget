@@ -5,10 +5,10 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };
-use bson::{doc, oid::ObjectId, serde_helpers::hex_string_as_object_id};
+use bson::{doc, oid::ObjectId};
 use chrono::{NaiveDateTime, NaiveTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::{clone, str::FromStr};
+use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
 

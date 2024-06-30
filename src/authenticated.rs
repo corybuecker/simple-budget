@@ -4,6 +4,7 @@ use axum::{
     http::StatusCode,
     middleware::{self, Next},
     response::{IntoResponse, Response},
+    routing::get,
     Router,
 };
 use axum_extra::extract::SignedCookieJar;
@@ -14,6 +15,7 @@ use mongodb::{
 };
 use serde::{Deserialize, Serialize};
 mod accounts;
+mod dashboard;
 mod envelopes;
 mod goals;
 
@@ -73,5 +75,6 @@ pub fn authenticated_router(state: SharedState) -> Router<SharedState> {
         .nest("/accounts", accounts::accounts_router())
         .nest("/goals", goals::goals_router())
         .nest("/envelopes", envelopes::envelopes_router())
+        .route("/reports", get(dashboard::index))
         .route_layer(middleware::from_fn_with_state(state, authenticated))
 }

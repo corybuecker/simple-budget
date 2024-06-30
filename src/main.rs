@@ -28,15 +28,6 @@ impl FromRef<SharedState> for Key {
     }
 }
 
-async fn root(shared_state: State<SharedState>) -> Response {
-    let context = Context::new();
-    let Ok(content) = shared_state.tera.render("dashboard.html", &context) else {
-        return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-    };
-
-    Html::from(content).into_response()
-}
-
 // struct AssetDigests {}
 
 // impl tera::Function for AssetDigests {
@@ -96,7 +87,6 @@ async fn main() {
             "/",
             authenticated::authenticated_router(shared_state.clone()),
         )
-        .route("/", get(root))
         .nest_service("/assets", ServeDir::new("static"))
         .with_state(shared_state)
         .layer(

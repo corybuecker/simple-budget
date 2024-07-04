@@ -33,11 +33,7 @@ pub async fn page(
         .collection("envelopes");
 
     let Ok(envelope) = envelopes
-        .find_one(
-            doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()},
-            None,
-        )
-        .await
+        .find_one(            doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()} )        .await
     else {
         return Err(StatusCode::NOT_FOUND);
     };

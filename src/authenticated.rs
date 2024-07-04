@@ -54,10 +54,7 @@ async fn authenticated(
 
     let users: Collection<User> = state.mongo.database("simple_budget").collection("users");
     let user = users
-        .find_one(
-            doc! {"sessions.id": Uuid::parse_str(session_id).unwrap()},
-            None,
-        )
+        .find_one(doc! {"sessions.id": Uuid::parse_str(session_id).unwrap()})
         .await;
 
     if let Ok(Some(user)) = user {

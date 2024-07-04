@@ -61,7 +61,7 @@ pub async fn page(
     let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
     log::debug!("{:?}", filter);
 
-    let Ok(envelope) = envelopes.find_one(filter.clone(), None).await else {
+    let Ok(envelope) = envelopes.find_one(filter.clone()).await else {
         log::error!("could not find record");
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };
@@ -72,7 +72,7 @@ pub async fn page(
 
     envelope.name = form.name.clone();
     envelope.amount = form.amount;
-    let _ = envelopes.replace_one(filter, envelope, None).await;
+    let _ = envelopes.replace_one(filter, envelope).await;
 
     Ok(Redirect::to("/envelopes").into_response())
 }

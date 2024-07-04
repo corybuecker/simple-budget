@@ -70,7 +70,7 @@ async fn accounts_total(client: &mongodb::Client, user_id: &ObjectId) -> f64 {
     let collection: Collection<Account> = client.database("simple_budget").collection("accounts");
 
     let mut accounts: Vec<Account> = Vec::new();
-    match collection.find(doc! {"user_id": user_id}, None).await {
+    match collection.find(doc! {"user_id": user_id}).await {
         Ok(mut cursor) => {
             while cursor.advance().await.unwrap() {
                 match cursor.deserialize_current() {
@@ -109,7 +109,7 @@ async fn envelopes_total(client: &mongodb::Client, user_id: &ObjectId) -> f64 {
     let collection: Collection<Envelope> = client.database("simple_budget").collection("envelopes");
 
     let mut envelopes: Vec<Envelope> = Vec::new();
-    match collection.find(doc! {"user_id": user_id}, None).await {
+    match collection.find(doc! {"user_id": user_id}).await {
         Ok(mut cursor) => {
             while cursor.advance().await.unwrap() {
                 match cursor.deserialize_current() {

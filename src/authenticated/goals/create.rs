@@ -74,7 +74,7 @@ pub async fn page(
         .database("simple_budget")
         .collection("goals");
 
-    let _ = goals.insert_one(goal_record, None).await;
+    let _ = goals.insert_one(goal_record).await;
 
     Ok(Redirect::to("/goals").into_response())
 }

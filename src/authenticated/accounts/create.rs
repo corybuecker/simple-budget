@@ -68,7 +68,7 @@ pub async fn page(
         .database("simple_budget")
         .collection("accounts");
 
-    let _ = accounts.insert_one(account_record, None).await;
+    let _ = accounts.insert_one(account_record).await;
 
     Ok(Redirect::to("/accounts").into_response())
 }

@@ -116,7 +116,7 @@ mod tests {
         let client = mongo_client().await;
         assert!(client.is_ok());
         let client = client.unwrap();
-        let databases = client.list_databases(None, None).await;
+        let databases = client.list_databases().await;
         assert!(databases.is_ok())
     }
 }

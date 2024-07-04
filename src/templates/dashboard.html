@@ -1,4 +1,16 @@
 {% extends "layout.html" %}
 {% block content %}
 <p>test</p>
+
+
+
+{{end_of_month}}
+<div>{{remaining_seconds}}</div>
+<div>{{accounts_total}}</div>
+<div>{{envelopes_total}}</div>
+<div>{{goals_total}}</div>
+
+<div>{{accounts_total - envelopes_total - goals_total}}</div>
+
+
 {% endblock content %}

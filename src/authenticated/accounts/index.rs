@@ -69,6 +69,7 @@ pub async fn page(
     }
 
     let Ok(content) = shared_state.tera.render("accounts/index.html", &context) else {
+        log::error!("could not render template");
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };
 

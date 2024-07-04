@@ -50,11 +50,15 @@ pub async fn login(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response), 
         .add_scope(Scope::new("openid".to_string()))
         .url();
 
+    let secure = env::var("SECURE")
+        .or::<String>(Ok("false".to_string()))
+        .unwrap();
     let cookie = Cookie::build(("nonce", nonce.secret().clone()))
         .expires(None)
         .http_only(true)
         .path("/authentication")
-        .same_site(SameSite::Strict)
+        .same_site(SameSite::Lax)
+        .secure(secure == "true".to_string())
         .build();
 
     return Ok((

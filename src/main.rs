@@ -8,12 +8,17 @@ use axum::{
 };
 use axum_extra::extract::cookie::Key;
 use mongodb::Client;
-use std::{collections::HashMap, env, str::FromStr, time::SystemTime};
+use std::{
+    collections::HashMap,
+    env,
+    str::FromStr,
+    time::{Duration, SystemTime},
+};
 use tera::{Context, Tera};
-use tower_http::services::ServeDir;
+use tower_http::{classify::ServerErrorsFailureClass, services::ServeDir};
 mod authenticated;
 use tower_http::trace::{self, TraceLayer};
-use tracing::Level;
+use tracing::{Level, Span};
 
 #[derive(Clone)]
 struct SharedState {
@@ -89,11 +94,7 @@ async fn main() {
         )
         .nest_service("/assets", ServeDir::new("static"))
         .with_state(shared_state)
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-                .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
-        );
+        .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
     axum::serve(listener, app).await.unwrap();

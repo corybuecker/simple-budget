@@ -98,6 +98,9 @@ pub async fn callback(
         return Err(StatusCode::FORBIDDEN);
     };
     let email = email.to_string();
+    let secure = env::var("SECURE")
+        .or::<String>(Ok("false".to_string()))
+        .unwrap();
 
     match create_session(shared_state.mongo.clone(), subject, email).await {
         Ok(id) => {
@@ -106,6 +109,7 @@ pub async fn callback(
                 .http_only(true)
                 .path("/")
                 .same_site(SameSite::Strict)
+                .secure(secure == "true".to_string())
                 .build();
 
             return Ok((jar.add(cookie), Redirect::to("/").into_response()));

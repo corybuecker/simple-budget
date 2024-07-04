@@ -135,8 +135,7 @@ async fn create_session(
     let result = user_collection
         .update_one(
             doc! {"subject": user.subject},
-            doc! {"$push": doc! {"sessions": doc! {"expiration": session.expiration, "id": session.id, "_id": ObjectId::new()}}},
-            None,
+            doc! {"$push": doc! {"sessions": doc! {"expiration": session.expiration, "id": session.id, "_id": ObjectId::new()}}}
         )
         .await;
     log::info!("{:?}", result);
@@ -149,9 +148,7 @@ async fn upsert_subject(
     email: String,
 ) -> Result<User, mongodb::error::Error> {
     let user_collection: Collection<User> = mongo.database("simple_budget").collection("users");
-    let existing_user = user_collection
-        .find_one(doc! {"subject": &subject}, None)
-        .await;
+    let existing_user = user_collection.find_one(doc! {"subject": &subject}).await;
 
     if existing_user.is_err() {
         return Err(existing_user.err().unwrap());
@@ -162,7 +159,6 @@ async fn upsert_subject(
                     .update_one(
                         doc! {"subject": &subject},
                         doc! {"$set": doc! {"email": email}},
-                        None,
                     )
                     .await;
 
@@ -181,7 +177,7 @@ async fn upsert_subject(
                     sessions: Vec::new(),
                     _id: ObjectId::new(),
                 };
-                let result = user_collection.insert_one(&user, None).await;
+                let result = user_collection.insert_one(&user).await;
                 log::info!("{:?}", result);
                 return Ok(user);
             }

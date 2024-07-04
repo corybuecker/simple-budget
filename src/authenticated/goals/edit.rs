@@ -38,9 +38,7 @@ pub async fn page(
 
     let Ok(goal) = goals
         .find_one(
-            doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()},
-            None,
-        )
+            doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()})
         .await
     else {
         return Err(StatusCode::NOT_FOUND);

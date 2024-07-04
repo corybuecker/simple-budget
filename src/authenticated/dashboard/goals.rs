@@ -29,7 +29,7 @@ pub async fn goals(
     let mut goals: Vec<Goal> = Vec::new();
 
     let collection: Collection<Goal> = client.database("simple_budget").collection("goals");
-    let mut cursor = collection.find(doc! {"user_id": user_id}, None).await?;
+    let mut cursor = collection.find(doc! {"user_id": user_id}).await?;
 
     while cursor.advance().await? {
         goals.push(cursor.deserialize_current()?);

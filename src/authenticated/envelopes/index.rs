@@ -42,7 +42,7 @@ pub async fn page(
     let mut context = Context::new();
     let mut envelopes: Vec<EnvelopeRecord> = Vec::new();
 
-    match collection.find(doc! {"user_id": &user_id}, None).await {
+    match collection.find(doc! {"user_id": &user_id}).await {
         Ok(mut cursor) => {
             while cursor.advance().await.unwrap() {
                 match cursor.deserialize_current() {

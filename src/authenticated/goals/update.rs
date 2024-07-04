@@ -71,7 +71,7 @@ pub async fn page(
     let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
     log::debug!("{:?}", filter);
 
-    let Ok(goal) = goals.find_one(filter.clone(), None).await else {
+    let Ok(goal) = goals.find_one(filter.clone()).await else {
         log::error!("could not find record");
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };
@@ -84,7 +84,7 @@ pub async fn page(
     goal.target = form.target;
     goal.target_date = NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc();
     goal.recurrence = form.recurrence.clone();
-    let _ = goals.replace_one(filter, goal, None).await;
+    let _ = goals.replace_one(filter, goal).await;
 
     Ok(Redirect::to("/goals").into_response())
 }

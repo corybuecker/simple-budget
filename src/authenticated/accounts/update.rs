@@ -68,7 +68,7 @@ pub async fn page(
     let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
     log::debug!("{:?}", filter);
 
-    let Ok(account) = accounts.find_one(filter.clone(), None).await else {
+    let Ok(account) = accounts.find_one(filter.clone()).await else {
         log::error!("could not find record");
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };
@@ -81,7 +81,7 @@ pub async fn page(
     account.amount = form.amount;
     account.debt = form.debt.or(Some(false)).unwrap();
 
-    let _ = accounts.replace_one(filter, account, None).await;
+    let _ = accounts.replace_one(filter, account).await;
 
     Ok(Redirect::to("/accounts").into_response())
 }

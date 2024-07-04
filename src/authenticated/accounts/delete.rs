@@ -31,7 +31,7 @@ pub async fn page(
 
     let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
 
-    let Ok(account) = accounts.find_one(filter.clone(), None).await else {
+    let Ok(account) = accounts.find_one(filter.clone()).await else {
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };
 
@@ -39,7 +39,7 @@ pub async fn page(
         return Err(StatusCode::NOT_FOUND);
     };
 
-    let _ = accounts.delete_one(filter, None).await;
+    let _ = accounts.delete_one(filter).await;
 
     Ok(Redirect::to("/accounts").into_response())
 }

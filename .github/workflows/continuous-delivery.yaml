@@ -1,4 +1,5 @@
-on: workflow-dispatch
+name: continuous-delivery
+on: workflow_dispatch
 jobs:
   build-image:
     runs-on: ubuntu-latest

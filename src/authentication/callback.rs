@@ -112,7 +112,7 @@ pub async fn callback(
                 .secure(secure == "true".to_string())
                 .build();
 
-            return Ok((jar.add(cookie), Redirect::to("/").into_response()));
+            return Ok((jar.add(cookie), Redirect::to("/reports").into_response()));
         }
         Err(code) => {
             error!("issue with sesssion");

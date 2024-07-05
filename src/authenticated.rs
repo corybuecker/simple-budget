@@ -3,7 +3,7 @@ use axum::{
     extract::{Request, State},
     http::StatusCode,
     middleware::{self, Next},
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
     routing::get,
     Router,
 };
@@ -46,7 +46,7 @@ async fn authenticated(
     next: Next,
 ) -> Response {
     let Some(session_id) = jar.get("session_id") else {
-        return StatusCode::FORBIDDEN.into_response();
+        return Redirect::to("authentication/login").into_response();
     };
 
     let session_id = session_id.value();
@@ -64,7 +64,7 @@ async fn authenticated(
         });
         next.run(request).await
     } else {
-        StatusCode::FORBIDDEN.into_response()
+        Redirect::to("authentication/login").into_response()
     }
 }
 pub fn authenticated_router(state: SharedState) -> Router<SharedState> {

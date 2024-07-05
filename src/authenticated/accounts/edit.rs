@@ -54,6 +54,7 @@ pub async fn page(
     context.insert("id", &account._id);
     context.insert("name", &account.name);
     context.insert("amount", &account.amount);
+    context.insert("debt", &account.debt);
 
     let Ok(content) = shared_state.tera.render("accounts/edit.html", &context) else {
         return Err(StatusCode::INTERNAL_SERVER_ERROR);

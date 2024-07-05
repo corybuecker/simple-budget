@@ -36,10 +36,11 @@ pub async fn index(
         .iter()
         .map(|g| g.accumulated())
         .reduce(|memo, a| memo + a)
+        .or(Some(0.0))
         .unwrap();
 
     context.insert("end_of_month", &end_of_month);
-    context.insert("remaining_seconds", &remaining_seconds().num_seconds());
+    context.insert("remaining_seconds", &remaining_seconds().num_days());
 
     let envelopes_total = envelopes_total(&shared_state.mongo, &user_id).await;
     context.insert("envelopes_total", &envelopes_total);

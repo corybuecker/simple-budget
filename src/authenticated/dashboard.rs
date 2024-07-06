@@ -1,21 +1,19 @@
 use super::UserExtension;
 use crate::SharedState;
 use axum::{
-    extract::{FromRef, State},
+    extract::State,
     http::StatusCode,
     response::{Html, IntoResponse, Response},
     Extension,
 };
 use bson::{doc, oid::ObjectId};
-use chrono::{
-    DateTime, Datelike, FixedOffset, Local, Months, NaiveDateTime, TimeDelta, TimeZone, Timelike,
-    Utc,
-};
+use chrono::{DateTime, Datelike, Local, Months, TimeDelta, Timelike};
 use mongodb::Collection;
 use serde::Deserialize;
 use std::{ops::Sub, str::FromStr};
 use tera::Context;
 mod goals;
+use goals::Goal;
 
 pub async fn index(
     shared_state: State<SharedState>,
@@ -27,11 +25,17 @@ pub async fn index(
 
     let mut context = Context::new();
 
-    let Ok(end_of_month) = end_of_month() else {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
+    let goals = goals::goals(&shared_state.mongo, &user_id)
+        .await
+        .or::<Vec<Goal>>(Ok(Vec::new()))
+        .unwrap();
 
-    let goals = goals::goals(&shared_state.mongo, &user_id).await.unwrap();
+    let goals_accumulated = goals
+        .iter()
+        .map(|g| g.accumulated_per_day())
+        .reduce(|memo, a| memo + a)
+        .or(Some(0.0))
+        .unwrap();
     let goals_total = goals
         .iter()
         .map(|g| g.accumulated())
@@ -39,14 +43,14 @@ pub async fn index(
         .or(Some(0.0))
         .unwrap();
 
-    context.insert("end_of_month", &end_of_month);
-    context.insert("remaining_seconds", &remaining_seconds().num_days());
-
     let envelopes_total = envelopes_total(&shared_state.mongo, &user_id).await;
-    context.insert("envelopes_total", &envelopes_total);
     let accounts_total = accounts_total(&shared_state.mongo, &user_id).await;
+
     context.insert("accounts_total", &accounts_total);
+    context.insert("envelopes_total", &envelopes_total);
+    context.insert("goals_accumulated", &goals_accumulated);
     context.insert("goals_total", &goals_total);
+    context.insert("remaining_seconds", &remaining_seconds().num_days());
 
     match shared_state.tera.render("dashboard.html", &context) {
         Ok(content) => Ok(Html::from(content).into_response()),

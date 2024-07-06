@@ -1,16 +1,30 @@
 {% extends "layout.html" %}
 {% block content %}
-<p>test</p>
+
+{% set remaining = (accounts_total - envelopes_total - goals_total) / remaining_seconds %}
+{% set deg_value = 1.0 - ((78.0 - remaining) / 20.0)  %}
+{% set deg = 135.0 * deg_value %}
 
 
+<div class="flex justify-center">
+  <div class="w-64">
+  <div class="bg-blue-400 aspect-[2] rounded-t-full relative flex items-center justify-center overflow-hidden">
+    <div class="absolute top-0 aspect-square w-full bg-gradient-to-tr from-transparent from-50% to-white to-50%" style="transform: rotate({{deg}}deg)"></div>
+    {{deg}}
+  </div>
+  </div>
+</div>
 
-{{end_of_month}}
-<div>{{remaining_seconds}}</div>
-<div>{{accounts_total}}</div>
-<div>{{envelopes_total}}</div>
-<div>{{goals_total}}</div>
+<div class="flex flex-col pt-10">
+  <div class="flex justify-around">
+    <div>Remaining: {{ accounts_total - envelopes_total - goals_total}} </div>
+    <div>Remaing per day: {{ (accounts_total - envelopes_total - goals_total) / remaining_seconds }}</div>
+  </div>
 
-<div>{{accounts_total - envelopes_total - goals_total}}</div>
-
+  <div class="flex justify-around">
+    <div>Goals total: {{ goals_total}} </div>
+    <div>Goals: {{ goals_accumulated }}</div>
+  </div>
+</div>
 
 {% endblock content %}

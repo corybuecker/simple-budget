@@ -1,7 +1,6 @@
 use crate::SharedState;
 use axum::{
     extract::{Request, State},
-    http::StatusCode,
     middleware::{self, Next},
     response::{IntoResponse, Redirect, Response},
     routing::get,

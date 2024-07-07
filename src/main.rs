@@ -1,24 +1,12 @@
 mod authentication;
-use axum::{
-    extract::{FromRef, State},
-    http::StatusCode,
-    response::{Html, IntoResponse, Response},
-    routing::get,
-    Router,
-};
+use axum::{extract::FromRef, Router};
 use axum_extra::extract::cookie::Key;
 use mongodb::Client;
-use std::{
-    collections::HashMap,
-    env,
-    str::FromStr,
-    time::{Duration, SystemTime},
-};
-use tera::{Context, Tera};
-use tower_http::{classify::ServerErrorsFailureClass, services::ServeDir};
+use std::{collections::HashMap, env, str::FromStr, time::SystemTime};
+use tera::Tera;
 mod authenticated;
-use tower_http::trace::{self, TraceLayer};
-use tracing::{Level, Span};
+use tower_http::{services::ServeDir, trace::TraceLayer};
+use tracing::Level;
 
 #[derive(Clone)]
 struct SharedState {
@@ -85,7 +73,6 @@ async fn main() {
     let key = Key::from(secret_key.as_bytes());
 
     let shared_state = SharedState { tera, mongo, key };
-
     let app = Router::new()
         .nest("/authentication", authentication::authentication_router())
         .nest(

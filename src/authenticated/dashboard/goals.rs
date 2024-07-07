@@ -1,5 +1,5 @@
 use bson::{doc, oid::ObjectId};
-use chrono::{DateTime, Datelike, Days, Local, Months, TimeDelta, TimeZone, Timelike, Utc};
+use chrono::{DateTime, Datelike, Days, Local, Months, TimeDelta, Timelike, Utc};
 use mongodb::{Client, Collection};
 use serde::{Deserialize, Serialize};
 
@@ -39,6 +39,18 @@ pub async fn goals(
 }
 
 impl Goal {
+    pub fn accumulated_per_day(&self) -> f64 {
+        if self.start_at() > Local::now() {
+            return 0.0;
+        }
+
+        if Local::now() > self.target_date {
+            return 0.0;
+        }
+
+        self.target / self.total_time().num_days() as f64
+    }
+
     pub fn accumulated(&self) -> f64 {
         if self.start_at() > Local::now() {
             return 0.0;

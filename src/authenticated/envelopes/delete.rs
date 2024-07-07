@@ -2,7 +2,7 @@ use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
     Extension,
 };
 use bson::doc;
@@ -10,7 +10,6 @@ use bson::oid::ObjectId;
 use bson::serde_helpers::hex_string_as_object_id;
 use core::str::FromStr;
 use serde::{Deserialize, Serialize};
-use tera::Context;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EnvelopeRecord {

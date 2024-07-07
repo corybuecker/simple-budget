@@ -29,6 +29,7 @@ pub async fn page(
     user: Extension<UserExtension>,
 ) -> Result<Response, StatusCode> {
     log::debug!("{:?}", user);
+
     let Ok(user_id) = ObjectId::parse_str(&user.id) else {
         return Err(StatusCode::FORBIDDEN);
     };

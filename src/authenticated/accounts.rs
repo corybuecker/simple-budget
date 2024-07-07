@@ -1,6 +1,6 @@
 use crate::SharedState;
-use axum::{routing::get, Router};
 mod create;
+use axum::{routing::get, Router};
 mod delete;
 mod edit;
 mod index;

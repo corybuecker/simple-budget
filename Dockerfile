@@ -1,12 +1,15 @@
 FROM rust:1.79.0 AS backend_builder
+
 RUN mkdir -p /build
-COPY Cargo.toml /build/
-COPY src /build/src
 WORKDIR /build
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/build/target \
-    cargo build --release
-RUN --mount=type=cache,target=/build/target cp /build/target/release/simple-budget /build/simple-budget
+COPY Cargo.toml /build/
+RUN mkdir -p /build/src
+RUN echo "fn main() {}" > /build/src/main.rs
+RUN cargo build --release
+COPY src /build/src
+RUN touch /build/src/main.rs
+RUN cargo build --release
+RUN cp /build/target/release/simple-budget /build/simple-budget
 
 FROM node:alpine AS frontend_builder
 RUN mkdir /build

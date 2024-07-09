@@ -25,7 +25,8 @@ pub async fn page(
 ) -> Result<Response, StatusCode> {
     log::debug!("{:?}", user);
 
-    let context = Context::new();
+    let mut context = Context::new();
+    context.insert("csrf", &user.csrf);
     let Ok(content) = shared_state.tera.render("envelopes/new.html", &context) else {
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };

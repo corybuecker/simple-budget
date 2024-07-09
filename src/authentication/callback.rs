@@ -2,7 +2,7 @@ use crate::SharedState;
 use axum::{
     extract::State,
     http::StatusCode,
-    response::{IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Response},
 };
 use axum_extra::extract::{
     cookie::{Cookie, SameSite},
@@ -19,6 +19,10 @@ use openidconnect::{
     AuthorizationCode, ClientId, ClientSecret, IssuerUrl, Nonce, TokenResponse,
 };
 use openidconnect::{reqwest::async_http_client, RedirectUrl};
+use rand::{
+    distributions::{Alphanumeric, DistString},
+    thread_rng,
+};
 use serde::{Deserialize, Serialize};
 use std::env;
 
@@ -32,6 +36,7 @@ struct Session {
     #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     expiration: DateTime<Utc>,
     id: bson::Uuid,
+    csrf: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -112,7 +117,7 @@ pub async fn callback(
                 .secure(secure == "true".to_string())
                 .build();
 
-            return Ok((jar.add(cookie), Redirect::to("/reports").into_response()));
+            return Ok((jar.add(cookie), Html::from("OK").into_response()));
         }
         Err(code) => {
             error!("issue with sesssion");
@@ -127,19 +132,22 @@ async fn create_session(
     email: String,
 ) -> Result<String, StatusCode> {
     let user_collection: Collection<User> = mongo.database("simple_budget").collection("users");
+    let csrf = Alphanumeric.sample_string(&mut thread_rng(), 32);
 
     let Ok(user) = upsert_subject(mongo, subject, email).await else {
         return Err(StatusCode::FORBIDDEN);
     };
+
     let expiration = Utc::now().checked_add_days(Days::new(1)).expect("msg");
     let session = Session {
         id: Uuid::new(),
         expiration,
+        csrf: csrf.clone(),
     };
     let result = user_collection
         .update_one(
             doc! {"subject": user.subject},
-            doc! {"$push": doc! {"sessions": doc! {"expiration": session.expiration, "id": session.id, "_id": ObjectId::new()}}}
+            doc! {"$push": doc! {"sessions": doc! {"expiration": session.expiration, "id": session.id, "_id": ObjectId::new(), "csrf": session.csrf}}}
         )
         .await;
     log::info!("{:?}", result);

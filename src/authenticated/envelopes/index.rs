@@ -40,6 +40,7 @@ pub async fn page(
         .collection("envelopes");
 
     let mut context = Context::new();
+    context.insert("csrf", &user.csrf);
     let mut envelopes: Vec<EnvelopeRecord> = Vec::new();
 
     match collection.find(doc! {"user_id": &user_id}).await {

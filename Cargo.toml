@@ -12,6 +12,7 @@ chrono = "0.4.38"
 log = "0.4.22"
 mongodb = { version = "3.0.0" }
 openidconnect = { version = "3.5.0", features = ["reqwest"] }
+rand = "0.8.5"
 serde = "1.0.203"
 tera = { version = "1.20.0" }
 tokio = { version = "1.38.0", features = ["full"] }

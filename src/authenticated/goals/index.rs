@@ -41,6 +41,7 @@ pub async fn page(
 
     let mut context = Context::new();
     let mut goals: Vec<GoalRecord> = Vec::new();
+    context.insert("csrf", &user.csrf);
 
     match collection.find(doc! {"user_id": &user_id}).await {
         Ok(mut cursor) => {

@@ -42,6 +42,7 @@ pub async fn page(
         .collection::<Account>("accounts");
 
     let mut context = Context::new();
+    context.insert("csrf", &user.csrf);
     let mut accounts: Vec<AccountRecord> = Vec::new();
 
     match collection.find(doc! {"user_id": &user_id}).await {

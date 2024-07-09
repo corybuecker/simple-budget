@@ -43,6 +43,7 @@ pub async fn page(
     };
 
     let mut context = Context::new();
+    context.insert("csrf", &user.csrf);
 
     context.insert("id", &envelope._id);
     context.insert("name", &envelope.name);

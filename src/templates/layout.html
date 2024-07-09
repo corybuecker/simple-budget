@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1" />
 
+  {% if csrf %}
+    <meta name="csrf-token" content="{{ csrf }}" />   
+  {% endif %}
+
   <!--
   JSPM Generator Import Map
   Edit URL: https://generator.jspm.io/#Y2VnYGBkTM4vqkwqTU3OTi1icMjILynPLEpN0S8pLUrKd7DQM9AzAQCjsMejJwA

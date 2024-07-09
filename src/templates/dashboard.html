@@ -3,14 +3,13 @@
 
 {% set remaining = (accounts_total - envelopes_total - goals_total) / remaining_seconds %}
 {% set deg_value = 1.0 - ((78.0 - remaining) / 20.0)  %}
-{% set deg = 135.0 * deg_value %}
+{% set deg = 90 * deg_value %}
 
 
 <div class="flex justify-center">
   <div class="w-64">
   <div class="bg-blue-400 aspect-[2] rounded-t-full relative flex items-center justify-center overflow-hidden">
     <div class="absolute top-0 aspect-square w-full bg-gradient-to-tr from-transparent from-50% to-white to-50%" style="transform: rotate({{deg}}deg)"></div>
-    {{deg}}
   </div>
   </div>
 </div>

@@ -50,7 +50,7 @@ pub async fn page(
     };
 
     let mut context = Context::new();
-
+    context.insert("csrf", &user.csrf);
     context.insert("id", &account._id);
     context.insert("name", &account.name);
     context.insert("amount", &account.amount);

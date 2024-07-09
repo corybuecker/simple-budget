@@ -50,6 +50,7 @@ pub async fn page(
 
     let mut context = Context::new();
 
+    context.insert("csrf", &user.csrf);
     context.insert("id", &goal._id);
     context.insert("name", &goal.name);
     context.insert("target", &goal.target);

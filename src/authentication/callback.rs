@@ -120,8 +120,8 @@ pub async fn callback(
             return Ok((jar.add(cookie), Html::from("OK").into_response()));
         }
         Err(code) => {
-            error!("issue with sesssion");
-            return Err(code);
+            error!("{}", code);
+            return Err(StatusCode::FORBIDDEN);
         }
     }
 }
@@ -130,13 +130,11 @@ async fn create_session(
     mongo: Client,
     subject: String,
     email: String,
-) -> Result<String, StatusCode> {
+) -> Result<String, mongodb::error::Error> {
     let user_collection: Collection<User> = mongo.database("simple_budget").collection("users");
     let csrf = Alphanumeric.sample_string(&mut thread_rng(), 32);
 
-    let Ok(user) = upsert_subject(mongo, subject, email).await else {
-        return Err(StatusCode::FORBIDDEN);
-    };
+    let user = upsert_subject(mongo, subject, email).await?;
 
     let expiration = Utc::now().checked_add_days(Days::new(1)).expect("msg");
     let session = Session {
@@ -144,13 +142,13 @@ async fn create_session(
         expiration,
         csrf: csrf.clone(),
     };
-    let result = user_collection
+    let _result = user_collection
         .update_one(
             doc! {"subject": user.subject},
             doc! {"$push": doc! {"sessions": doc! {"expiration": session.expiration, "id": session.id, "_id": ObjectId::new(), "csrf": session.csrf}}}
         )
-        .await;
-    log::info!("{:?}", result);
+        .await?;
+
     return Ok(session.id.to_string());
 }
 

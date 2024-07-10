@@ -1,6 +1,7 @@
 mod authentication;
 use axum::{extract::FromRef, Router};
 use axum_extra::extract::cookie::Key;
+use log::LevelFilter;
 use mongodb::Client;
 use std::{collections::HashMap, env, str::FromStr, time::SystemTime};
 use tera::Tera;
@@ -60,8 +61,10 @@ fn digest_asset() -> impl tera::Function {
 
 #[tokio::main]
 async fn main() {
+    let tracing_fmt = tracing_subscriber::fmt::format().pretty();
     tracing_subscriber::fmt()
         .with_max_level(Level::DEBUG)
+        .event_format(tracing_fmt)
         .init();
 
     let mut tera = Tera::new("src/templates/**/*.html").expect("cannot initialize Tera");

@@ -1,7 +1,7 @@
 use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };
@@ -21,6 +21,39 @@ pub struct Account {
     debt: Option<bool>,
 }
 
+#[derive(Debug)]
+pub struct Error {
+    message: String,
+}
+
+impl IntoResponse for Error {
+    fn into_response(self) -> Response {
+        return (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response();
+    }
+}
+
+impl From<bson::oid::Error> for Error {
+    fn from(value: bson::oid::Error) -> Self {
+        Error {
+            message: value.to_string(),
+        }
+    }
+}
+
+impl From<tera::Error> for Error {
+    fn from(value: tera::Error) -> Self {
+        Error {
+            message: value.to_string(),
+        }
+    }
+}
+impl From<mongodb::error::Error> for Error {
+    fn from(value: mongodb::error::Error) -> Self {
+        Error {
+            message: value.to_string(),
+        }
+    }
+}
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AccountRecord {
     #[serde(with = "hex_string_as_object_id")]
@@ -36,11 +69,22 @@ pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<String>,
+    headers: HeaderMap,
     form: Form<Account>,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, Error> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
 
+    let mut turbo = false;
+    let accept = headers.get("Accept");
+    match accept {
+        Some(accept) => {
+            if accept.to_str().unwrap().contains("turbo") {
+                turbo = true;
+            }
+        }
+        _ => {}
+    }
     match form.validate() {
         Ok(_) => {}
         Err(validation_errors) => {
@@ -51,12 +95,25 @@ pub async fn page(
             context.insert("name", &form.name);
             context.insert("amount", &form.amount);
             context.insert("debt", &form.debt);
+            let content = shared_state.tera.render(
+                if turbo {
+                    "accounts/edit.turbo.html"
+                } else {
+                    "accounts/edit.html"
+                },
+                &context,
+            )?;
 
-            let Ok(content) = shared_state.tera.render("accounts/edit.html", &context) else {
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            };
-
-            return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
+            if turbo {
+                return Ok((
+                    StatusCode::BAD_REQUEST,
+                    [("content-type", "text/vnd.turbo-stream.html")],
+                    Html::from(content),
+                )
+                    .into_response());
+            } else {
+                return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
+            }
         }
     }
 
@@ -68,20 +125,19 @@ pub async fn page(
     let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
     log::debug!("{:?}", filter);
 
-    let Ok(account) = accounts.find_one(filter.clone()).await else {
-        log::error!("could not find record");
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
+    let account = accounts.find_one(filter.clone()).await?;
 
     let Some(mut account) = account else {
-        return Err(StatusCode::NOT_FOUND);
+        return Err(Error {
+            message: "could not find account".to_string(),
+        });
     };
 
     account.name = form.name.clone();
     account.amount = form.amount;
     account.debt = form.debt.or(Some(false)).unwrap();
 
-    let _ = accounts.replace_one(filter, account).await;
+    let _ = accounts.replace_one(filter, account).await?;
 
     Ok(Redirect::to("/accounts").into_response())
 }

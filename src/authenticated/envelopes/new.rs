@@ -27,9 +27,11 @@ pub async fn page(
 
     let mut context = Context::new();
     context.insert("csrf", &user.csrf);
-    let Ok(content) = shared_state.tera.render("envelopes/new.html", &context) else {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
-
-    Ok(Html::from(content).into_response())
+    match shared_state.tera.render("envelopes/new.html", &context) {
+        Ok(content) => Ok(Html::from(content).into_response()),
+        Err(error) => {
+            log::error!("{}", error);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }

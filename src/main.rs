@@ -1,7 +1,6 @@
 mod authentication;
 use axum::{extract::FromRef, Router};
 use axum_extra::extract::cookie::Key;
-use log::LevelFilter;
 use mongodb::Client;
 use std::{collections::HashMap, env, str::FromStr, time::SystemTime};
 use tera::Tera;

@@ -1,8 +1,5 @@
-{% extends "layout.html" %}
-{% block content %}
-<p>Goals</p>
-<turbo-frame id="new-goals">
-<form method="post" class="flex flex-col" action="/goals">
+<turbo-frame id="goals-{{ id }}">
+<form method="put" action="/goals/{{ id }}">
     {% if errors %}
     <div>{{errors}}</div>
     {% endif %}
@@ -38,4 +35,3 @@
     </div>
 </form>
 </turbo-frame>
-{% endblock content %}

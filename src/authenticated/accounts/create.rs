@@ -1,7 +1,7 @@
 use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::State,
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };
@@ -31,14 +31,58 @@ pub struct AccountRecord {
     user_id: ObjectId,
 }
 
+#[derive(Debug)]
+pub struct Error {
+    message: String,
+}
+
+impl IntoResponse for Error {
+    fn into_response(self) -> Response {
+        return (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response();
+    }
+}
+
+impl From<bson::oid::Error> for Error {
+    fn from(value: bson::oid::Error) -> Self {
+        Error {
+            message: value.to_string(),
+        }
+    }
+}
+
+impl From<tera::Error> for Error {
+    fn from(value: tera::Error) -> Self {
+        Error {
+            message: value.to_string(),
+        }
+    }
+}
+impl From<mongodb::error::Error> for Error {
+    fn from(value: mongodb::error::Error) -> Self {
+        Error {
+            message: value.to_string(),
+        }
+    }
+}
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
+    headers: HeaderMap,
     Form(form): Form<Account>,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, Error> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
 
+    let mut turbo = false;
+    let accept = headers.get("Accept");
+    match accept {
+        Some(accept) => {
+            if accept.to_str().unwrap().contains("turbo") {
+                turbo = true;
+            }
+        }
+        _ => {}
+    }
     match form.validate() {
         Ok(_) => {}
         Err(validation_errors) => {
@@ -49,11 +93,25 @@ pub async fn page(
             context.insert("amount", &form.amount);
             context.insert("debt", &form.debt);
 
-            let Ok(content) = shared_state.tera.render("accounts/new.html", &context) else {
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            };
+            let content = shared_state.tera.render(
+                if turbo {
+                    "accounts/new.turbo.html"
+                } else {
+                    "accounts/new.html"
+                },
+                &context,
+            )?;
 
-            return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
+            if turbo {
+                return Ok((
+                    StatusCode::BAD_REQUEST,
+                    [("content-type", "text/vnd.turbo-stream.html")],
+                    Html::from(content),
+                )
+                    .into_response());
+            } else {
+                return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
+            }
         }
     }
 
@@ -68,7 +126,7 @@ pub async fn page(
         .database("simple_budget")
         .collection("accounts");
 
-    let _ = accounts.insert_one(account_record).await;
+    let _ = accounts.insert_one(account_record).await?;
 
     Ok(Redirect::to("/accounts").into_response())
 }

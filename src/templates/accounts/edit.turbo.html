@@ -1,9 +1,7 @@
-{% extends "layout.html" %}
-{% block content %}
-<p>Accounts</p>
-<form id="accounts-{{ id }}" method="put" action="/accounts/{{ id }}">
+<turbo-stream action="update" target="accounts-{{ id }}">
+  <template>
     {% if errors %}
-    <p>{{errors}}</p>
+      <p>{{errors}}</p>
     {% endif %}
     <div>
     <label for="name">Name</label>
@@ -18,6 +16,6 @@
     <label for="debt">Debt</label>
     <input name="debt" type="checkbox" {% if debt %}{{ "checked" }}{% endif %} value="true" />
     </div>
-    <input type="submit" value="Save" />
-</form>
-{% endblock content %}
+    <input type="submit">Save</input>
+  </template>
+</turbo-stream>

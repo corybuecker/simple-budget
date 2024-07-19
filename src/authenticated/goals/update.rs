@@ -1,7 +1,7 @@
 use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };
@@ -34,15 +34,60 @@ pub struct GoalRecord {
     recurrence: String,
 }
 
+#[derive(Debug)]
+pub struct Error {
+    message: String,
+}
+
+impl IntoResponse for Error {
+    fn into_response(self) -> Response {
+        return (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response();
+    }
+}
+
+impl From<bson::oid::Error> for Error {
+    fn from(value: bson::oid::Error) -> Self {
+        Error {
+            message: value.to_string(),
+        }
+    }
+}
+
+impl From<tera::Error> for Error {
+    fn from(value: tera::Error) -> Self {
+        Error {
+            message: value.to_string(),
+        }
+    }
+}
+
+impl From<mongodb::error::Error> for Error {
+    fn from(value: mongodb::error::Error) -> Self {
+        Error {
+            message: value.to_string(),
+        }
+    }
+}
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<String>,
+    headers: HeaderMap,
     form: Form<Goal>,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, Error> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
 
+    let mut turbo = false;
+    let accept = headers.get("Accept");
+    match accept {
+        Some(accept) => {
+            if accept.to_str().unwrap().contains("turbo") {
+                turbo = true;
+            }
+        }
+        _ => {}
+    }
     match form.validate() {
         Ok(_) => {}
         Err(validation_errors) => {
@@ -55,9 +100,7 @@ pub async fn page(
             context.insert("target_date", &form.target_date);
             context.insert("recurrence", &form.recurrence);
 
-            let Ok(content) = shared_state.tera.render("goals/edit.html", &context) else {
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            };
+            let content = shared_state.tera.render("goals/edit.html", &context)?;
 
             return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
         }
@@ -71,20 +114,19 @@ pub async fn page(
     let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
     log::debug!("{:?}", filter);
 
-    let Ok(goal) = goals.find_one(filter.clone()).await else {
-        log::error!("could not find record");
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
+    let goal = goals.find_one(filter.clone()).await?;
 
     let Some(mut goal) = goal else {
-        return Err(StatusCode::NOT_FOUND);
+        return Err(Error {
+            message: "could not find goal".to_string(),
+        });
     };
 
     goal.name = form.name.clone();
     goal.target = form.target;
     goal.target_date = NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc();
     goal.recurrence = form.recurrence.clone();
-    let _ = goals.replace_one(filter, goal).await;
+    let _ = goals.replace_one(filter, goal).await?;
 
     Ok(Redirect::to("/goals").into_response())
 }

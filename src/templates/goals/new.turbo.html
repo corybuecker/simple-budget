@@ -1,6 +1,3 @@
-{% extends "layout.html" %}
-{% block content %}
-<p>Goals</p>
 <turbo-frame id="new-goals">
 <form method="post" class="flex flex-col" action="/goals">
     {% if errors %}
@@ -38,4 +35,3 @@
     </div>
 </form>
 </turbo-frame>
-{% endblock content %}

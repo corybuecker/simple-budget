@@ -1,4 +1,7 @@
-use crate::{authenticated::UserExtension, SharedState};
+use crate::{
+    authenticated::{FormError, UserExtension},
+    SharedState,
+};
 use axum::{
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
@@ -21,39 +24,6 @@ pub struct Account {
     debt: Option<bool>,
 }
 
-#[derive(Debug)]
-pub struct Error {
-    message: String,
-}
-
-impl IntoResponse for Error {
-    fn into_response(self) -> Response {
-        return (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response();
-    }
-}
-
-impl From<bson::oid::Error> for Error {
-    fn from(value: bson::oid::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<tera::Error> for Error {
-    fn from(value: tera::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-impl From<mongodb::error::Error> for Error {
-    fn from(value: mongodb::error::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AccountRecord {
     #[serde(with = "hex_string_as_object_id")]
@@ -71,7 +41,7 @@ pub async fn page(
     Path(id): Path<String>,
     headers: HeaderMap,
     form: Form<Account>,
-) -> Result<Response, Error> {
+) -> Result<Response, FormError> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
 
@@ -128,7 +98,7 @@ pub async fn page(
     let account = accounts.find_one(filter.clone()).await?;
 
     let Some(mut account) = account else {
-        return Err(Error {
+        return Err(FormError {
             message: "could not find account".to_string(),
         });
     };

@@ -1,3 +1,4 @@
+use super::super::FormError;
 use crate::{authenticated::UserExtension, SharedState};
 use axum::{
     extract::State,
@@ -35,47 +36,12 @@ pub struct GoalRecord {
     recurrence: String,
 }
 
-#[derive(Debug)]
-pub struct Error {
-    message: String,
-}
-
-impl IntoResponse for Error {
-    fn into_response(self) -> Response {
-        return (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response();
-    }
-}
-
-impl From<bson::oid::Error> for Error {
-    fn from(value: bson::oid::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<tera::Error> for Error {
-    fn from(value: tera::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<mongodb::error::Error> for Error {
-    fn from(value: mongodb::error::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
     form: Form<Goal>,
-) -> Result<Response, Error> {
+) -> Result<Response, FormError> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
 

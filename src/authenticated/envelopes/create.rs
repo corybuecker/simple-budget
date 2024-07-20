@@ -1,4 +1,7 @@
-use crate::{authenticated::UserExtension, SharedState};
+use crate::{
+    authenticated::{FormError, UserExtension},
+    SharedState,
+};
 use axum::{
     extract::{Request, State},
     http::{HeaderMap, HeaderValue, StatusCode},
@@ -27,39 +30,12 @@ pub struct EnvelopeRecord {
     user_id: ObjectId,
 }
 
-#[derive(Debug)]
-pub struct Error {
-    message: String,
-}
-
-impl IntoResponse for Error {
-    fn into_response(self) -> Response {
-        return (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response();
-    }
-}
-
-impl From<bson::oid::Error> for Error {
-    fn from(value: bson::oid::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<mongodb::error::Error> for Error {
-    fn from(value: mongodb::error::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
     form: Form<Envelope>,
-) -> Result<Response, Error> {
+) -> Result<Response, FormError> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
     let mut context = Context::new();
@@ -82,18 +58,14 @@ pub async fn page(
             context.insert("name", &form.name);
             context.insert("amount", &form.amount);
 
-            let Ok(content) = shared_state.tera.render(
+            let content = shared_state.tera.render(
                 if turbo {
                     "envelopes/new.turbo.html"
                 } else {
                     "envelopes/new.html"
                 },
                 &context,
-            ) else {
-                return Err(Error {
-                    message: "cannot render".to_owned(),
-                });
-            };
+            )?;
 
             if turbo {
                 return Ok((

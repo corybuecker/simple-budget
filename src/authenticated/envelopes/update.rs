@@ -1,4 +1,7 @@
-use crate::{authenticated::UserExtension, SharedState};
+use crate::{
+    authenticated::{FormError, UserExtension},
+    SharedState,
+};
 use axum::{
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
@@ -26,47 +29,13 @@ pub struct EnvelopeRecord {
     user_id: ObjectId,
 }
 
-#[derive(Debug)]
-pub struct Error {
-    message: String,
-}
-
-impl IntoResponse for Error {
-    fn into_response(self) -> Response {
-        return (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response();
-    }
-}
-
-impl From<bson::oid::Error> for Error {
-    fn from(value: bson::oid::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<tera::Error> for Error {
-    fn from(value: tera::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-impl From<mongodb::error::Error> for Error {
-    fn from(value: mongodb::error::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<String>,
     headers: HeaderMap,
     form: Form<Envelope>,
-) -> Result<Response, Error> {
+) -> Result<Response, FormError> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
 
@@ -99,13 +68,21 @@ pub async fn page(
                 },
                 &context,
             ) else {
-                return Err(Error {
+                return Err(FormError {
                     message: "cannot render".to_owned(),
                 });
             };
 
-            let content = shared_state.tera.render("envelopes/edit.html", &context)?;
-            return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
+            if turbo {
+                return Ok((
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    [("content-type", "text/vnd.turbo-stream.html")],
+                    Html::from(content),
+                )
+                    .into_response());
+            } else {
+                return Ok((StatusCode::UNPROCESSABLE_ENTITY, Html::from(content)).into_response());
+            }
         }
     }
 
@@ -120,7 +97,7 @@ pub async fn page(
     let envelope = envelopes.find_one(filter.clone()).await?;
 
     let Some(mut envelope) = envelope else {
-        return Err(Error {
+        return Err(FormError {
             message: "could not update envelope".to_string(),
         });
     };

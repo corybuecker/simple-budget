@@ -1,4 +1,7 @@
-use crate::{authenticated::UserExtension, SharedState};
+use crate::{
+    authenticated::{FormError, UserExtension},
+    SharedState,
+};
 use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
@@ -31,45 +34,12 @@ pub struct AccountRecord {
     user_id: ObjectId,
 }
 
-#[derive(Debug)]
-pub struct Error {
-    message: String,
-}
-
-impl IntoResponse for Error {
-    fn into_response(self) -> Response {
-        return (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response();
-    }
-}
-
-impl From<bson::oid::Error> for Error {
-    fn from(value: bson::oid::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<tera::Error> for Error {
-    fn from(value: tera::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-impl From<mongodb::error::Error> for Error {
-    fn from(value: mongodb::error::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
     Form(form): Form<Account>,
-) -> Result<Response, Error> {
+) -> Result<Response, FormError> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
 

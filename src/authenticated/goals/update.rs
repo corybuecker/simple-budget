@@ -1,4 +1,7 @@
-use crate::{authenticated::UserExtension, SharedState};
+use crate::{
+    authenticated::{FormError, UserExtension},
+    SharedState,
+};
 use axum::{
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
@@ -34,47 +37,13 @@ pub struct GoalRecord {
     recurrence: String,
 }
 
-#[derive(Debug)]
-pub struct Error {
-    message: String,
-}
-
-impl IntoResponse for Error {
-    fn into_response(self) -> Response {
-        return (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response();
-    }
-}
-
-impl From<bson::oid::Error> for Error {
-    fn from(value: bson::oid::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<tera::Error> for Error {
-    fn from(value: tera::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
-
-impl From<mongodb::error::Error> for Error {
-    fn from(value: mongodb::error::Error) -> Self {
-        Error {
-            message: value.to_string(),
-        }
-    }
-}
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<String>,
     headers: HeaderMap,
     form: Form<Goal>,
-) -> Result<Response, Error> {
+) -> Result<Response, FormError> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
 
@@ -100,7 +69,14 @@ pub async fn page(
             context.insert("target_date", &form.target_date);
             context.insert("recurrence", &form.recurrence);
 
-            let content = shared_state.tera.render("goals/edit.html", &context)?;
+            let content = shared_state.tera.render(
+                if turbo {
+                    "goals/edit.turbo.html"
+                } else {
+                    "goals/edit.html"
+                },
+                &context,
+            )?;
 
             return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
         }
@@ -117,7 +93,7 @@ pub async fn page(
     let goal = goals.find_one(filter.clone()).await?;
 
     let Some(mut goal) = goal else {
-        return Err(Error {
+        return Err(FormError {
             message: "could not find goal".to_string(),
         });
     };

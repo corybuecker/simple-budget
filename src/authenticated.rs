@@ -118,7 +118,7 @@ async fn authenticated(
         .projection(doc! {"sessions.$": 1, "email": 1, "subject": 1})
         .build();
     let user = users
-        .find_one(doc! {"sessions.id": Uuid::parse_str(session_id).unwrap()})
+        .find_one(doc! {"sessions.id": Uuid::parse_str(session_id).unwrap(), "sessions.expiration": doc! { "$gte": Utc::now() } })
         .with_options(option)
         .await;
 
@@ -132,6 +132,7 @@ async fn authenticated(
         Redirect::to("authentication/login").into_response()
     }
 }
+
 pub fn authenticated_router(state: SharedState) -> Router<SharedState> {
     Router::new()
         .nest("/accounts", accounts::accounts_router())

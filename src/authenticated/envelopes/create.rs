@@ -3,8 +3,8 @@ use crate::{
     SharedState,
 };
 use axum::{
-    extract::{Request, State},
-    http::{HeaderMap, HeaderValue, StatusCode},
+    extract::State,
+    http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };

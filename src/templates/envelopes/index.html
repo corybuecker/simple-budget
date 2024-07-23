@@ -5,7 +5,7 @@
 {% for envelope in envelopes %}
 <p>
     <a href="/envelopes/{{envelope.id}}">{{envelope.name}}</a>
-<form method="delete" action="/envelopes/{{envelope.id}}">
+<form method="delete" action="/envelopes/{{envelope.id}}" data-turbo-confirm="Sure?">
     <input type="submit" value="Delete" />
 </form>
 </p>

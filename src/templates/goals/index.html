@@ -5,7 +5,7 @@
 {% for goal in goals %}
 <p>
     <a href="/goals/{{goal.id}}">{{goal.name}}</a>
-<form method="delete" action="/goals/{{goal.id}}">
+<form method="delete" action="/goals/{{goal.id}}" data-turbo-confirm="Sure?">
     <input type="submit" value="Delete" />
 </form>
 </p>

@@ -5,7 +5,7 @@
 {% for account in accounts %}
 <p>
 <a href="/accounts/{{account.id}}">{{account.name}}</a>
-<form method="delete" action="/accounts/{{account.id}}">
+<form method="delete" action="/accounts/{{account.id}}" data-turbo-confirm="Sure?">
   <input type="submit" value="Delete" />
 </form>
 </p>

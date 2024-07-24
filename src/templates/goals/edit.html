@@ -1,8 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
 <p>Goals</p>
-<turbo-frame id="goals-{{ id }}">
-<form method="put" action="/goals/{{ id }}">
+<form id="goals-{{ id }}" method="put" action="/goals/{{ id }}">
     {% if errors %}
     <div>{{errors}}</div>
     {% endif %}
@@ -37,5 +36,4 @@
         <input type="submit" value="Save" />
     </div>
 </form>
-</turbo-frame>
 {% endblock content %}

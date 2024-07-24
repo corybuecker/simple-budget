@@ -78,7 +78,16 @@ pub async fn page(
                 &context,
             )?;
 
-            return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
+            if turbo {
+                return Ok((
+                    StatusCode::BAD_REQUEST,
+                    [("content-type", "text/vnd.turbo-stream.html")],
+                    Html::from(content),
+                )
+                    .into_response());
+            } else {
+                return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
+            }
         }
     }
 

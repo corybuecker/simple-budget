@@ -1,51 +1,57 @@
 <html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1" />
 
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1" />
-
-  {% if csrf %}
-    <meta name="csrf-token" content="{{ csrf }}" />   
-  {% endif %}
-
-  <!--
-  JSPM Generator Import Map
-  Edit URL: https://generator.jspm.io/#Y2VnYGBkTM4vqkwqTU3OTi1icMjILynPLEpN0S8pLUrKd7DQM9AzAQCjsMejJwA
--->
-  <script type="importmap">
+    {% if csrf %}
+      <meta name="csrf-token" content="{{ csrf }}" />   
+    {% endif %}
+    
+    <!--
+      JSPM Generator Import Map
+      Edit URL: https://generator.jspm.io/#Y2VnYGBiTs4vqkwqTU3OTi1icMjILynPLEpN0S8uycwtzSktdjDWM9IzQpIoKS1Kynew0DPQMwUAZ9h56kAA
+    -->
+     <script type="importmap">
     {
       "imports": {
-        "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.4/dist/turbo.es2017-esm.js"
+        "@hotwired/stimulus": "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js",
+        "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.5/dist/turbo.es2017-esm.js",
+        "controllers/": "/assets/controllers/"
+      },
+      "integrity": {
+        "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js": "sha384-NStGXzUH4pFNGrLRkzXYz7zzDn8S6MvFPwfKSuYf6TlX25BrNVP4oCN2S04XUuOI",
+        "https://ga.jspm.io/npm:@hotwired/turbo@8.0.5/dist/turbo.es2017-esm.js": "sha384-X0tpH4zny/Ei/nRQDzJetxNnASrfOb+3HbVmlQqsylGFgvEXR8pv83YKCs+82aOf"
       }
     }
     </script>
 
-  <!-- ES Module Shims: Import maps polyfill for older browsers without import maps support (eg Safari 16.3) -->
-  <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"
-    integrity="sha384-ie1x72Xck445i0j4SlNJ5W5iGeL3Dpa0zD48MZopgWsjNB/lt60SuG1iduZGNnJn"
-    crossorigin="anonymous"></script>
+    <!-- ES Module Shims import maps polyfills -->
+    <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js" integrity="sha384-ie1x72Xck445i0j4SlNJ5W5iGeL3Dpa0zD48MZopgWsjNB/lt60SuG1iduZGNnJn" crossorigin="anonymous"></script>
 
-  <link rel="modulepreload" href="https://ga.jspm.io/npm:@hotwired/turbo@8.0.4/dist/turbo.es2017-esm.js"
-    integrity="sha384-9L4CKakr2dokVw57T+WxD+LWnad4+vw0qLlH1Y0+Sqva14nv7WvDrQqY6FlBVoIe" />
+    <link rel="modulepreload" href="https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js"/>
+    <link rel="modulepreload" href="https://ga.jspm.io/npm:@hotwired/turbo@8.0.5/dist/turbo.es2017-esm.js"/>
 
-  <link rel="stylesheet" href={{ digest_asset(file="app.css" ) }}>
-</head>
 
-<body>
-  <nav class="bg-gray-800">
-    <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-      <a class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" href="/reports">Reports</a>
-      <a class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" href="/accounts">Accounts</a>
-      <a class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" href="/envelopes">Envelopes</a>
-      <a class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" href="/goals">Goals</a>
-    </div>
-  </nav>
-  <main class="@container">
-    {% block content %}{% endblock content %}
-  </main>
-  <script type="module">
-    import * as Turbo from "@hotwired/turbo"
-  </script>
-</body>
+    <link rel="stylesheet" href={{ digest_asset(file="app.css" ) }}>
+  </head>
 
+  <body>
+    <nav>
+      <a data-controller="form" href="/reports">Reports</a>
+      <a href="/accounts">Accounts</a>
+      <a href="/envelopes">Envelopes</a>
+      <a href="/goals">Goals</a>
+    </nav>
+    <main class="@container">
+      {% block content %}{% endblock content %}
+    </main>
+    <script type="module">
+      import * as Turbo from "@hotwired/turbo"
+      import { Application, Controller } from "@hotwired/stimulus"
+      import FormController from "controllers/form_controller.js"
+      
+      window.Stimulus = Application.start()
+      Stimulus.register("form", FormController)
+    </script>
+  </body>
 </html>

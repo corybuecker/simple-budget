@@ -1,5 +1,5 @@
-<turbo-frame id="goals-{{ id }}">
-<form method="put" action="/goals/{{ id }}">
+<turbo-stream action="update" target="goals-{{ id }}">
+  <template>
     {% if errors %}
     <div>{{errors}}</div>
     {% endif %}
@@ -33,5 +33,5 @@
     <div>
         <input type="submit" value="Save" />
     </div>
-</form>
-</turbo-frame>
+  </template>
+</turbo-stream>

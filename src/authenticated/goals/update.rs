@@ -71,7 +71,7 @@ pub async fn page(
 
             let content = shared_state.tera.render(
                 if turbo {
-                    "goals/edit.turbo.html"
+                    "goals/form.turbo.html"
                 } else {
                     "goals/edit.html"
                 },

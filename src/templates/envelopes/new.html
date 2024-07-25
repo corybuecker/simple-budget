@@ -1,20 +1,2 @@
-{% extends "layout.html" %}
-{% block content %}
-<p>Envelopes</p>
-<form id="new-envelope" method="post" action="/envelopes">
-    {% if errors %}
-    <div>{{errors}}</div>
-    {% endif %}
-    <div>
-      <label for="name">Name</label>
-      <input name="name" type="text" required value="{% if name %}{{ name }}{% endif %}" />
-    </div>
-    <div>
-      <label for="amount">Amount</label>
-      <input name="amount" required type="number" value="{% if amount %}{{ amount }}{% endif %}" />
-    </div>
-    <div>
-      <input type="submit" value="Save" />
-    </div>
-</form>
-{% endblock content %}
+{% extends "envelopes/form.html" %}
+{% block formtag %}<form id="new-envelope" method="post" action="/envelopes" class="flex flex-col gap-4">{% endblock formtag %}

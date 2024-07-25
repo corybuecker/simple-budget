@@ -1,20 +1,3 @@
-{% extends "layout.html" %}
-{% block content %}
-<p>Envelopes</p>
-  <form id="envelope-{{ id }}" method="put" action="/envelopes/{{ id }}">
-      {% if errors %}
-      <div>{{errors}}</div>
-      {% endif %}
-      <div>
-          <label for="name">Name</label>
-          <input name="name" type="text" required value="{% if name %}{{ name }}{% endif %}" />
-      </div>
-      <div>
-          <label for="amount">Amount</label>
-          <input name="amount" required type="number" value="{% if amount %}{{ amount }}{% endif %}" />
-      </div>
-      <div>
-          <input type="submit" value="Save" />
-      </div>
-  </form>
-{% endblock content %}
+{% extends "envelopes/form.html" %}
+{% block formtag %}<form class="flex flex-col gap-4" id="envelope-{{ id }}" method="put" action="/envelopes/{{ id }}"> {% endblock formtag %}
+  

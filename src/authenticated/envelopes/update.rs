@@ -62,7 +62,7 @@ pub async fn page(
 
             let Ok(content) = shared_state.tera.render(
                 if turbo {
-                    "envelopes/edit.turbo.html"
+                    "envelopes/form.turbo.html"
                 } else {
                     "envelopes/edit.html"
                 },

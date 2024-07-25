@@ -67,7 +67,7 @@ pub async fn page(
             context.insert("debt", &form.debt);
             let content = shared_state.tera.render(
                 if turbo {
-                    "accounts/edit.turbo.html"
+                    "accounts/form.turbo.html"
                 } else {
                     "accounts/edit.html"
                 },

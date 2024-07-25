@@ -25,5 +25,6 @@ COPY --from=backend_builder /build/simple-budget /app/simple-budget
 COPY src/templates /app/src/templates
 COPY controllers /app/static/controllers
 COPY --from=frontend_builder /build/app.css /app/static/app.css
+
 WORKDIR /app
 CMD ["/app/simple-budget"]

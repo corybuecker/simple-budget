@@ -60,6 +60,15 @@ fn digest_asset() -> impl tera::Function {
 
 #[tokio::main]
 async fn main() {
+    let sentry_url = env::var("SENTRY_URL").unwrap();
+    let _guard = sentry::init((
+        sentry_url,
+        sentry::ClientOptions {
+            release: sentry::release_name!(),
+            ..Default::default()
+        },
+    ));
+
     let tracing_fmt = tracing_subscriber::fmt::format().pretty();
     tracing_subscriber::fmt()
         .with_max_level(Level::DEBUG)

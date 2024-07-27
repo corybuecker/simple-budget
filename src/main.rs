@@ -1,8 +1,10 @@
 mod authentication;
 use axum::{extract::FromRef, Router};
 use axum_extra::extract::cookie::Key;
-use chrono::Local;
+use bson::{doc, oid::ObjectId};
+use chrono::{DateTime, Local, Utc};
 use mongodb::Client;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     env,
@@ -69,12 +71,49 @@ async fn current_time() {
     println!("{}", Local::now())
 }
 
+#[derive(Deserialize, Serialize)]
+struct Session {
+    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
+    expiration: DateTime<Utc>,
+    id: bson::Uuid,
+    csrf: String,
+}
+
+#[derive(Deserialize, Serialize)]
+struct User {
+    subject: String,
+    email: String,
+    sessions: Vec<Session>,
+    _id: ObjectId,
+}
+async fn clear_sessions() {
+    let mongo = mongo_client().await.unwrap();
+
+    let update_result = mongo
+        .database("simple_budget")
+        .collection::<User>("users")
+        .update_many(
+            doc! {},
+            doc! {"$pull": doc! {"sessions": doc! {"expiration": doc! { "$lte": Utc::now()}}}},
+        )
+        .await;
+
+    match update_result {
+        Ok(_) => {}
+        Err(err) => {
+            println!("{}", err);
+        }
+    }
+}
+
 fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     tokio::spawn(async {
         loop {
-            let h1 = tokio::spawn(async { current_time().await });
-            let h2 = tokio::spawn(async { current_time().await });
-            tokio::join!(h1, h2);
+            let h1 = async { current_time().await };
+            let h2 = async { current_time().await };
+
+            tokio::join!(h1, h2, clear_sessions());
+
             thread::sleep(Duration::from_millis(5000))
         }
     })
@@ -122,7 +161,14 @@ async fn main() {
         axum::serve(listener, app).await.unwrap();
     });
 
-    tokio::join!(server_handle, start_background_jobs());
+    let background_jobs_handle = start_background_jobs();
+
+    match tokio::try_join!(server_handle, background_jobs_handle) {
+        Ok(_) => {}
+        Err(err) => {
+            println!("{}", err);
+        }
+    };
 
     return ();
 }

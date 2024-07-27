@@ -1,8 +1,15 @@
 mod authentication;
 use axum::{extract::FromRef, Router};
 use axum_extra::extract::cookie::Key;
+use chrono::Local;
 use mongodb::Client;
-use std::{collections::HashMap, env, str::FromStr, time::SystemTime};
+use std::{
+    collections::HashMap,
+    env,
+    str::FromStr,
+    thread,
+    time::{Duration, SystemTime},
+};
 use tera::Tera;
 mod authenticated;
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -58,6 +65,21 @@ fn digest_asset() -> impl tera::Function {
     };
 }
 
+async fn current_time() {
+    println!("{}", Local::now())
+}
+
+fn start_background_jobs() -> tokio::task::JoinHandle<()> {
+    tokio::spawn(async {
+        loop {
+            let h1 = tokio::spawn(async { current_time().await });
+            let h2 = tokio::spawn(async { current_time().await });
+            tokio::join!(h1, h2);
+            thread::sleep(Duration::from_millis(5000))
+        }
+    })
+}
+
 #[tokio::main]
 async fn main() {
     let sentry_url = env::var("SENTRY_URL").unwrap();
@@ -95,7 +117,14 @@ async fn main() {
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+
+    let server_handle = tokio::spawn(async {
+        axum::serve(listener, app).await.unwrap();
+    });
+
+    tokio::join!(server_handle, start_background_jobs());
+
+    return ();
 }
 
 async fn mongo_client() -> Result<mongodb::Client, mongodb::error::Error> {

@@ -1,5 +1,5 @@
 use super::UserExtension;
-use crate::SharedState;
+use crate::{models::goal::Goal, SharedState};
 use axum::{
     extract::State,
     http::StatusCode,
@@ -13,7 +13,6 @@ use serde::Deserialize;
 use std::{ops::Sub, str::FromStr};
 use tera::Context;
 mod goals;
-use goals::Goal;
 
 pub async fn index(
     shared_state: State<SharedState>,
@@ -52,13 +51,12 @@ pub async fn index(
     context.insert("goals_total", &goals_total);
     context.insert("remaining_seconds", &remaining_seconds().num_days());
 
-    match shared_state.tera.render("dashboard.html", &context) {
-        Ok(content) => Ok(Html::from(content).into_response()),
-        Err(e) => {
-            log::error!("{}", e);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
+    let content = shared_state
+        .tera
+        .render("dashboard.html", &context)
+        .unwrap();
+
+    Ok(Html::from(content).into_response())
 }
 
 #[derive(Deserialize, Debug)]
@@ -143,9 +141,27 @@ async fn envelopes_total(client: &mongodb::Client, user_id: &ObjectId) -> f64 {
 fn remaining_seconds() -> TimeDelta {
     let now = Local::now();
     let end_of_month = end_of_month().expect("could not determine end of month");
-    end_of_month - now
+    let end_of_next_month = end_of_next_month().expect("could not determine end of next month");
+    let days = end_of_month - now;
+
+    if days.num_days() == 0 {
+        return end_of_next_month - now;
+    } else {
+        return end_of_month - now;
+    }
 }
 
+fn end_of_next_month() -> Result<DateTime<Local>, String> {
+    let now = Local::now()
+        .checked_add_months(Months::new(2))
+        .expect("failed to build datetime");
+    let now = now.with_hour(0).ok_or("could not set time");
+    let now = now?.with_minute(0).ok_or("could not set time");
+    let now = now?.with_second(0).ok_or("could not set time");
+    let now = now?.with_day0(0).ok_or("could not set day to zero");
+    let now = now?.sub(TimeDelta::new(1, 0).unwrap());
+    Ok(now)
+}
 fn end_of_month() -> Result<DateTime<Local>, String> {
     let now = Local::now()
         .checked_add_months(Months::new(1))

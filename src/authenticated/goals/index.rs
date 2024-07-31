@@ -1,28 +1,12 @@
-use crate::{authenticated::UserExtension, SharedState};
+use crate::{authenticated::UserExtension, models::goal::Goal, SharedState};
 use axum::{
     extract::State,
     http::StatusCode,
     response::{Html, IntoResponse, Response},
     Extension,
 };
-use bson::{doc, oid::ObjectId, serde_helpers::hex_string_as_object_id};
-use serde::{Deserialize, Serialize};
+use bson::{doc, oid::ObjectId};
 use tera::Context;
-
-#[derive(Deserialize)]
-pub struct Goal {
-    #[serde(with = "hex_string_as_object_id")]
-    _id: String,
-    name: String,
-    target: f64,
-}
-
-#[derive(Serialize)]
-pub struct GoalRecord {
-    name: String,
-    target: f64,
-    id: String,
-}
 
 pub async fn page(
     shared_state: State<SharedState>,
@@ -40,7 +24,7 @@ pub async fn page(
         .collection::<Goal>("goals");
 
     let mut context = Context::new();
-    let mut goals: Vec<GoalRecord> = Vec::new();
+    let mut goals: Vec<Goal> = Vec::new();
     context.insert("csrf", &user.csrf);
 
     match collection.find(doc! {"user_id": &user_id}).await {
@@ -48,11 +32,7 @@ pub async fn page(
             while cursor.advance().await.unwrap() {
                 match cursor.deserialize_current() {
                     Ok(goal) => {
-                        goals.push(GoalRecord {
-                            name: goal.name,
-                            target: goal.target,
-                            id: goal._id,
-                        });
+                        goals.push(goal);
                     }
                     Err(e) => {
                         log::error!("{}", e);
@@ -67,10 +47,10 @@ pub async fn page(
         }
     }
 
-    let Ok(content) = shared_state.tera.render("goals/index.html", &context) else {
-        log::error!("could not render template");
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
+    let content = shared_state
+        .tera
+        .render("goals/index.html", &context)
+        .unwrap();
 
     Ok(Html::from(content).into_response())
 }

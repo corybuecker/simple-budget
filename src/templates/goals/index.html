@@ -1,13 +1,14 @@
 {% extends "layout.html" %}
 {% block content %}
 <p>Goals</p>
-<p><a href="/goals/new">New goal</a></p>
-{% for goal in goals %}
 <p>
-    <a href="/goals/{{goal.id}}">{{goal.name}}</a>
-<form method="delete" action="/goals/{{goal.id}}" data-turbo-confirm="Sure?">
-    <input type="submit" value="Delete" />
-</form>
+  <a href="/goals/new">New goal</a>
 </p>
+{% for goal in goals %}
+    <a href="/goals/{{goal._id['$oid']}}">{{goal.name}}</a>
+    <form method="delete" action="/goals/{{goal._id['$oid']}}" data-turbo-confirm="Sure?">
+      <input type="submit" value="Delete" />
+    </form>
+  </p>
 {% endfor %}
 {% endblock content %}

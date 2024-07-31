@@ -16,6 +16,7 @@ use tera::Tera;
 mod authenticated;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::Level;
+mod models;
 
 #[derive(Clone)]
 struct SharedState {

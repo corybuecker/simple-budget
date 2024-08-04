@@ -16,6 +16,7 @@
 <div class="flex flex-col pt-10">
   <div class="flex justify-around">
     <div>Remaining: {{ accounts_total - envelopes_total - goals_total}} </div>
+    <div>Remaining days: {{ remaining_seconds }}</div>
     <div>Remaing per day: {{ (accounts_total - envelopes_total - goals_total) / remaining_seconds }}</div>
   </div>
 

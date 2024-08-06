@@ -2,7 +2,7 @@ use crate::SharedState;
 use axum::{
     extract::State,
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
     cookie::{Cookie, SameSite},
@@ -73,6 +73,14 @@ pub async fn callback(
         return Err(StatusCode::FORBIDDEN);
     };
 
+    let redirect_cookie = jar.get("redirect_to");
+    let redirect = match &redirect_cookie {
+        Some(cookie) => cookie.value(),
+        None => "/reports",
+    };
+
+    let jar = jar.remove(Cookie::from("redirect_to"));
+
     let client = CoreClient::from_provider_metadata(
         provider_metadata,
         ClientId::new(client_id),
@@ -117,7 +125,7 @@ pub async fn callback(
                 .secure(secure == "true".to_string())
                 .build();
 
-            return Ok((jar.add(cookie), Html::from("OK").into_response()));
+            return Ok((jar.add(cookie), Redirect::to(redirect).into_response()));
         }
         Err(code) => {
             error!("{}", code);

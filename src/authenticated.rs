@@ -1,13 +1,18 @@
+use std::env;
+
 use crate::SharedState;
 use axum::{
     extract::{Request, State},
     http::{HeaderMap, Method, StatusCode},
     middleware::{self, Next},
-    response::{IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect, Response},
     routing::get,
     Extension, Router,
 };
-use axum_extra::extract::SignedCookieJar;
+use axum_extra::extract::{
+    cookie::{Cookie, SameSite},
+    SignedCookieJar,
+};
 use chrono::{DateTime, Utc};
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Uuid},
@@ -107,9 +112,9 @@ async fn authenticated(
     jar: SignedCookieJar,
     mut request: Request,
     next: Next,
-) -> Response {
+) -> Result<(SignedCookieJar, Response), StatusCode> {
     let Some(session_id) = jar.get("session_id") else {
-        return Redirect::to("authentication/login").into_response();
+        return Ok((jar, Redirect::to("authentication/login").into_response()));
     };
 
     let session_id = session_id.value();
@@ -127,9 +132,24 @@ async fn authenticated(
             id: user._id.to_hex(),
             csrf: user.sessions[0].csrf.clone(),
         });
-        next.run(request).await
+        Ok((jar, next.run(request).await))
     } else {
-        Redirect::to("authentication/login").into_response()
+        let secure = env::var("SECURE")
+            .or::<String>(Ok("false".to_string()))
+            .unwrap();
+
+        let redirect_cookie = Cookie::build(("redirect_to", request.uri().path().to_owned()))
+            .expires(None)
+            .http_only(true)
+            .path("/authentication")
+            .same_site(SameSite::Strict)
+            .secure(secure == "true".to_string())
+            .build();
+
+        Ok((
+            jar.add(redirect_cookie),
+            Redirect::to("authentication/login").into_response(),
+        ))
     }
 }
 

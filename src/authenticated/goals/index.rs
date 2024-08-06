@@ -6,14 +6,21 @@ use axum::{
     Extension,
 };
 use bson::{doc, oid::ObjectId};
+use serde::Serialize;
 use tera::Context;
+
+#[derive(Serialize)]
+struct Item {
+    name: String,
+    id: String,
+    accumulated: f64,
+    target: f64,
+}
 
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
 ) -> Result<Response, StatusCode> {
-    log::debug!("{:?}", user);
-
     let Ok(user_id) = ObjectId::parse_str(&user.id) else {
         return Err(StatusCode::FORBIDDEN);
     };
@@ -24,7 +31,8 @@ pub async fn page(
         .collection::<Goal>("goals");
 
     let mut context = Context::new();
-    let mut goals: Vec<Goal> = Vec::new();
+    let mut goals: Vec<Item> = Vec::new();
+
     context.insert("csrf", &user.csrf);
 
     match collection.find(doc! {"user_id": &user_id}).await {
@@ -32,7 +40,12 @@ pub async fn page(
             while cursor.advance().await.unwrap() {
                 match cursor.deserialize_current() {
                     Ok(goal) => {
-                        goals.push(goal);
+                        goals.push(Item {
+                            name: goal.name.to_owned(),
+                            id: goal._id.to_owned(),
+                            target: goal.target,
+                            accumulated: goal.accumulated(),
+                        });
                     }
                     Err(e) => {
                         log::error!("{}", e);

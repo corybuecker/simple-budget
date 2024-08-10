@@ -31,22 +31,6 @@ impl FromRef<SharedState> for Key {
     }
 }
 
-// struct AssetDigests {}
-
-// impl tera::Function for AssetDigests {
-//     fn call(&self, args: &HashMap<String, Value>) -> tera::Result<Value> {
-//         Ok("test".to_string().into())
-//     }
-// }
-
-fn currency() -> impl tera::Function {
-    return move |args: &HashMap<String, tera::Value>| -> tera::Result<tera::Value> {
-        match args.get("number") {
-            Some(number) => Ok(number.clone()),
-            None => Err("".to_string().into()),
-        }
-    };
-}
 fn digest_asset() -> impl tera::Function {
     let key = SystemTime::now();
     let key = key
@@ -147,7 +131,6 @@ async fn main() {
 
     let mut tera = Tera::new("src/templates/**/*.html").expect("cannot initialize Tera");
     tera.register_function("digest_asset", digest_asset());
-    tera.register_function("currency", currency());
 
     let mongo = mongo_client().await.expect("cannot create Mongo client");
 

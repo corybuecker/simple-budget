@@ -21,7 +21,9 @@
               <tr class="odd:bg-white even:bg-gray-50 border-b">
                 <th scope="row"
                     class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap">{{ account.name }}</th>
-                <td class="px-6 py-2">{{ account.amount }}</td>
+                <td class="px-6 py-2"
+                    data-controller="formatter"
+                    data-formatter-currency-value="{{ account.amount }}">{{ account.amount }}</td>
                 <td class="px-6 py-2">
                   {% if account.debt %}
                     Yes

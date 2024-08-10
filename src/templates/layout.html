@@ -37,7 +37,7 @@
 
   <body>
     <nav>
-      <a data-controller="form" href="/reports">Reports</a>
+      <a href="/reports">Reports</a>
       <a href="/accounts">Accounts</a>
       <a href="/envelopes">Envelopes</a>
       <a href="/goals">Goals</a>
@@ -48,10 +48,10 @@
     <script type="module">
       import * as Turbo from "@hotwired/turbo"
       import { Application, Controller } from "@hotwired/stimulus"
-      import FormController from "controllers/form_controller.js"
+      import FormatterController from "controllers/formatter_controller.js"
       
       window.Stimulus = Application.start()
-      Stimulus.register("form", FormController)
+      Stimulus.register("formatter", FormatterController)
     </script>
   </body>
 </html>

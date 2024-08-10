@@ -1,17 +1,45 @@
 {% extends "layout.html" %}
 {% block content %}
-  <p>Envelopes</p>
-  <p>
-    <a href="/envelopes/new">New envelope</a>
-  </p>
-  {% for envelope in envelopes %}
-    <p>
-      <a href="/envelopes/{{ envelope.id }}">{{ envelope.name }}</a>
-      <form method="delete"
-            action="/envelopes/{{ envelope.id }}"
-            data-turbo-confirm="Sure?">
-        <input type="submit" value="Delete" />
-      </form>
-    </p>
-  {% endfor %}
+  <div class="flex justify-center mt-8">
+    <div class="flex flex-col basis-1/2 gap-4">
+      <p>
+        <a class="inline-block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+           href="/envelopes/new">New envelope</a>
+      </p>
+      <div class="shadow-md ">
+        <table class="w-full text-sm text-left text-gray-500">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3">Name</th>
+              <th scope="col" class="px-6 py-3">Amount</th>
+              <th scope="col" class="px-6 py-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for envelope in envelopes %}
+              <tr class="odd:bg-white even:bg-gray-50 border-b">
+                <th scope="row"
+                    class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap">{{ envelope.name }}</th>
+                <td class="px-6 py-2"
+                    data-controller="formatter"
+                    data-formatter-currency-value="{{ envelope.amount }}">{{ envelope.amount }}</td>
+                <td class="px-6 py-2">
+                  <div class="flex @lg:flex-row flex-col items-center gap-4">
+                    <a href="/envelopes/{{ envelope.id }}"
+                       class="font-medium text-blue-600 hover:underline">Edit</a>
+                    <form method="delete"
+                          class="m-0"
+                          action="/envelopes/{{ envelope.id }}"
+                          data-turbo-confirm="Sure?">
+                      <input type="submit" value="Delete" />
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 {% endblock content %}

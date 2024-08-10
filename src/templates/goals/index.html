@@ -10,25 +10,24 @@
         <table class="w-full text-sm text-left text-gray-500">
           <thead class="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
-              <th scope="col" class="px-6 py-3">Name</th>
-              <th scope="col" class="px-6 py-3">Target</th>
-              <th scope="col" class="px-6 py-3">Accumulated</th>
-              <th scope="col" class="px-6 py-3">Action</th>
+              <th scope="col" class="px-6 @sm:px-3 py-3">Name</th>
+              <th scope="col" class="px-6 @sm:px-3 py-3">Target</th>
+              <th scope="col" class="px-6 @sm:px-3 py-3">Accumulated</th>
+              <th scope="col" class="px-6 @sm:px-3 py-3">Action</th>
             </tr>
           </thead>
           <tbody>
             {% for goal in goals %}
               <tr class="odd:bg-white even:bg-gray-50 border-b">
-                <th scope="row"
-                    class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap">{{ goal.name }}</th>
-                <td class="px-6 py-2"
+                <th scope="row" class="px-6 @sm:px-3 py-2 font-medium text-gray-900">{{ goal.name }}</th>
+                <td class="px-6 @sm:px-3 py-2"
                     data-controller="formatter"
                     data-formatter-currency-value="{{ goal.target }}">{{ goal.target }}</td>
-                <td class="px-6 py-2"
+                <td class="px-6 @sm:px-3 py-2"
                     data-controller="formatter"
                     data-formatter-currency-value="{{ goal.accumulated }}"
                     data-formatter-currency-precision-value="2">{{ goal.accumulated }}</td>
-                <td class="px-6 py-2">
+                <td class="px-6 @sm:px-3 py-2">
                   <div class="flex @lg:flex-row flex-col items-center gap-4">
                     <a href="/goals/{{ goal.id }}"
                        class="font-medium text-blue-600 hover:underline">Edit</a>

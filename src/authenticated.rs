@@ -69,6 +69,8 @@ impl From<bson::oid::Error> for FormError {
 
 impl From<tera::Error> for FormError {
     fn from(value: tera::Error) -> Self {
+        log::error!("{:#?}", value);
+
         FormError {
             message: value.to_string(),
         }

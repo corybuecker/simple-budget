@@ -1,10 +1,13 @@
-use crate::{authenticated::UserExtension, SharedState};
+use crate::{
+    authenticated::{FormError, UserExtension},
+    SharedState,
+};
 use axum::{
     extract::State,
-    http::StatusCode,
     response::{Html, IntoResponse, Response},
     Extension,
 };
+use bson::serde_helpers::hex_string_as_object_id;
 use log::debug;
 use log::error;
 use mongodb::bson::{doc, oid::ObjectId};
@@ -16,25 +19,17 @@ use tera::Context;
 struct Account {
     name: String,
     amount: f64,
-    _id: ObjectId,
-}
-
-#[derive(Serialize)]
-struct AccountRecord {
-    name: String,
-    amount: f64,
-    id: String,
+    #[serde(with = "hex_string_as_object_id")]
+    _id: String,
 }
 
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
-) -> Result<Response, StatusCode> {
-    debug!("{:?}", user);
+) -> Result<Response, FormError> {
+    debug!("{:#?}", user);
 
-    let Ok(user_id) = ObjectId::from_str(&user.id) else {
-        return Err(StatusCode::FORBIDDEN);
-    };
+    let user_id = ObjectId::from_str(&user.id)?;
 
     let collection = shared_state
         .mongo
@@ -43,18 +38,15 @@ pub async fn page(
 
     let mut context = Context::new();
     context.insert("csrf", &user.csrf);
-    let mut accounts: Vec<AccountRecord> = Vec::new();
+
+    let mut accounts: Vec<Account> = Vec::new();
 
     match collection.find(doc! {"user_id": &user_id}).await {
         Ok(mut cursor) => {
             while cursor.advance().await.unwrap() {
                 match cursor.deserialize_current() {
                     Ok(account) => {
-                        accounts.push(AccountRecord {
-                            name: account.name,
-                            amount: account.amount,
-                            id: account._id.to_string(),
-                        });
+                        accounts.push(account);
                     }
                     Err(e) => {
                         log::error!("{}", e);
@@ -69,10 +61,7 @@ pub async fn page(
         }
     }
 
-    let Ok(content) = shared_state.tera.render("accounts/index.html", &context) else {
-        log::error!("could not render template");
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
+    let content = shared_state.tera.render("accounts/index.html", &context)?;
 
     Ok(Html::from(content).into_response())
 }

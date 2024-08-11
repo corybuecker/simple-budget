@@ -1,10 +1,13 @@
-use crate::{authenticated::UserExtension, SharedState};
+use crate::{
+    authenticated::{FormError, UserExtension},
+    SharedState,
+};
 use axum::{
     extract::State,
-    http::StatusCode,
     response::{Html, IntoResponse, Response},
     Extension,
 };
+use bson::serde_helpers::hex_string_as_object_id;
 use bson::{doc, oid::ObjectId};
 use mongodb::Collection;
 use serde::{Deserialize, Serialize};
@@ -15,24 +18,15 @@ use tera::Context;
 struct Envelope {
     name: String,
     amount: f64,
-    _id: ObjectId,
-}
-
-#[derive(Serialize)]
-struct EnvelopeRecord {
-    name: String,
-    amount: f64,
-    id: String,
+    #[serde(with = "hex_string_as_object_id")]
+    _id: String,
 }
 
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
-) -> Result<Response, StatusCode> {
-    log::debug!("{:?}", user);
-    let Ok(user_id) = ObjectId::from_str(&user.id) else {
-        return Err(StatusCode::FORBIDDEN);
-    };
+) -> Result<Response, FormError> {
+    let user_id = ObjectId::from_str(&user.id)?;
 
     let collection: Collection<Envelope> = shared_state
         .mongo
@@ -41,35 +35,28 @@ pub async fn page(
 
     let mut context = Context::new();
     context.insert("csrf", &user.csrf);
-    let mut envelopes: Vec<EnvelopeRecord> = Vec::new();
+    let mut envelopes: Vec<Envelope> = Vec::new();
 
     match collection.find(doc! {"user_id": &user_id}).await {
         Ok(mut cursor) => {
             while cursor.advance().await.unwrap() {
                 match cursor.deserialize_current() {
                     Ok(envelope) => {
-                        envelopes.push(EnvelopeRecord {
-                            name: envelope.name,
-                            amount: envelope.amount,
-                            id: envelope._id.to_string(),
-                        });
+                        envelopes.push(envelope);
                     }
                     Err(e) => {
-                        log::error!("{}", e);
+                        log::error!("{:#?}", e);
                     }
                 }
             }
-            context.insert("envelopes", &envelopes);
         }
         Err(e) => {
-            log::error!("{}", e);
-            context.insert("envelopes", &envelopes);
+            log::error!("{:#?}", e);
         }
     }
 
-    let Ok(content) = shared_state.tera.render("envelopes/index.html", &context) else {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
+    context.insert("envelopes", &envelopes);
+    let content = shared_state.tera.render("envelopes/index.html", &context)?;
 
     Ok(Html::from(content).into_response())
 }

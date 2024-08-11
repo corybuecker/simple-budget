@@ -1,29 +1,22 @@
-use crate::{authenticated::UserExtension, models::goal::Goal, SharedState};
+use crate::{
+    authenticated::{FormError, UserExtension},
+    models::goal::Goal,
+    SharedState,
+};
 use axum::{
     extract::State,
-    http::StatusCode,
     response::{Html, IntoResponse, Response},
     Extension,
 };
 use bson::{doc, oid::ObjectId};
-use serde::Serialize;
+use std::collections::HashMap;
 use tera::Context;
-
-#[derive(Serialize)]
-struct Item {
-    name: String,
-    id: String,
-    accumulated: f64,
-    target: f64,
-}
 
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
-) -> Result<Response, StatusCode> {
-    let Ok(user_id) = ObjectId::parse_str(&user.id) else {
-        return Err(StatusCode::FORBIDDEN);
-    };
+) -> Result<Response, FormError> {
+    let user_id = ObjectId::parse_str(&user.id)?;
 
     let collection = shared_state
         .mongo
@@ -31,7 +24,9 @@ pub async fn page(
         .collection::<Goal>("goals");
 
     let mut context = Context::new();
-    let mut goals: Vec<Item> = Vec::new();
+    let mut goals: Vec<Goal> = Vec::new();
+
+    let mut accumulations: HashMap<String, f64> = HashMap::new();
 
     context.insert("csrf", &user.csrf);
 
@@ -40,30 +35,24 @@ pub async fn page(
             while cursor.advance().await.unwrap() {
                 match cursor.deserialize_current() {
                     Ok(goal) => {
-                        goals.push(Item {
-                            name: goal.name.to_owned(),
-                            id: goal._id.to_owned(),
-                            target: goal.target,
-                            accumulated: goal.accumulated(),
-                        });
+                        accumulations.insert(goal._id.clone(), goal.accumulated());
+                        goals.push(goal);
                     }
                     Err(e) => {
-                        log::error!("{}", e);
+                        log::error!("{:#?}", e);
                     }
                 }
             }
-            context.insert("goals", &goals);
         }
         Err(e) => {
-            log::error!("{}", e);
-            context.insert("goals", &goals);
+            log::error!("{:#?}", e);
         }
     }
 
-    let content = shared_state
-        .tera
-        .render("goals/index.html", &context)
-        .unwrap();
+    context.insert("goals", &goals);
+    context.insert("accumulations", &accumulations);
+
+    let content = shared_state.tera.render("goals/index.html", &context)?;
 
     Ok(Html::from(content).into_response())
 }

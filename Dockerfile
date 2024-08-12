@@ -1,4 +1,4 @@
-FROM rust:1.79.0 AS backend_builder
+FROM rust:1.80.1 AS backend_builder
 
 RUN mkdir -p /build
 WORKDIR /build
@@ -20,7 +20,7 @@ WORKDIR /build
 RUN npm install tailwindcss @tailwindcss/container-queries @tailwindcss/forms
 RUN npx tailwindcss -i src/input.css -o app.css
 
-FROM rust:1.79.0-slim
+FROM rust:1.80.1-slim
 COPY --from=backend_builder /build/simple-budget /app/simple-budget
 COPY src/templates /app/src/templates
 COPY controllers /app/static/controllers

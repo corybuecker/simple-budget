@@ -1,4 +1,5 @@
 mod authentication;
+mod jobs;
 use axum::{extract::FromRef, Router};
 use axum_extra::extract::cookie::Key;
 use bson::{doc, oid::ObjectId};
@@ -7,9 +8,7 @@ use mongodb::Client;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
-    env,
-    str::FromStr,
-    thread,
+    env, thread,
     time::{Duration, SystemTime},
 };
 use tera::Tera;
@@ -79,6 +78,7 @@ struct User {
     sessions: Vec<Session>,
     _id: ObjectId,
 }
+
 async fn clear_sessions() {
     let mongo = mongo_client().await.unwrap();
 
@@ -99,13 +99,18 @@ async fn clear_sessions() {
     }
 }
 
+async fn convert_goals_wrapper() {
+    let mongo = mongo_client().await.unwrap();
+    let _ = jobs::convert_goals::convert_goals(mongo.start_session().await.unwrap(), None).await;
+}
+
 fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     tokio::spawn(async {
         loop {
             let h1 = async { current_time().await };
             let h2 = async { current_time().await };
 
-            tokio::join!(h1, h2, clear_sessions());
+            tokio::join!(h1, h2, clear_sessions(), convert_goals_wrapper());
 
             thread::sleep(Duration::from_millis(60000))
         }
@@ -158,9 +163,8 @@ async fn main() {
 }
 
 async fn mongo_client() -> Result<mongodb::Client, mongodb::error::Error> {
-    let mongo_connection_string = env::var("DATABASE_URL").unwrap_or(
-        String::from_str("mongodb://localhost:27017/simple_budget?connectTimeoutMS=1000").unwrap(),
-    );
+    let mongo_connection_string =
+        env::var("DATABASE_URL").expect("could not find database connection URL");
 
     Client::with_uri_str(mongo_connection_string).await
 }

@@ -1,9 +1,11 @@
+use std::ops::Add;
+
 use bson::{doc, serde_helpers::hex_string_as_object_id};
-use chrono::{DateTime, Datelike, Days, Local, Months, TimeDelta, Timelike, Utc};
+use chrono::{DateTime, Datelike, Days, Duration, Local, Months, TimeDelta, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all(deserialize = "lowercase"))]
+#[derive(Deserialize, Serialize, Debug, Copy, Clone)]
+#[serde(rename_all(deserialize = "lowercase", serialize = "lowercase"))]
 pub enum Recurrence {
     Never,
     Daily,
@@ -31,6 +33,28 @@ pub struct Goal {
 }
 
 impl Goal {
+    pub fn increment(&self) -> Self {
+        let mut goal = Goal {
+            _id: self._id.clone(),
+            target: self.target,
+            user_id: self.user_id.clone(),
+            recurrence: self.recurrence,
+            name: self.name.clone(),
+            target_date: self.target_date,
+        };
+
+        match self.recurrence {
+            Recurrence::Never => goal.target_date = self.target_date,
+            Recurrence::Daily => goal.target_date = self.target_date.add(Duration::days(1)),
+            Recurrence::Weekly => goal.target_date = self.target_date.add(Duration::weeks(1)),
+            Recurrence::Yearly => goal.target_date = self.target_date.add(Duration::days(365)),
+            Recurrence::Monthly => goal.target_date = self.target_date.add(Duration::days(30)),
+            Recurrence::Quarterly => goal.target_date = self.target_date.add(Duration::weeks(12)),
+        }
+
+        goal
+    }
+
     pub fn accumulated_per_day(&self) -> f64 {
         if self.start_at() > Local::now() {
             return 0.0;

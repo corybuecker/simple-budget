@@ -107,22 +107,13 @@ fn start_background_jobs() -> tokio::task::JoinHandle<()> {
 
             tokio::join!(h1, h2, clear_sessions());
 
-            thread::sleep(Duration::from_millis(5000))
+            thread::sleep(Duration::from_millis(60000))
         }
     })
 }
 
 #[tokio::main]
 async fn main() {
-    let sentry_url = env::var("SENTRY_URL").unwrap();
-    let _guard = sentry::init((
-        sentry_url,
-        sentry::ClientOptions {
-            release: sentry::release_name!(),
-            ..Default::default()
-        },
-    ));
-
     let tracing_fmt = tracing_subscriber::fmt::format().pretty();
     tracing_subscriber::fmt()
         .with_max_level(Level::DEBUG)

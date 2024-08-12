@@ -1,11 +1,9 @@
-use std::env;
-
 use crate::SharedState;
 use axum::{
     extract::{Request, State},
     http::{HeaderMap, Method, StatusCode},
     middleware::{self, Next},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
     routing::get,
     Extension, Router,
 };
@@ -20,6 +18,7 @@ use mongodb::{
     Collection,
 };
 use serde::{Deserialize, Serialize};
+use std::env;
 mod accounts;
 mod dashboard;
 mod envelopes;

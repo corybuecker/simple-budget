@@ -2,7 +2,7 @@ use crate::SharedState;
 use axum::{
     extract::State,
     http::StatusCode,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
     cookie::{Cookie, SameSite},

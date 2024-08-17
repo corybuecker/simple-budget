@@ -47,6 +47,7 @@ pub struct UserExtension {
     csrf: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct FormError {
     message: String,

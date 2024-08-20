@@ -45,11 +45,14 @@ pub async fn index(
     let envelopes_total = envelopes_total(&shared_state.mongo, &user_id).await;
     let accounts_total = accounts_total(&shared_state.mongo, &user_id).await;
 
+    let remaining_total = accounts_total - envelopes_total - goals_accumulated;
+
     context.insert("accounts_total", &accounts_total);
     context.insert("envelopes_total", &envelopes_total);
     context.insert("goals_accumulated", &goals_accumulated);
     context.insert("goals_total", &goals_total);
-    context.insert("remaining_seconds", &remaining_seconds().num_days());
+    context.insert("remaining_days", &remaining_seconds().num_days());
+    context.insert("remaining_total", &remaining_total);
 
     let content = shared_state
         .tera

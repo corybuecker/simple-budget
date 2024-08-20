@@ -1,17 +1,42 @@
 {% extends "layout.html" %}
 {% block content %}
-
-<div class="flex flex-col pt-10">
-  <div class="flex justify-around">
-    <div>Remaining: {{ accounts_total - envelopes_total - goals_total | round(precision=2) }} </div>
-    <div>Remaining days: {{ remaining_seconds }}</div>
-    <div>Remaing per day: {{ (accounts_total - envelopes_total - goals_total) / remaining_seconds | round(precision=2) }}</div>
-  </div>
-
-  <div class="flex justify-around">
-    <div>Goals total: {{ goals_total}} </div>
-    <div>Goals: {{ goals_accumulated }}</div>
-  </div>
-</div>
-
+    <div class="flex flex-col gap-4 mt-8">
+        <div class="flex flex-row gap-8 justify-around">
+            <div class="flex flex-col items-center">
+                <div class="text-2xl"
+                     data-controller="formatter"
+                     data-formatter-currency-value="{{ remaining_total }}">{{ remaining_total }}</div>
+                <div class="text-sm text-slate-600">Remaining</div>
+            </div>
+            <div class="flex flex-col items-center">
+                <div class="text-2xl">{{ remaining_days }}</div>
+                <div class="text-sm text-slate-600">Remaining days</div>
+            </div>
+        </div>
+        <div class="flex flex-row gap-8 justify-around">
+            <div class="flex flex-col items-center">
+                <div class="text-2xl"
+                     data-controller="formatter"
+                     data-formatter-currency-value="{{ remaining_total / remaining_days }}"
+                     data-formatter-currency-precision-value="3">{{ remaining_total / remaining_days }}</div>
+                <div class="text-sm text-slate-600">Per day</div>
+            </div>
+        </div>
+        <div class="flex flex-row gap-8 justify-around">
+            <div class="flex flex-col items-center">
+                <div class="text-2xl"
+                     data-controller="formatter"
+                     data-formatter-currency-value="{{ envelopes_total }}"
+                     data-formatter-currency-precision-value="2">{{ envelopes_total }}</div>
+                <div class="text-sm text-slate-600">Envelopes</div>
+            </div>
+            <div class="flex flex-col items-center">
+                <div data-controller="formatter"
+                     data-formatter-currency-value="{{ goals_accumulated }}"
+                     data-formatter-currency-precision-value="2"
+                     class="text-2xl">{{ goals_accumulated }}</div>
+                <div class="text-sm text-slate-600">Goals</div>
+            </div>
+        </div>
+    </div>
 {% endblock content %}

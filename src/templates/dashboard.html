@@ -1,42 +1,43 @@
 {% extends "layout.html" %}
 {% block content %}
-    <div class="flex flex-col gap-4 mt-8">
-        <div class="flex flex-row gap-8 justify-around">
-            <div class="flex flex-col items-center">
-                <div class="text-2xl"
-                     data-controller="formatter"
-                     data-formatter-currency-value="{{ remaining_total }}">{{ remaining_total }}</div>
-                <div class="text-sm text-slate-600">Remaining</div>
-            </div>
-            <div class="flex flex-col items-center">
-                <div class="text-2xl">{{ remaining_days }}</div>
-                <div class="text-sm text-slate-600">Remaining days</div>
-            </div>
+    <div class="grid grid-cols-2 justify-evenly gap-8 mt-8">
+        <div class="flex flex-col items-center">
+            <div class="text-2xl"
+                 data-controller="formatter"
+                 data-formatter-currency-value="{{ remaining_total / remaining_days }}"
+                 data-formatter-currency-precision-value="3">{{ remaining_total / remaining_days }}</div>
+            <div class="text-sm text-slate-600">Per day</div>
         </div>
-        <div class="flex flex-row gap-8 justify-around">
-            <div class="flex flex-col items-center">
-                <div class="text-2xl"
-                     data-controller="formatter"
-                     data-formatter-currency-value="{{ remaining_total / remaining_days }}"
-                     data-formatter-currency-precision-value="3">{{ remaining_total / remaining_days }}</div>
-                <div class="text-sm text-slate-600">Per day</div>
-            </div>
+        <div class="flex flex-col items-center">
+            <div data-controller="formatter"
+                 data-formatter-currency-value="{{ goals_accumulated_per_day }}"
+                 data-formatter-currency-precision-value="3"
+                 class="text-2xl">{{ goals_accumulated_per_day }}</div>
+            <div class="text-sm text-slate-600">Goals per day</div>
         </div>
-        <div class="flex flex-row gap-8 justify-around">
-            <div class="flex flex-col items-center">
-                <div class="text-2xl"
-                     data-controller="formatter"
-                     data-formatter-currency-value="{{ envelopes_total }}"
-                     data-formatter-currency-precision-value="2">{{ envelopes_total }}</div>
-                <div class="text-sm text-slate-600">Envelopes</div>
-            </div>
-            <div class="flex flex-col items-center">
-                <div data-controller="formatter"
-                     data-formatter-currency-value="{{ goals_accumulated }}"
-                     data-formatter-currency-precision-value="2"
-                     class="text-2xl">{{ goals_accumulated }}</div>
-                <div class="text-sm text-slate-600">Goals</div>
-            </div>
+        <div class="flex flex-col items-center">
+            <div class="text-2xl"
+                 data-controller="formatter"
+                 data-formatter-currency-value="{{ remaining_total }}">{{ remaining_total }}</div>
+            <div class="text-sm text-slate-600">Remaining</div>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="text-2xl">{{ remaining_days }}</div>
+            <div class="text-sm text-slate-600">Remaining days</div>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="text-2xl"
+                 data-controller="formatter"
+                 data-formatter-currency-value="{{ envelopes_total }}"
+                 data-formatter-currency-precision-value="2">{{ envelopes_total }}</div>
+            <div class="text-sm text-slate-600">Envelopes</div>
+        </div>
+        <div class="flex flex-col items-center">
+            <div data-controller="formatter"
+                 data-formatter-currency-value="{{ goals_total }}"
+                 data-formatter-currency-precision-value="2"
+                 class="text-2xl">{{ goals_total }}</div>
+            <div class="text-sm text-slate-600">Goals</div>
         </div>
     </div>
 {% endblock content %}

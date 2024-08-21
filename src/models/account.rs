@@ -12,4 +12,5 @@ pub struct Account {
 
     pub name: String,
     pub amount: f64,
+    pub debt: bool,
 }

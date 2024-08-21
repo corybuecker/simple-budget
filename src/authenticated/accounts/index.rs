@@ -1,5 +1,6 @@
 use crate::{
     authenticated::{FormError, UserExtension},
+    models::account::Account,
     SharedState,
 };
 use axum::{
@@ -7,21 +8,11 @@ use axum::{
     response::{Html, IntoResponse, Response},
     Extension,
 };
-use bson::serde_helpers::hex_string_as_object_id;
 use log::debug;
 use log::error;
 use mongodb::bson::{doc, oid::ObjectId};
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use tera::Context;
-
-#[derive(Serialize, Deserialize)]
-struct Account {
-    name: String,
-    amount: f64,
-    #[serde(with = "hex_string_as_object_id")]
-    _id: String,
-}
 
 pub async fn page(
     shared_state: State<SharedState>,

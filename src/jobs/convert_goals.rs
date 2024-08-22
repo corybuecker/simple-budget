@@ -4,25 +4,19 @@ use chrono::Utc;
 use mongodb::ClientSession;
 use std::str::FromStr;
 
-pub async fn convert_goals(
-    mut session: ClientSession,
-    database: Option<String>,
-) -> Result<f64, mongodb::error::Error> {
+pub async fn convert_goals(mut session: ClientSession) -> Result<f64, mongodb::error::Error> {
     session.start_transaction().await?;
-
-    let database = match database {
-        Some(database) => database,
-        None => "simple_budget".to_owned(),
-    };
 
     let envelopes = session
         .client()
-        .database(&database)
+        .default_database()
+        .unwrap()
         .collection::<Envelope>("envelopes");
 
     let goals = session
         .client()
-        .database(&database)
+        .default_database()
+        .unwrap()
         .collection::<Goal>("goals");
 
     let goal = goals
@@ -76,19 +70,28 @@ mod tests {
         let client = mongo_client().await.unwrap();
 
         let goals = client
-            .database("simple_budget_test")
+            .default_database()
+            .unwrap()
             .collection::<Goal>("goals");
 
+        goals
+            .delete_many(doc! {"name": "convert_goals"})
+            .await
+            .unwrap();
+
         let envelopes = client
-            .database("simple_budget_test")
+            .default_database()
+            .unwrap()
             .collection::<Envelope>("envelopes");
 
-        let _ = goals.delete_many(doc! {}).await;
-        let _ = envelopes.delete_many(doc! {}).await;
+        envelopes
+            .delete_many(doc! {"name": "convert_goals"})
+            .await
+            .unwrap();
 
         let _ = goals
             .insert_one(Goal {
-                name: "test".to_owned(),
+                name: "convert_goals".to_owned(),
                 target_date: Utc::now().sub(Duration::seconds(100)),
                 recurrence: Recurrence::Daily,
                 user_id: ObjectId::new().to_hex(),
@@ -100,13 +103,13 @@ mod tests {
 
         let session = client.start_session().await.unwrap();
 
-        match convert_goals(session, Some("simple_budget_test".to_owned())).await {
+        match convert_goals(session).await {
             Ok(result) => println!("{}", result),
             Err(error) => println!("conversion error: {}", error),
         };
 
         let envelope = envelopes
-            .find_one(doc! {"name": "test"})
+            .find_one(doc! {"name": "convert_goals"})
             .await
             .expect("error fetching envelope")
             .expect("could not find envelope");
@@ -114,7 +117,7 @@ mod tests {
         assert_eq!(envelope.amount, 100.0);
 
         let goal = goals
-            .find_one(doc! {"name": "test"})
+            .find_one(doc! {"name": "convert_goals"})
             .await
             .expect("error fetching goal")
             .expect("could not find goal");

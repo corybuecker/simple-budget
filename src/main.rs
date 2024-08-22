@@ -101,7 +101,7 @@ async fn clear_sessions() {
 
 async fn convert_goals_wrapper() {
     let mongo = mongo_client().await.unwrap();
-    let _ = jobs::convert_goals::convert_goals(mongo.start_session().await.unwrap(), None).await;
+    let _ = jobs::convert_goals::convert_goals(mongo.start_session().await.unwrap()).await;
 }
 
 fn start_background_jobs() -> tokio::task::JoinHandle<()> {

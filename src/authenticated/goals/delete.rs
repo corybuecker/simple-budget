@@ -36,8 +36,6 @@ pub async fn action(
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Add;
-
     use super::*;
     use crate::models::goal::Goal;
     use crate::mongo_client;
@@ -46,6 +44,7 @@ mod tests {
     use axum::Router;
     use axum_extra::extract::cookie::Key;
     use chrono::Duration;
+    use std::ops::Add;
     use tera::Tera;
     use tower::ServiceExt;
 

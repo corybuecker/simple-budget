@@ -12,7 +12,7 @@ pub fn envelopes_router() -> Router<SharedState> {
         .route("/", get(index::page).post(create::page))
         .route(
             "/:id",
-            get(edit::page).put(update::page).delete(delete::page),
+            get(edit::page).put(update::page).delete(delete::action),
         )
         .route("/new", get(new::page))
 }

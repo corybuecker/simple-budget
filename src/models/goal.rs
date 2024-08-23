@@ -1,8 +1,8 @@
-use std::ops::Add;
-
 use bson::{doc, serde_helpers::hex_string_as_object_id};
 use chrono::{DateTime, Datelike, Days, Duration, Local, Months, TimeDelta, Timelike, Utc};
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::ops::Add;
 
 #[derive(Deserialize, Serialize, Debug, Copy, Clone)]
 #[serde(rename_all(deserialize = "lowercase", serialize = "lowercase"))]
@@ -13,6 +13,31 @@ pub enum Recurrence {
     Monthly,
     Quarterly,
     Yearly,
+}
+
+#[derive(Debug)]
+pub struct RecurrenceError {}
+
+impl std::error::Error for RecurrenceError {}
+
+impl fmt::Display for RecurrenceError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "RecurrenceError")
+    }
+}
+
+impl Recurrence {
+    pub fn from_str(string: &str) -> Result<Self, RecurrenceError> {
+        match string {
+            "never" => Ok(Self::Never),
+            "daily" => Ok(Self::Daily),
+            "weekly" => Ok(Self::Weekly),
+            "monthly" => Ok(Self::Monthly),
+            "quarterly" => Ok(Self::Quarterly),
+            "yearly" => Ok(Self::Yearly),
+            _ => Err(RecurrenceError {}),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]

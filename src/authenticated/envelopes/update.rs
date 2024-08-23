@@ -1,5 +1,6 @@
 use crate::{
     authenticated::{FormError, UserExtension},
+    models::envelope::Envelope,
     SharedState,
 };
 use axum::{
@@ -9,32 +10,25 @@ use axum::{
     Extension, Form,
 };
 use bson::{doc, oid::ObjectId};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
 
 #[derive(Debug, Validate, Deserialize)]
-pub struct Envelope {
+pub struct EnvelopeForm {
     #[validate(length(min = 5))]
     name: String,
     #[validate(range(min = 0.0))]
     amount: f64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct EnvelopeRecord {
-    name: String,
-    amount: f64,
-    user_id: ObjectId,
-}
-
-pub async fn page(
+pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<String>,
     headers: HeaderMap,
-    form: Form<Envelope>,
+    form: Form<EnvelopeForm>,
 ) -> Result<Response, FormError> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
@@ -86,9 +80,10 @@ pub async fn page(
         }
     }
 
-    let envelopes: mongodb::Collection<EnvelopeRecord> = shared_state
+    let envelopes: mongodb::Collection<Envelope> = shared_state
         .mongo
-        .database("simple_budget")
+        .default_database()
+        .unwrap()
         .collection("envelopes");
 
     let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
@@ -107,4 +102,88 @@ pub async fn page(
     let _ = envelopes.replace_one(filter, envelope).await;
 
     Ok(Redirect::to("/envelopes").into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        authenticated::UserExtension, models::envelope::Envelope, mongo_client, SharedState,
+    };
+    use axum::{
+        http::{Method, Request, StatusCode},
+        Extension,
+    };
+    use axum_extra::extract::cookie::Key;
+    use mongodb::bson::doc;
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn test_update_envelope() {
+        // Set up the database connection
+        let client = mongo_client().await.unwrap();
+        let db = client.default_database().unwrap();
+        let envelopes_collection: mongodb::Collection<Envelope> = db.collection("envelopes");
+
+        // Create a test envelope
+        let user_id = mongodb::bson::oid::ObjectId::new();
+        let envelope_id = mongodb::bson::oid::ObjectId::new();
+        let test_envelope = Envelope {
+            _id: envelope_id.to_string(),
+            user_id: user_id.to_string(),
+            name: "Test Envelope".to_string(),
+            amount: 100.0,
+        };
+        envelopes_collection
+            .insert_one(test_envelope)
+            .await
+            .unwrap();
+
+        // Set up the SharedState
+        let shared_state = SharedState {
+            mongo: client,
+            key: Key::generate(),
+            tera: tera::Tera::new("templates/**/*").unwrap(),
+        };
+
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri(format!("/envelopes/{}", envelope_id.to_hex()))
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body("name=Updated%20Envelope&amount=200.0".to_string())
+            .unwrap();
+
+        // Create a test app and call the action
+        let app = axum::Router::new()
+            .route(
+                "/envelopes/:id",
+                axum::routing::post(crate::authenticated::envelopes::update::action),
+            )
+            .with_state(shared_state)
+            .layer(Extension(UserExtension {
+                id: user_id.to_string(),
+                csrf: "test".to_string(),
+            }));
+
+        let response = app.oneshot(request).await.unwrap();
+
+        // Assert the response
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers().get("location").unwrap(), "/envelopes");
+
+        // Verify the envelope was updated in the database
+        let updated_envelope = envelopes_collection
+            .find_one(doc! {"_id": envelope_id})
+            .await
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(updated_envelope.name, "Updated Envelope");
+        assert_eq!(updated_envelope.amount, 200.0);
+
+        // Clean up
+        envelopes_collection
+            .delete_one(doc! {"_id": envelope_id})
+            .await
+            .unwrap();
+    }
 }

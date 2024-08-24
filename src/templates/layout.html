@@ -13,7 +13,7 @@
   "imports": {
     "@hotwired/stimulus": "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js",
     "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.5/dist/turbo.es2017-esm.js",
-        "controllers/": "/assets/controllers/"
+    "controllers/": "/assets/controllers/"
   },
   "integrity": {
     "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js": "sha384-NStGXzUH4pFNGrLRkzXYz7zzDn8S6MvFPwfKSuYf6TlX25BrNVP4oCN2S04XUuOI",
@@ -28,17 +28,28 @@
                 crossorigin="anonymous"></script>
         <link rel="stylesheet" href={{ digest_asset(file="app.css") }}>
     </head>
-    <body>
-        <nav>
-            <a href="/reports">Reports</a>
-            <a href="/accounts">Accounts</a>
-            <a href="/envelopes">Envelopes</a>
-            <a href="/goals">Goals</a>
-        </nav>
-        <main class="@container">
-            {% block content %}
-            {% endblock content %}
-        </main>
+    <body class="@container">
+        <div class="h-dvh flex flex-col justify-between">
+            <nav class="@sm:hidden @lg:block">
+                <a href="/reports">Reports</a>
+                <a href="/accounts">Accounts</a>
+                <a href="/envelopes">Envelopes</a>
+                <a href="/goals">Goals</a>
+            </nav>
+            <main class="overflow-y-scroll">
+                {% block content %}
+                {% endblock content %}
+            </main>
+            <nav class="@sm:block @lg:hidden px-2 bg-slate-300 pt-[1rem]"
+                 style="padding-bottom: calc(env(safe-area-inset-bottom, 0) + 1rem)">
+                <div class="flex justify-between">
+                    <a class="text-sm font-semibold" href="/reports">Reports</a>
+                    <a class="text-sm font-semibold" href="/accounts">Accounts</a>
+                    <a href="/envelopes">Envelopes</a>
+                    <a href="/goals">Goals</a>
+                </div>
+            </nav>
+        </div>
         <script type="module">
       import * as Turbo from "@hotwired/turbo"
       import { Application, Controller } from "@hotwired/stimulus"

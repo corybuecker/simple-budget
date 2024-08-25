@@ -1,3 +1,4 @@
+use super::AccountForm;
 use crate::{
     authenticated::{FormError, UserExtension},
     models::account::Account,
@@ -10,19 +11,9 @@ use axum::{
     Extension, Form,
 };
 use mongodb::bson::{doc, oid::ObjectId};
-use serde::Deserialize;
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
-
-#[derive(Debug, Validate, Deserialize)]
-pub struct AccountForm {
-    #[validate(length(min = 5))]
-    name: String,
-    #[validate(range(min = 0.0))]
-    amount: f64,
-    debt: Option<bool>,
-}
 
 pub async fn action(
     shared_state: State<SharedState>,

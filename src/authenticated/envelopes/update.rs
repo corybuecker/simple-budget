@@ -1,3 +1,4 @@
+use super::EnvelopeForm;
 use crate::{
     authenticated::{FormError, UserExtension},
     models::envelope::Envelope,
@@ -10,18 +11,9 @@ use axum::{
     Extension, Form,
 };
 use bson::{doc, oid::ObjectId};
-use serde::Deserialize;
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
-
-#[derive(Debug, Validate, Deserialize)]
-pub struct EnvelopeForm {
-    #[validate(length(min = 5))]
-    name: String,
-    #[validate(range(min = 0.0))]
-    amount: f64,
-}
 
 pub async fn action(
     shared_state: State<SharedState>,

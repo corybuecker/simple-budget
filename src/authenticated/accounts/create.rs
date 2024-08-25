@@ -1,5 +1,7 @@
+use super::AccountForm;
 use crate::{
     authenticated::{FormError, UserExtension},
+    models::account::Account,
     SharedState,
 };
 use axum::{
@@ -8,41 +10,17 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };
-use mongodb::{
-    bson::{doc, oid::ObjectId},
-    Collection,
-};
-use serde::{Deserialize, Serialize};
+use mongodb::{bson::oid::ObjectId, Collection};
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
-
-#[derive(Debug, Validate, Deserialize)]
-pub struct Account {
-    #[validate(length(min = 5))]
-    name: String,
-    #[validate(range(min = 0.0))]
-    amount: f64,
-    debt: Option<bool>,
-}
-
-#[derive(Serialize)]
-pub struct AccountRecord {
-    name: String,
-    amount: f64,
-    debt: bool,
-    user_id: ObjectId,
-}
 
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
-    Form(form): Form<Account>,
+    Form(form): Form<AccountForm>,
 ) -> Result<Response, FormError> {
-    log::debug!("{:?}", user);
-    log::debug!("{:?}", form);
-
     let mut turbo = false;
     let accept = headers.get("Accept");
     match accept {
@@ -85,13 +63,15 @@ pub async fn page(
         }
     }
 
-    let account_record = AccountRecord {
+    let account_record = Account {
+        _id: ObjectId::new().to_string(),
         name: form.name.to_owned(),
         amount: form.amount.to_owned(),
         debt: form.debt.or(Some(false)).unwrap(),
-        user_id: ObjectId::from_str(&user.id).unwrap(),
+        user_id: ObjectId::from_str(&user.id).unwrap().to_string(),
     };
-    let accounts: Collection<AccountRecord> = shared_state
+
+    let accounts: Collection<Account> = shared_state
         .mongo
         .database("simple_budget")
         .collection("accounts");

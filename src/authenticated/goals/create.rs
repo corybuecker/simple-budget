@@ -1,5 +1,9 @@
-use super::super::FormError;
-use crate::{authenticated::UserExtension, SharedState};
+use super::{super::FormError, GoalForm};
+use crate::{
+    authenticated::UserExtension,
+    models::goal::{Goal, Recurrence},
+    SharedState,
+};
 use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
@@ -7,40 +11,17 @@ use axum::{
     Extension, Form,
 };
 use bson::oid::ObjectId;
-use chrono::{NaiveDateTime, NaiveTime, Utc};
+use chrono::{NaiveDateTime, NaiveTime};
 use mongodb::Collection;
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
-
-#[derive(Debug, Validate, Deserialize)]
-pub struct Goal {
-    #[validate(length(min = 5))]
-    name: String,
-    #[validate(range(min = 0.0))]
-    target: f64,
-    target_date: chrono::NaiveDate,
-    recurrence: String,
-}
-
-#[derive(Serialize)]
-pub struct GoalRecord {
-    name: String,
-    target: f64,
-    user_id: ObjectId,
-
-    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
-    target_date: chrono::DateTime<Utc>,
-
-    recurrence: String,
-}
 
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
-    form: Form<Goal>,
+    form: Form<GoalForm>,
 ) -> Result<Response, FormError> {
     log::debug!("{:?}", user);
     log::debug!("{:?}", form);
@@ -89,15 +70,16 @@ pub async fn page(
         }
     }
 
-    let goal_record = GoalRecord {
+    let goal_record = Goal {
+        _id: ObjectId::new().to_string(),
         name: form.name.to_owned(),
         target: form.target.to_owned(),
-        recurrence: form.recurrence.to_owned(),
+        recurrence: Recurrence::from_str(&form.recurrence).unwrap(),
         target_date: NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc(),
-        user_id: ObjectId::from_str(&user.id).unwrap(),
+        user_id: ObjectId::from_str(&user.id).unwrap().to_string(),
     };
 
-    let goals: Collection<GoalRecord> = shared_state
+    let goals: Collection<Goal> = shared_state
         .mongo
         .database("simple_budget")
         .collection("goals");

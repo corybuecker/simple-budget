@@ -1,3 +1,4 @@
+use crate::models::account::Account;
 use crate::{authenticated::UserExtension, SharedState};
 use axum::extract::Path;
 use axum::{
@@ -6,34 +7,20 @@ use axum::{
     response::{Html, IntoResponse, Response},
     Extension,
 };
-use bson::serde_helpers::hex_string_as_object_id;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use tera::Context;
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Account {
-    #[serde(with = "hex_string_as_object_id")]
-    _id: String,
-    name: String,
-    amount: f64,
-    debt: bool,
-    #[serde(with = "hex_string_as_object_id")]
-    user_id: String,
-}
 
 pub async fn page(
     shared_state: State<SharedState>,
     Path(id): Path<String>,
     user: Extension<UserExtension>,
 ) -> Result<Response, StatusCode> {
-    log::debug!("{:?}", user);
-
     let accounts: mongodb::Collection<Account> = shared_state
         .mongo
-        .database("simple_budget")
+        .default_database()
+        .unwrap()
         .collection("accounts");
 
     let Ok(account) = accounts

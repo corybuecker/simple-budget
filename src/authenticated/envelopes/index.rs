@@ -1,5 +1,6 @@
 use crate::{
     authenticated::{FormError, UserExtension},
+    models::envelope::Envelope,
     SharedState,
 };
 use axum::{
@@ -7,20 +8,10 @@ use axum::{
     response::{Html, IntoResponse, Response},
     Extension,
 };
-use bson::serde_helpers::hex_string_as_object_id;
 use bson::{doc, oid::ObjectId};
 use mongodb::Collection;
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use tera::Context;
-
-#[derive(Serialize, Deserialize)]
-struct Envelope {
-    name: String,
-    amount: f64,
-    #[serde(with = "hex_string_as_object_id")]
-    _id: String,
-}
 
 pub async fn page(
     shared_state: State<SharedState>,

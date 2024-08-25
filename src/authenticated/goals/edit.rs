@@ -1,36 +1,19 @@
-use crate::{authenticated::UserExtension, SharedState};
+use crate::{authenticated::UserExtension, models::goal::Goal, SharedState};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::{Html, IntoResponse, Response},
     Extension,
 };
-use bson::{doc, oid::ObjectId, serde_helpers::hex_string_as_object_id};
-use chrono::Utc;
-use serde::{Deserialize, Serialize};
+use bson::{doc, oid::ObjectId};
 use std::str::FromStr;
 use tera::Context;
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Goal {
-    #[serde(with = "hex_string_as_object_id")]
-    _id: String,
-    name: String,
-    target: f64,
-    #[serde(with = "hex_string_as_object_id")]
-    user_id: String,
-    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
-    target_date: chrono::DateTime<Utc>,
-    recurrence: String,
-}
 
 pub async fn page(
     shared_state: State<SharedState>,
     Path(id): Path<String>,
     user: Extension<UserExtension>,
 ) -> Result<Response, StatusCode> {
-    log::debug!("{:?}", user);
-
     let goals: mongodb::Collection<Goal> = shared_state
         .mongo
         .database("simple_budget")

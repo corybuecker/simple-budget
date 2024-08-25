@@ -1,3 +1,4 @@
+use super::GoalForm;
 use crate::{
     authenticated::{FormError, UserExtension},
     models::goal::{Goal, Recurrence},
@@ -11,20 +12,9 @@ use axum::{
 };
 use bson::{doc, oid::ObjectId};
 use chrono::{NaiveDateTime, NaiveTime};
-use serde::Deserialize;
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
-
-#[derive(Debug, Validate, Deserialize)]
-pub struct GoalForm {
-    #[validate(length(min = 5))]
-    name: String,
-    #[validate(range(min = 0.0))]
-    target: f64,
-    target_date: chrono::NaiveDate,
-    recurrence: String,
-}
 
 pub async fn action(
     shared_state: State<SharedState>,

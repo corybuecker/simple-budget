@@ -5,27 +5,12 @@ use axum::{
     response::{Html, IntoResponse, Response},
     Extension,
 };
-use mongodb::bson::doc;
-use serde::{Deserialize, Serialize};
 use tera::Context;
-use validator::Validate;
-
-#[derive(Validate, Serialize, Deserialize)]
-struct Account {
-    #[validate(length(min = 1))]
-    name: String,
-
-    #[validate(range(min = 0.0))]
-    amount: f64,
-    debt: bool,
-}
 
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
 ) -> Result<Response, StatusCode> {
-    log::debug!("{:?}", user);
-
     let mut context = Context::new();
     context.insert("csrf", &user.csrf);
 

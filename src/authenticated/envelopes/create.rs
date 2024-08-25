@@ -1,5 +1,7 @@
+use super::EnvelopeForm;
 use crate::{
     authenticated::{FormError, UserExtension},
+    models::envelope::Envelope,
     SharedState,
 };
 use axum::{
@@ -10,34 +12,16 @@ use axum::{
 };
 use bson::oid::ObjectId;
 use mongodb::Collection;
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
-
-#[derive(Debug, Validate, Deserialize)]
-pub struct Envelope {
-    #[validate(length(min = 5))]
-    name: String,
-    #[validate(range(min = 0.0))]
-    amount: f64,
-}
-
-#[derive(Serialize)]
-pub struct EnvelopeRecord {
-    name: String,
-    amount: f64,
-    user_id: ObjectId,
-}
 
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
-    form: Form<Envelope>,
+    form: Form<EnvelopeForm>,
 ) -> Result<Response, FormError> {
-    log::debug!("{:?}", user);
-    log::debug!("{:?}", form);
     let mut context = Context::new();
 
     let mut turbo = false;
@@ -80,12 +64,13 @@ pub async fn page(
         }
     }
 
-    let goal_record = EnvelopeRecord {
+    let goal_record = Envelope {
+        _id: ObjectId::new().to_string(),
         name: form.name.to_owned(),
         amount: form.amount.to_owned(),
-        user_id: ObjectId::from_str(&user.id)?,
+        user_id: ObjectId::from_str(&user.id).unwrap().to_string(),
     };
-    let goals: Collection<EnvelopeRecord> = shared_state
+    let goals: Collection<Envelope> = shared_state
         .mongo
         .database("simple_budget")
         .collection("envelopes");

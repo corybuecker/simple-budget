@@ -1,7 +1,5 @@
 use crate::{
-    authenticated::{FormError, UserExtension},
-    models::account::Account,
-    SharedState,
+    authenticated::UserExtension, errors::FormError, models::account::Account, SharedState,
 };
 use axum::{
     extract::State,

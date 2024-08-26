@@ -1,8 +1,6 @@
 use super::EnvelopeForm;
 use crate::{
-    authenticated::{FormError, UserExtension},
-    models::envelope::Envelope,
-    SharedState,
+    authenticated::UserExtension, errors::FormError, models::envelope::Envelope, SharedState,
 };
 use axum::{
     extract::{Path, State},
@@ -46,18 +44,14 @@ pub async fn action(
             context.insert("name", &form.name);
             context.insert("amount", &form.amount);
 
-            let Ok(content) = shared_state.tera.render(
+            let content = shared_state.tera.render(
                 if turbo {
                     "envelopes/form.turbo.html"
                 } else {
                     "envelopes/edit.html"
                 },
                 &context,
-            ) else {
-                return Err(FormError {
-                    message: "cannot render".to_owned(),
-                });
-            };
+            )?;
 
             if turbo {
                 return Ok((
@@ -86,6 +80,7 @@ pub async fn action(
     let Some(mut envelope) = envelope else {
         return Err(FormError {
             message: "could not update envelope".to_string(),
+            status_code: Some(StatusCode::NOT_FOUND),
         });
     };
 

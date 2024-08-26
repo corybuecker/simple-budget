@@ -1,4 +1,4 @@
-use crate::{authenticated::UserExtension, models::goal::Goal, SharedState};
+use crate::{authenticated::UserExtension, errors::FormError, models::goal::Goal, SharedState};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -13,23 +13,23 @@ pub async fn page(
     shared_state: State<SharedState>,
     Path(id): Path<String>,
     user: Extension<UserExtension>,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, FormError> {
     let goals: mongodb::Collection<Goal> = shared_state
         .mongo
         .default_database()
         .unwrap()
         .collection("goals");
 
-    let Ok(goal) = goals
+    let goal = goals
         .find_one(
             doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()})
-        .await
-    else {
-        return Err(StatusCode::NOT_FOUND);
-    };
+        .await?;
 
     let Some(goal) = goal else {
-        return Err(StatusCode::NOT_FOUND);
+        return Err(FormError {
+            message: "could not find goal".to_string(),
+            status_code: Some(StatusCode::NOT_FOUND),
+        });
     };
 
     let mut context = Context::new();
@@ -41,9 +41,7 @@ pub async fn page(
     context.insert("target_date", &goal.target_date.date_naive());
     context.insert("recurrence", &goal.recurrence);
 
-    let Ok(content) = shared_state.tera.render("goals/edit.html", &context) else {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-    };
+    let content = shared_state.tera.render("goals/edit.html", &context)?;
 
     Ok(Html::from(content).into_response())
 }

@@ -1,9 +1,6 @@
 use super::AccountForm;
-use crate::{
-    authenticated::{FormError, UserExtension},
-    models::account::Account,
-    SharedState,
-};
+use crate::errors::FormError;
+use crate::{authenticated::UserExtension, models::account::Account, SharedState};
 use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},

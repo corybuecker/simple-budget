@@ -139,7 +139,7 @@ async fn create_session(
     subject: String,
     email: String,
 ) -> Result<String, mongodb::error::Error> {
-    let user_collection: Collection<User> = mongo.database("simple_budget").collection("users");
+    let user_collection: Collection<User> = mongo.default_database().unwrap().collection("users");
     let csrf = Alphanumeric.sample_string(&mut thread_rng(), 32);
 
     let user = upsert_subject(mongo, subject, email).await?;
@@ -165,7 +165,7 @@ async fn upsert_subject(
     subject: String,
     email: String,
 ) -> Result<User, mongodb::error::Error> {
-    let user_collection: Collection<User> = mongo.database("simple_budget").collection("users");
+    let user_collection: Collection<User> = mongo.default_database().unwrap().collection("users");
     let existing_user = user_collection.find_one(doc! {"subject": &subject}).await;
 
     if existing_user.is_err() {

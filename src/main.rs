@@ -83,7 +83,8 @@ async fn clear_sessions() {
     let mongo = mongo_client().await.unwrap();
 
     let update_result = mongo
-        .database("simple_budget")
+        .default_database()
+        .unwrap()
         .collection::<User>("users")
         .update_many(
             doc! {},

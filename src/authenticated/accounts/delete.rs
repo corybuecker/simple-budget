@@ -22,7 +22,8 @@ pub async fn action(
 
     let accounts: mongodb::Collection<Account> = shared_state
         .mongo
-        .database("simple_budget")
+        .default_database()
+        .unwrap()
         .collection("accounts");
 
     let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
@@ -49,7 +50,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_action() {
         let client = mongo_client().await.unwrap();
-        let database = client.database("simple_budget");
+        let database = client.default_database().unwrap();
         let accounts = database.collection::<Account>("accounts");
 
         let user_id = ObjectId::new();

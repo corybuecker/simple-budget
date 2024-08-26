@@ -73,7 +73,8 @@ pub async fn page(
 
     let accounts: Collection<Account> = shared_state
         .mongo
-        .database("simple_budget")
+        .default_database()
+        .unwrap()
         .collection("accounts");
 
     let _ = accounts.insert_one(account_record).await?;

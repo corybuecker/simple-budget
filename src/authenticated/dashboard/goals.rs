@@ -8,7 +8,7 @@ pub async fn goals(
 ) -> Result<Vec<Goal>, mongodb::error::Error> {
     let mut goals: Vec<Goal> = Vec::new();
 
-    let collection: Collection<Goal> = client.database("simple_budget").collection("goals");
+    let collection: Collection<Goal> = client.default_database().unwrap().collection("goals");
     let mut cursor = collection.find(doc! {"user_id": user_id}).await?;
 
     while cursor.advance().await? {

@@ -81,7 +81,8 @@ pub async fn page(
 
     let goals: Collection<Goal> = shared_state
         .mongo
-        .database("simple_budget")
+        .default_database()
+        .unwrap()
         .collection("goals");
 
     let _ = goals.insert_one(goal_record).await?;

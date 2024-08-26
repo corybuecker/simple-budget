@@ -72,7 +72,8 @@ pub async fn page(
     };
     let goals: Collection<Envelope> = shared_state
         .mongo
-        .database("simple_budget")
+        .default_database()
+        .unwrap()
         .collection("envelopes");
 
     let _ = goals.insert_one(goal_record).await?;

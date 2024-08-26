@@ -24,7 +24,8 @@ pub async fn page(
 
     let collection = shared_state
         .mongo
-        .database("simple_budget")
+        .default_database()
+        .unwrap()
         .collection::<Account>("accounts");
 
     let mut context = Context::new();

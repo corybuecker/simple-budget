@@ -120,7 +120,7 @@ async fn authenticated(
     };
 
     let session_id = session_id.value();
-    let users: Collection<User> = state.mongo.database("simple_budget").collection("users");
+    let users: Collection<User> = state.mongo.default_database().unwrap().collection("users");
     let option = FindOneOptions::builder()
         .projection(doc! {"sessions.$": 1, "email": 1, "subject": 1})
         .build();

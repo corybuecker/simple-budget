@@ -16,7 +16,8 @@ pub async fn page(
 ) -> Result<Response, StatusCode> {
     let goals: mongodb::Collection<Goal> = shared_state
         .mongo
-        .database("simple_budget")
+        .default_database()
+        .unwrap()
         .collection("goals");
 
     let Ok(goal) = goals

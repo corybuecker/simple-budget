@@ -73,7 +73,7 @@ struct Account {
 }
 
 async fn accounts_total(client: &mongodb::Client, user_id: &ObjectId) -> f64 {
-    let collection: Collection<Account> = client.database("simple_budget").collection("accounts");
+    let collection: Collection<Account> = client.default_database().unwrap().collection("accounts");
 
     let mut accounts: Vec<Account> = Vec::new();
     match collection.find(doc! {"user_id": user_id}).await {
@@ -112,7 +112,8 @@ async fn accounts_total(client: &mongodb::Client, user_id: &ObjectId) -> f64 {
     non_debt - debt
 }
 async fn envelopes_total(client: &mongodb::Client, user_id: &ObjectId) -> f64 {
-    let collection: Collection<Envelope> = client.database("simple_budget").collection("envelopes");
+    let collection: Collection<Envelope> =
+        client.default_database().unwrap().collection("envelopes");
 
     let mut envelopes: Vec<Envelope> = Vec::new();
     match collection.find(doc! {"user_id": user_id}).await {

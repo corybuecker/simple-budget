@@ -29,14 +29,14 @@
         <link rel="stylesheet" href={{ digest_asset(file="app.css") }}>
     </head>
     <body class="@container">
-        <div class="@sm:h-vh @sm:flex @sm:flex-col @sm:justify-between">
+        <div class="@sm:h-svh @sm:flex @sm:flex-col @sm:justify-between">
             <nav class="@sm:hidden @lg:block">
                 <a href="/reports">Reports</a>
                 <a href="/accounts">Accounts</a>
                 <a href="/envelopes">Envelopes</a>
                 <a href="/goals">Goals</a>
             </nav>
-            <main class="@sm:overflow-y-scroll">
+            <main class="@sm:overflow-y-scroll @sm:pb-1">
                 {% block content %}
                 {% endblock content %}
             </main>

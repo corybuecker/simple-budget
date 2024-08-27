@@ -18,5 +18,3 @@ jobs:
         with:
           push: true
           tags: ${{ secrets.DOCKER_IMAGE }}:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_IMAGE }}:buildcache,mode=max

@@ -121,7 +121,7 @@ pub async fn callback(
                 .expires(None)
                 .http_only(true)
                 .path("/")
-                .same_site(SameSite::Strict)
+                .same_site(SameSite::Lax)
                 .secure(secure == "true".to_string())
                 .build();
 

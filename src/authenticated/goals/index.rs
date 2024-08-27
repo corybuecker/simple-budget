@@ -1,8 +1,4 @@
-use crate::{
-    authenticated::{FormError, UserExtension},
-    models::goal::Goal,
-    SharedState,
-};
+use crate::{authenticated::UserExtension, errors::FormError, models::goal::Goal, SharedState};
 use axum::{
     extract::State,
     response::{Html, IntoResponse, Response},

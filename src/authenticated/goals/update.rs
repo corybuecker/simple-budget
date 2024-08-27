@@ -1,6 +1,7 @@
 use super::GoalForm;
 use crate::{
-    authenticated::{FormError, UserExtension},
+    authenticated::UserExtension,
+    errors::FormError,
     models::goal::{Goal, Recurrence},
     SharedState,
 };
@@ -81,6 +82,7 @@ pub async fn action(
     let Some(mut goal) = goal else {
         return Err(FormError {
             message: "could not find goal".to_string(),
+            status_code: Some(StatusCode::NOT_FOUND),
         });
     };
 

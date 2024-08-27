@@ -1,6 +1,7 @@
-use super::{super::FormError, GoalForm};
+use super::GoalForm;
 use crate::{
     authenticated::UserExtension,
+    errors::FormError,
     models::goal::{Goal, Recurrence},
     SharedState,
 };

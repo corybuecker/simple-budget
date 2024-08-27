@@ -1,4 +1,5 @@
 mod authentication;
+mod errors;
 mod jobs;
 use axum::{extract::FromRef, Router};
 use axum_extra::extract::cookie::Key;

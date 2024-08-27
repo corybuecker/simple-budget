@@ -1,8 +1,6 @@
 use super::AccountForm;
 use crate::{
-    authenticated::{FormError, UserExtension},
-    models::account::Account,
-    SharedState,
+    authenticated::UserExtension, errors::FormError, models::account::Account, SharedState,
 };
 use axum::{
     extract::{Path, State},
@@ -77,6 +75,7 @@ pub async fn action(
     let Some(mut account) = account else {
         return Err(FormError {
             message: "could not find account".to_string(),
+            status_code: Some(StatusCode::NOT_FOUND),
         });
     };
 

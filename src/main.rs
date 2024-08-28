@@ -14,8 +14,11 @@ use std::{
 };
 use tera::Tera;
 mod authenticated;
-use tower_http::{services::ServeDir, trace::TraceLayer};
-use tracing::Level;
+use tower_http::{
+    services::ServeDir,
+    trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer},
+};
+use tracing::{info, Level, Span};
 mod models;
 
 #[derive(Clone)]
@@ -144,7 +147,11 @@ async fn main() {
         )
         .nest_service("/assets", ServeDir::new("static"))
         .with_state(shared_state)
-        .layer(TraceLayer::new_for_http());
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().include_headers(true))
+                .on_response(DefaultOnResponse::new().include_headers(true)),
+        );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
 

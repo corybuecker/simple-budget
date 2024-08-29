@@ -18,7 +18,7 @@ use tower_http::{
     services::ServeDir,
     trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer},
 };
-use tracing::{info, Level, Span};
+use tracing::Level;
 mod models;
 
 #[derive(Clone)]
@@ -53,8 +53,6 @@ fn digest_asset() -> impl tera::Function {
                 path.push_str(file);
                 path.push_str("?v=");
                 path.push_str(&key);
-
-                log::debug!("{:?}", path);
 
                 Ok(path.into())
             }
@@ -149,8 +147,8 @@ async fn main() {
         .with_state(shared_state)
         .layer(
             TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::new().include_headers(true))
-                .on_response(DefaultOnResponse::new().include_headers(true)),
+                .make_span_with(DefaultMakeSpan::new().level(tracing::Level::INFO))
+                .on_response(DefaultOnResponse::new().level(tracing::Level::INFO)),
         );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();

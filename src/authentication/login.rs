@@ -1,6 +1,7 @@
 use axum::{
+    extract::State,
     http::StatusCode,
-    response::{IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
     cookie::{Cookie, SameSite},
@@ -12,8 +13,18 @@ use openidconnect::{
 };
 use openidconnect::{reqwest::async_http_client, RedirectUrl};
 use std::env;
+use tera::Context;
 
-pub async fn login(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response), StatusCode> {
+use crate::{errors::FormError, SharedState};
+
+pub async fn login(state: State<SharedState>) -> Result<Response, FormError> {
+    let tera = &state.tera;
+    let content = tera.render("authentication/login.html", &Context::new())?;
+
+    Ok(Html::from(content).into_response())
+}
+
+pub async fn redirect(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response), StatusCode> {
     let client_id = env::var("GOOGLE_CLIENT_ID").unwrap();
     let client_secret = env::var("GOOGLE_CLIENT_SECRET").unwrap();
     let callback_url = env::var("GOOGLE_CALLBACK_URL").unwrap();

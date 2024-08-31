@@ -58,6 +58,6 @@ fn account_generator(index: u32, user_id: String) -> Account {
         user_id,
         name: format!("Test account {}", index),
         amount: (rnd * 1000.0).floor(),
-        debt: if index % 3 == 0 { true } else { false },
+        debt: index % 3 == 0,
     }
 }

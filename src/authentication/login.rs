@@ -62,14 +62,13 @@ pub async fn redirect(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response
         .url();
 
     let secure = env::var("SECURE")
-        .or::<String>(Ok("false".to_string()))
-        .unwrap();
+        .unwrap_or("false".to_string());
     let cookie = Cookie::build(("nonce", nonce.secret().clone()))
         .expires(None)
         .http_only(true)
         .path("/authentication")
         .same_site(SameSite::Lax)
-        .secure(secure == "true".to_string())
+        .secure(secure == *"true")
         .build();
 
     return Ok((

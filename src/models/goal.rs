@@ -1,7 +1,6 @@
 use bson::{doc, serde_helpers::hex_string_as_object_id};
 use chrono::{DateTime, Datelike, Days, Duration, Local, Months, TimeDelta, Timelike, Utc};
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use std::ops::Add;
 
 #[derive(Deserialize, Serialize, Debug, Copy, Clone)]
@@ -18,16 +17,8 @@ pub enum Recurrence {
 #[derive(Debug)]
 pub struct RecurrenceError {}
 
-impl std::error::Error for RecurrenceError {}
-
-impl fmt::Display for RecurrenceError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "RecurrenceError")
-    }
-}
-
-impl Recurrence {
-    pub fn from_str(string: &str) -> Result<Self, RecurrenceError> {
+impl std::str::FromStr for Recurrence {
+    fn from_str(string: &str) -> Result<Self, RecurrenceError> {
         match string {
             "never" => Ok(Self::Never),
             "daily" => Ok(Self::Daily),
@@ -38,6 +29,8 @@ impl Recurrence {
             _ => Err(RecurrenceError {}),
         }
     }
+
+    type Err = RecurrenceError;
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -111,8 +104,8 @@ impl Goal {
 
     fn elapsed_time(&self) -> TimeDelta {
         let start_at = self.start_at();
-        let elapsed_time = Local::now() - start_at;
-        elapsed_time
+        
+        Local::now() - start_at
     }
 
     fn start_at(&self) -> DateTime<Local> {

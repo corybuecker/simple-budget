@@ -22,13 +22,10 @@ pub async fn action(
 ) -> Result<Response, FormError> {
     let mut turbo = false;
     let accept = headers.get("Accept");
-    match accept {
-        Some(accept) => {
-            if accept.to_str().unwrap().contains("turbo") {
-                turbo = true;
-            }
+    if let Some(accept) = accept {
+        if accept.to_str().unwrap().contains("turbo") {
+            turbo = true;
         }
-        _ => {}
     }
     match form.validate() {
         Ok(_) => {}
@@ -81,7 +78,7 @@ pub async fn action(
 
     account.name = form.name.clone();
     account.amount = form.amount;
-    account.debt = form.debt.or(Some(false)).unwrap();
+    account.debt = form.debt.unwrap_or(false);
 
     let _ = accounts.replace_one(filter, account).await?;
 
@@ -161,7 +158,7 @@ mod tests {
 
         assert_eq!(updated_account.name, "Updated Account");
         assert_eq!(updated_account.amount, 200.0);
-        assert_eq!(updated_account.debt, true);
+        assert!(updated_account.debt);
 
         // Clean up
         accounts_collection

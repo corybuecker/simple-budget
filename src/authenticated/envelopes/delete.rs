@@ -95,7 +95,7 @@ mod tests {
             .with_state(shared_state);
 
         let request = Request::builder()
-            .uri(format!("/envelopes/{}", envelope_id.to_string()))
+            .uri(format!("/envelopes/{}", envelope_id))
             .method("DELETE")
             .body(Body::empty())
             .unwrap();

@@ -12,7 +12,7 @@ pub struct FormError {
 
 impl IntoResponse for FormError {
     fn into_response(self) -> Response {
-        return (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response();
+        (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response()
     }
 }
 

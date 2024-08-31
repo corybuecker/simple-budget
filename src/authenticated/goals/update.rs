@@ -26,13 +26,10 @@ pub async fn action(
 ) -> Result<Response, FormError> {
     let mut turbo = false;
     let accept = headers.get("Accept");
-    match accept {
-        Some(accept) => {
-            if accept.to_str().unwrap().contains("turbo") {
-                turbo = true;
-            }
+    if let Some(accept) = accept {
+        if accept.to_str().unwrap().contains("turbo") {
+            turbo = true;
         }
-        _ => {}
     }
     match form.validate() {
         Ok(_) => {}

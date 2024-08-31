@@ -1,5 +1,5 @@
 use super::UserExtension;
-use crate::{models::goal::Goal, SharedState};
+use crate::SharedState;
 use axum::{
     extract::State,
     http::StatusCode,
@@ -26,21 +26,18 @@ pub async fn index(
 
     let goals = goals::goals(&shared_state.mongo, &user_id)
         .await
-        .or::<Vec<Goal>>(Ok(Vec::new()))
-        .unwrap();
+        .unwrap_or(Vec::new());
 
     let goals_accumulated = goals
         .iter()
         .map(|g| g.accumulated_per_day())
         .reduce(|memo, a| memo + a)
-        .or(Some(0.0))
-        .unwrap();
+        .unwrap_or(0.0);
     let goals_total = goals
         .iter()
         .map(|g| g.accumulated())
         .reduce(|memo, a| memo + a)
-        .or(Some(0.0))
-        .unwrap();
+        .unwrap_or(0.0);
 
     let envelopes_total = envelopes_total(&shared_state.mongo, &user_id).await;
     let accounts_total = accounts_total(&shared_state.mongo, &user_id).await;
@@ -96,18 +93,16 @@ async fn accounts_total(client: &mongodb::Client, user_id: &ObjectId) -> f64 {
 
     let debt = accounts
         .iter()
-        .filter(|a| a.debt == true)
+        .filter(|a| a.debt)
         .map(|e| e.amount)
         .reduce(|memo, amount| memo + amount)
-        .or(Some(0.0))
-        .unwrap();
+        .unwrap_or(0.0);
     let non_debt = accounts
         .iter()
-        .filter(|a| a.debt == false)
+        .filter(|a| !a.debt)
         .map(|e| e.amount)
         .reduce(|memo, amount| memo + amount)
-        .or(Some(0.0))
-        .unwrap();
+        .unwrap_or(0.0);
 
     non_debt - debt
 }
@@ -139,7 +134,7 @@ async fn envelopes_total(client: &mongodb::Client, user_id: &ObjectId) -> f64 {
         .map(|e| e.amount)
         .reduce(|memo, amount| memo + amount);
 
-    total.or(Some(0.0)).unwrap()
+    total.unwrap_or(0.0)
 }
 
 fn remaining_seconds() -> TimeDelta {
@@ -149,9 +144,9 @@ fn remaining_seconds() -> TimeDelta {
     let days = end_of_month - now;
 
     if days.num_days() == 0 {
-        return end_of_next_month - now;
+        end_of_next_month - now
     } else {
-        return end_of_month - now;
+        end_of_month - now
     }
 }
 

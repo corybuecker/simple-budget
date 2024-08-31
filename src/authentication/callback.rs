@@ -130,8 +130,7 @@ pub async fn callback(
     };
     let email = email.to_string();
     let secure = env::var("SECURE")
-        .or::<String>(Ok("false".to_string()))
-        .unwrap();
+        .unwrap_or("false".to_string());
 
     match create_session(shared_state.mongo.clone(), subject, email).await {
         Ok(id) => {
@@ -140,16 +139,16 @@ pub async fn callback(
                 .http_only(true)
                 .path("/")
                 .same_site(SameSite::Lax)
-                .secure(secure == "true".to_string())
+                .secure(secure == *"true")
                 .build();
 
-            return Ok((jar.add(cookie), Redirect::to(redirect).into_response()));
+            Ok((jar.add(cookie), Redirect::to(redirect).into_response()))
         }
         Err(_code) => {
-            return Err(FormError {
+            Err(FormError {
                 message: String::new(),
                 status_code: Some(StatusCode::FORBIDDEN),
-            });
+            })
         }
     }
 }
@@ -177,7 +176,7 @@ async fn create_session(
         )
         .await?;
 
-    return Ok(session.id.to_string());
+    Ok(session.id.to_string())
 }
 
 async fn upsert_subject(
@@ -189,7 +188,7 @@ async fn upsert_subject(
     let existing_user = user_collection.find_one(doc! {"subject": &subject}).await;
 
     if existing_user.is_err() {
-        return Err(existing_user.err().unwrap());
+        Err(existing_user.err().unwrap())
     } else {
         match existing_user.unwrap() {
             Some(user) => {
@@ -206,7 +205,7 @@ async fn upsert_subject(
                     return Err(error.unwrap());
                 }
 
-                return Ok(user);
+                Ok(user)
             }
             None => {
                 let user = User {
@@ -217,7 +216,7 @@ async fn upsert_subject(
                 };
                 let result = user_collection.insert_one(&user).await;
                 log::info!("{:?}", result);
-                return Ok(user);
+                Ok(user)
             }
         }
     }

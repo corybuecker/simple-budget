@@ -20,13 +20,10 @@ pub async fn page(
 ) -> Result<Response, FormError> {
     let mut turbo = false;
     let accept = headers.get("Accept");
-    match accept {
-        Some(accept) => {
-            if accept.to_str().unwrap().contains("turbo") {
-                turbo = true;
-            }
+    if let Some(accept) = accept {
+        if accept.to_str().unwrap().contains("turbo") {
+            turbo = true;
         }
-        _ => {}
     }
     match form.validate() {
         Ok(_) => {}
@@ -64,7 +61,7 @@ pub async fn page(
         _id: ObjectId::new().to_string(),
         name: form.name.to_owned(),
         amount: form.amount.to_owned(),
-        debt: form.debt.or(Some(false)).unwrap(),
+        debt: form.debt.unwrap_or(false),
         user_id: ObjectId::from_str(&user.id).unwrap().to_string(),
     };
 

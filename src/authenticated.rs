@@ -61,13 +61,13 @@ async fn validate_csrf(
                 return StatusCode::BAD_REQUEST.into_response();
             };
             if user.csrf == header.clone() {
-                return next.run(request).await;
+                next.run(request).await
             } else {
-                return StatusCode::BAD_REQUEST.into_response();
+                StatusCode::BAD_REQUEST.into_response()
             }
         }
         _ => {
-            return next.run(request).await;
+            next.run(request).await
         }
     }
 }
@@ -100,15 +100,14 @@ async fn authenticated(
         Ok((jar, next.run(request).await))
     } else {
         let secure = env::var("SECURE")
-            .or::<String>(Ok("false".to_string()))
-            .unwrap();
+            .unwrap_or("false".to_string());
 
         let redirect_cookie = Cookie::build(("redirect_to", request.uri().path().to_owned()))
             .expires(None)
             .http_only(true)
             .path("/authentication")
             .same_site(SameSite::Strict)
-            .secure(secure == "true".to_string())
+            .secure(secure == *"true")
             .build();
 
         Ok((

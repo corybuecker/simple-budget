@@ -95,7 +95,7 @@ mod tests {
             .with_state(shared_state);
 
         let request = Request::builder()
-            .uri(format!("/goals/{}", goal_id.to_string()))
+            .uri(format!("/goals/{}", goal_id))
             .method("DELETE")
             .body(Body::empty())
             .unwrap();

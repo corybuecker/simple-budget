@@ -166,7 +166,7 @@ async fn main() {
         }
     };
 
-    return ();
+    return ;
 }
 
 async fn mongo_client() -> Result<mongodb::Client, mongodb::error::Error> {

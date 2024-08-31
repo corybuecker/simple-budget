@@ -1,4 +1,4 @@
-use crate::SharedState;
+use crate::{errors::FormError, SharedState};
 use axum::{
     extract::State,
     http::StatusCode,
@@ -9,7 +9,6 @@ use axum_extra::extract::{
     Query, SignedCookieJar,
 };
 use chrono::{DateTime, Days, Utc};
-use log::error;
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Uuid},
     Client, Collection,
@@ -50,27 +49,39 @@ pub async fn callback(
     shared_state: State<SharedState>,
     query: Query<GoogleCallback>,
     jar: SignedCookieJar,
-) -> Result<(SignedCookieJar, Response), StatusCode> {
+) -> Result<(SignedCookieJar, Response), FormError> {
     let client_id = env::var("GOOGLE_CLIENT_ID").unwrap();
     let client_secret = env::var("GOOGLE_CLIENT_SECRET").unwrap();
     let callback_url = env::var("GOOGLE_CALLBACK_URL").unwrap();
 
     let Ok(issuer_url) = IssuerUrl::new("https://accounts.google.com".to_string()) else {
-        return Err(StatusCode::SERVICE_UNAVAILABLE);
+        return Err(FormError {
+            message: String::new(),
+            status_code: Some(StatusCode::SERVICE_UNAVAILABLE),
+        });
     };
 
     let Ok(provider_metadata) =
         CoreProviderMetadata::discover_async(issuer_url, async_http_client).await
     else {
-        return Err(StatusCode::SERVICE_UNAVAILABLE);
+        return Err(FormError {
+            message: String::new(),
+            status_code: Some(StatusCode::SERVICE_UNAVAILABLE),
+        });
     };
 
     let Ok(redirect_uri) = RedirectUrl::new(callback_url) else {
-        return Err(StatusCode::SERVICE_UNAVAILABLE);
+        return Err(FormError {
+            message: String::new(),
+            status_code: Some(StatusCode::SERVICE_UNAVAILABLE),
+        });
     };
 
     let Some(nonce_cookie) = jar.get("nonce") else {
-        return Err(StatusCode::FORBIDDEN);
+        return Err(FormError {
+            message: String::new(),
+            status_code: Some(StatusCode::FORBIDDEN),
+        });
     };
 
     let redirect_cookie = jar.get("redirect_to");
@@ -95,20 +106,27 @@ pub async fn callback(
         .request_async(async_http_client)
         .await
     else {
-        return Err(StatusCode::SERVICE_UNAVAILABLE);
+        return Err(FormError {
+            message: String::new(),
+            status_code: Some(StatusCode::SERVICE_UNAVAILABLE),
+        });
     };
 
     let id_token = token_response.id_token().unwrap();
 
     let Ok(claims) = id_token.claims(&client.id_token_verifier(), &nonce) else {
-        error!("issue with claims");
-        return Err(StatusCode::FORBIDDEN);
+        return Err(FormError {
+            message: String::new(),
+            status_code: Some(StatusCode::FORBIDDEN),
+        });
     };
 
     let subject = claims.subject().to_string();
     let Some(email) = claims.email() else {
-        error!("issue with email");
-        return Err(StatusCode::FORBIDDEN);
+        return Err(FormError {
+            message: String::new(),
+            status_code: Some(StatusCode::FORBIDDEN),
+        });
     };
     let email = email.to_string();
     let secure = env::var("SECURE")
@@ -127,9 +145,11 @@ pub async fn callback(
 
             return Ok((jar.add(cookie), Redirect::to(redirect).into_response()));
         }
-        Err(code) => {
-            error!("{}", code);
-            return Err(StatusCode::FORBIDDEN);
+        Err(_code) => {
+            return Err(FormError {
+                message: String::new(),
+                status_code: Some(StatusCode::FORBIDDEN),
+            });
         }
     }
 }

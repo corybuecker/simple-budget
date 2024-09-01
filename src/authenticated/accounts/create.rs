@@ -75,3 +75,141 @@ pub async fn page(
 
     Ok(Redirect::to("/accounts").into_response())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::str::from_utf8;
+
+    use super::*;
+    use crate::{digest_asset, mongo_client};
+    use axum::body::{to_bytes, Body};
+    use axum::http::{Request, StatusCode};
+    use axum::routing::post;
+    use axum::Router;
+    use axum_extra::extract::cookie::Key;
+    use bson::doc;
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn test_create_account_success() {
+        let client = mongo_client().await.unwrap();
+        let accounts: Collection<Account> =
+            client.default_database().unwrap().collection("accounts");
+
+        accounts
+            .delete_one(doc! {"name": "test_create_account_success"})
+            .await
+            .unwrap();
+
+        let shared_state = SharedState {
+            mongo: client.clone(),
+            tera: tera::Tera::new("src/templates/**/*.html").unwrap(),
+            key: Key::generate(),
+        };
+
+        let app = Router::new()
+            .route("/accounts/create", post(page))
+            .layer(Extension(UserExtension {
+                id: ObjectId::new().to_string(),
+                csrf: String::new(),
+            }))
+            .with_state(shared_state);
+
+        let form_data = "name=test_create_account_success&amount=100.00&debt=false";
+        let request = Request::builder()
+            .method("POST")
+            .uri("/accounts/create")
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(Body::from(form_data))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers().get("location").unwrap(), "/accounts");
+
+        // Verify that the account was created in the database
+        let account = accounts
+            .find_one(doc! {"name": "test_create_account_success"})
+            .await
+            .unwrap();
+
+        assert!(account.is_some())
+    }
+
+    #[tokio::test]
+    async fn test_create_account_validation_error() {
+        let client = mongo_client().await.unwrap();
+
+        let mut tera = tera::Tera::new("src/templates/**/*").unwrap();
+        tera.register_function("digest_asset", digest_asset());
+
+        let shared_state = SharedState {
+            mongo: client,
+            tera,
+            key: Key::generate(),
+        };
+
+        let app = Router::new()
+            .route("/accounts/create", post(page))
+            .layer(Extension(UserExtension {
+                id: ObjectId::new().to_string(),
+                csrf: String::from("test"),
+            }))
+            .with_state(shared_state);
+
+        let form_data = "name=test&amount=1&debt=false";
+        let request = Request::builder()
+            .method("POST")
+            .uri("/accounts/create")
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(Body::from(form_data))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        let (parts, body) = response.into_parts();
+        let bytes = to_bytes(body, usize::MAX).await.unwrap();
+        let body_str = from_utf8(&bytes).unwrap().to_string();
+
+        assert_eq!(parts.status, StatusCode::BAD_REQUEST);
+        assert!(body_str.contains("test"))
+    }
+
+    #[tokio::test]
+    async fn test_create_account_turbo_stream() {
+        let client = mongo_client().await.unwrap();
+        let mut tera = tera::Tera::new("src/templates/**/*").unwrap();
+        tera.register_function("digest_asset", digest_asset());
+        let shared_state = SharedState {
+            mongo: client,
+            tera,
+            key: Key::generate(),
+        };
+
+        let app = Router::new()
+            .route("/accounts/create", post(page))
+            .layer(Extension(UserExtension {
+                id: ObjectId::new().to_string(),
+                csrf: String::new(),
+            }))
+            .with_state(shared_state);
+
+        let form_data = "name=test&amount=1&debt=false";
+        let request = Request::builder()
+            .method("POST")
+            .uri("/accounts/create")
+            .header("content-type", "application/x-www-form-urlencoded")
+            .header("Accept", "text/vnd.turbo-stream.html")
+            .body(Body::from(form_data))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/vnd.turbo-stream.html"
+        );
+    }
+}

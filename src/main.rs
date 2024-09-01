@@ -34,7 +34,7 @@ impl FromRef<SharedState> for Key {
     }
 }
 
-fn digest_asset() -> impl tera::Function {
+pub fn digest_asset() -> impl tera::Function {
     let key = SystemTime::now();
     let key = key
         .duration_since(SystemTime::UNIX_EPOCH)
@@ -166,7 +166,7 @@ async fn main() {
         }
     };
 
-    return ;
+    return;
 }
 
 async fn mongo_client() -> Result<mongodb::Client, mongodb::error::Error> {

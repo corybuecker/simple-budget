@@ -13,13 +13,13 @@ pub async fn convert_goals(mut session: ClientSession) -> Result<f64, mongodb::e
         .unwrap()
         .collection::<Envelope>("envelopes");
 
-    let goals = session
+    let goals_collection = session
         .client()
         .default_database()
         .unwrap()
         .collection::<Goal>("goals");
 
-    let goal = goals
+    let goal = goals_collection
         .find_one(
             doc! {"recurrence": doc! { "$ne": "never" }, "target_date": doc! {"$lt": Utc::now()}},
         )
@@ -38,7 +38,7 @@ pub async fn convert_goals(mut session: ClientSession) -> Result<f64, mongodb::e
 
             let new_goal = goal.increment();
 
-            let _ = goals
+            let _ = goals_collection
                 .replace_one(
                     doc! {"_id": ObjectId::from_str(&goal._id).unwrap()},
                     new_goal,
@@ -50,7 +50,7 @@ pub async fn convert_goals(mut session: ClientSession) -> Result<f64, mongodb::e
 
             Ok(1.0)
         }
-        None => Ok(1.9),
+        None => Ok(0.0),
     }
 }
 

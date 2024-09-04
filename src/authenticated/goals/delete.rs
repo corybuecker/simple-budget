@@ -37,22 +37,22 @@ pub async fn action(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::models::goal::Goal;
-    use crate::mongo_client;
+    use crate::test_utils::test_utils::{state_for_tests, user_for_tests};
     use axum::body::Body;
-    use axum::http::Request;
+    use axum::http::{Request, StatusCode};
     use axum::Router;
-    use axum_extra::extract::cookie::Key;
+    use bson::doc;
+    use bson::oid::ObjectId;
     use chrono::Duration;
     use std::ops::Add;
-    use tera::Tera;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_delete_action() {
-        let client = mongo_client().await.unwrap();
-        let goals = client
+        let shared_state = state_for_tests().await;
+        let goals = shared_state
+            .mongo
             .default_database()
             .unwrap()
             .collection::<Goal>("goals");
@@ -76,22 +76,10 @@ mod tests {
 
         goals.insert_one(goal).await.unwrap();
 
-        let tera = Tera::new("src/templates/**/*.html").expect("cannot initialize Tera");
-        let shared_state = SharedState {
-            mongo: client,
-            key: Key::generate(),
-            tera,
-        };
-
-        let user = UserExtension {
-            id: user_id.to_string(),
-            csrf: "test".to_string(),
-        };
-
         // Create a router with the delete route
         let app = Router::new()
-            .route("/goals/:id", axum::routing::delete(action))
-            .layer(Extension(user))
+            .route("/goals/:id", axum::routing::delete(super::action))
+            .layer(user_for_tests(&user_id.to_hex()))
             .with_state(shared_state);
 
         let request = Request::builder()

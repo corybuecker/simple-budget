@@ -43,18 +43,20 @@ pub async fn action(
 mod tests {
     use super::*;
     use crate::models::envelope::Envelope;
-    use crate::mongo_client;
+    
+    use crate::test_utils::test_utils::{state_for_tests, user_for_tests};
     use axum::body::Body;
     use axum::http::Request;
     use axum::Router;
-    use axum_extra::extract::cookie::Key;
-    use tera::Tera;
+    
+    
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_delete_action() {
-        let client = mongo_client().await.unwrap();
-        let envelopes = client
+        let shared_state = state_for_tests().await;
+        let envelopes = shared_state
+            .mongo
             .default_database()
             .unwrap()
             .collection::<Envelope>("envelopes");
@@ -76,22 +78,10 @@ mod tests {
 
         envelopes.insert_one(envelope).await.unwrap();
 
-        let tera = Tera::new("src/templates/**/*.html").expect("cannot initialize Tera");
-        let shared_state = SharedState {
-            mongo: client,
-            key: Key::generate(),
-            tera,
-        };
-
-        let user = UserExtension {
-            id: user_id.to_string(),
-            csrf: "test".to_string(),
-        };
-
         // Create a router with the delete route
         let app = Router::new()
             .route("/envelopes/:id", axum::routing::delete(action))
-            .layer(Extension(user))
+            .layer(user_for_tests(&user_id.to_hex()))
             .with_state(shared_state);
 
         let request = Request::builder()

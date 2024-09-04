@@ -88,21 +88,18 @@ pub async fn action(
 #[cfg(test)]
 mod tests {
     use crate::{
-        authenticated::UserExtension, models::account::Account, mongo_client, SharedState,
+        models::account::Account,
+        test_utils::test_utils::{state_for_tests, user_for_tests},
     };
-    use axum::{
-        http::{Method, Request, StatusCode},
-        Extension,
-    };
-    use axum_extra::extract::cookie::Key;
+    use axum::http::{Method, Request, StatusCode};
+    
     use mongodb::bson::doc;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_update_account() {
-        // Set up the database connection
-        let client = mongo_client().await.unwrap();
-        let db = client.default_database().unwrap();
+        let shared_state = state_for_tests().await;
+        let db = shared_state.mongo.default_database().unwrap();
         let accounts_collection: mongodb::Collection<Account> = db.collection("accounts");
 
         // Create a test account
@@ -116,13 +113,6 @@ mod tests {
             debt: false,
         };
         accounts_collection.insert_one(test_account).await.unwrap();
-
-        // Set up the SharedState
-        let shared_state = SharedState {
-            mongo: client,
-            key: Key::generate(),
-            tera: tera::Tera::new("templates/**/*").unwrap(),
-        };
 
         let request = Request::builder()
             .method(Method::POST)
@@ -138,10 +128,7 @@ mod tests {
                 axum::routing::post(crate::authenticated::accounts::update::action),
             )
             .with_state(shared_state)
-            .layer(Extension(UserExtension {
-                id: user_id.to_string(),
-                csrf: "test".to_string(),
-            }));
+            .layer(user_for_tests(&user_id.to_hex()));
 
         let response = app.oneshot(request).await.unwrap();
 

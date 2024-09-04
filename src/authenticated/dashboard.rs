@@ -7,7 +7,7 @@ use axum::{
     Extension,
 };
 use bson::{doc, oid::ObjectId};
-use chrono::{DateTime, Datelike, Local, Months, TimeDelta, Timelike};
+use chrono::{DateTime, Datelike, Duration, Local, Months, NaiveTime, TimeDelta, Timelike};
 use mongodb::Collection;
 use serde::Deserialize;
 use std::{ops::Sub, str::FromStr};
@@ -44,6 +44,18 @@ pub async fn index(
 
     let remaining_total = accounts_total - envelopes_total - goals_total;
 
+    let now = Local::now();
+    let tomorrow = (now + Duration::days(1))
+        .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
+        .unwrap();
+
+    let duration_until_tomorrow = tomorrow - now;
+    let seconds_until_tomorrow = duration_until_tomorrow.num_seconds() as f64;
+
+    let tomorrow_remaining_total =
+        remaining_total - goals_accumulated * (seconds_until_tomorrow / 86400.0);
+
+    context.insert("tomorrow_remaining_total", &tomorrow_remaining_total);
     context.insert("accounts_total", &accounts_total);
     context.insert("envelopes_total", &envelopes_total);
     context.insert("goals_accumulated_per_day", &goals_accumulated);

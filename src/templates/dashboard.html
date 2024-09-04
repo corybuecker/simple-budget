@@ -11,8 +11,10 @@
         <div class="flex flex-col items-center">
             <div class="text-2xl"
                  data-controller="formatter"
-                 data-formatter-currency-value="{{ tomorrow_remaining_total / remaining_days }}"
-                 data-formatter-currency-precision-value="3">{{ tomorrow_remaining_total / remaining_days }}</div>
+                 data-formatter-currency-value="{{ tomorrow_remaining_total / (remaining_days - 1) }}"
+                 data-formatter-currency-precision-value="3">
+                {{ tomorrow_remaining_total / (remaining_days - 1) }}
+            </div>
             <div class="text-sm text-slate-600">Per day (tomorrow)</div>
         </div>
         <div class="flex flex-col items-center">

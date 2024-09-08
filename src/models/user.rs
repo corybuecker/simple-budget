@@ -3,6 +3,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
+pub struct Preferences {}
+
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Session {
     #[serde(with = "hex_string_as_object_id")]
     pub _id: String,
@@ -21,4 +24,5 @@ pub struct User {
     pub email: String,
     pub subject: String,
     pub sessions: Option<Vec<Session>>,
+    pub preferences: Preferences,
 }

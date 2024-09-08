@@ -1,4 +1,8 @@
-use crate::{errors::FormError, SharedState};
+use crate::{
+    errors::FormError,
+    models::user::{Preferences, Session, User},
+    SharedState,
+};
 use axum::{
     extract::State,
     http::StatusCode,
@@ -8,9 +12,9 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
     Query, SignedCookieJar,
 };
-use chrono::{DateTime, Days, Utc};
+use chrono::{Days, Utc};
 use mongodb::{
-    bson::{self, doc, oid::ObjectId, Uuid},
+    bson::{doc, oid::ObjectId, Uuid},
     Client, Collection,
 };
 use openidconnect::{
@@ -22,7 +26,7 @@ use rand::{
     distributions::{Alphanumeric, DistString},
     thread_rng,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::env;
 
 #[derive(Deserialize)]
@@ -30,21 +34,6 @@ pub struct GoogleCallback {
     code: String,
 }
 
-#[derive(Deserialize, Serialize)]
-struct Session {
-    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
-    expiration: DateTime<Utc>,
-    id: bson::Uuid,
-    csrf: String,
-}
-
-#[derive(Deserialize, Serialize)]
-struct User {
-    subject: String,
-    email: String,
-    sessions: Vec<Session>,
-    _id: ObjectId,
-}
 pub async fn callback(
     shared_state: State<SharedState>,
     query: Query<GoogleCallback>,
@@ -129,8 +118,7 @@ pub async fn callback(
         });
     };
     let email = email.to_string();
-    let secure = env::var("SECURE")
-        .unwrap_or("false".to_string());
+    let secure = env::var("SECURE").unwrap_or("false".to_string());
 
     match create_session(shared_state.mongo.clone(), subject, email).await {
         Ok(id) => {
@@ -144,12 +132,10 @@ pub async fn callback(
 
             Ok((jar.add(cookie), Redirect::to(redirect).into_response()))
         }
-        Err(_code) => {
-            Err(FormError {
-                message: String::new(),
-                status_code: Some(StatusCode::FORBIDDEN),
-            })
-        }
+        Err(_code) => Err(FormError {
+            message: String::new(),
+            status_code: Some(StatusCode::FORBIDDEN),
+        }),
     }
 }
 
@@ -165,6 +151,7 @@ async fn create_session(
 
     let expiration = Utc::now().checked_add_days(Days::new(1)).expect("msg");
     let session = Session {
+        _id: ObjectId::new().to_string(),
         id: Uuid::new(),
         expiration,
         csrf: csrf.clone(),
@@ -211,8 +198,9 @@ async fn upsert_subject(
                 let user = User {
                     subject,
                     email,
-                    sessions: Vec::new(),
-                    _id: ObjectId::new(),
+                    preferences: Preferences {},
+                    sessions: Some(Vec::new()),
+                    _id: ObjectId::new().to_string(),
                 };
                 let result = user_collection.insert_one(&user).await;
                 log::info!("{:?}", result);

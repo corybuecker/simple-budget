@@ -54,10 +54,13 @@
       import * as Turbo from "@hotwired/turbo"
       import { Application, Controller } from "@hotwired/stimulus"
       import FormatterController from "controllers/formatter_controller.js"
+      import ModalController from "controllers/modal_controller.js"
       
       window.Stimulus = Application.start()
+      Stimulus.register("modal", ModalController)
       Stimulus.register("formatter", FormatterController)
         </script>
         <!-- <turbo-stream-source src="ws://localhost:8000/ws" signed-stream-name="test" /> -->
+        <turbo-frame data-controller="modal" class="absolute w-full top-0" id="confirmation-modal"></turbo-frame>
     </body>
 </html>

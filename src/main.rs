@@ -1,7 +1,6 @@
 mod authentication;
 mod errors;
 mod jobs;
-mod test_utils;
 use axum::{extract::FromRef, Router};
 use axum_extra::extract::cookie::Key;
 use bson::{doc, oid::ObjectId};
@@ -29,7 +28,7 @@ struct Broker {
 }
 
 #[derive(Clone)]
-struct SharedState {
+pub struct SharedState {
     tera: Tera,
     mongo: Client,
     key: Key,
@@ -200,6 +199,8 @@ async fn mongo_client() -> Result<mongodb::Client, mongodb::error::Error> {
     Client::with_uri_str(mongo_connection_string).await
 }
 
+#[cfg(test)]
+pub mod test_utils;
 #[cfg(test)]
 mod tests {
     use super::*;

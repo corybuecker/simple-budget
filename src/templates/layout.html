@@ -5,21 +5,21 @@
               content="width=device-width,minimum-scale=1,initial-scale=1" />
         {% if csrf %}<meta name="csrf-token" content="{{ csrf }}" />{% endif %}
         <!--
-  JSPM Generator Import Map
-  Edit URL: https://generator.jspm.io/#Y2NlYGBiTs4vqkwqTU3OTi1icMjILynPLEpN0S8uycwtzSktdjDWM9IzQpIoKS1Kynew0DPQMwUAIX0xAUAA
--->
+          JSPM Generator Import Map
+          Edit URL: https://generator.jspm.io/#Y2NlYGBiTs4vqkwqTU3OTi1icMjILynPLEpN0S8uycwtzSktdjDWM9IzQpIoKS1Kynew0DPQMwUAIX0xAUAA
+        -->
         <script type="importmap">
-{
-  "imports": {
-    "@hotwired/stimulus": "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js",
-    "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.5/dist/turbo.es2017-esm.js",
-    "controllers/": "/assets/controllers/"
-  },
-  "integrity": {
-    "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js": "sha384-NStGXzUH4pFNGrLRkzXYz7zzDn8S6MvFPwfKSuYf6TlX25BrNVP4oCN2S04XUuOI",
-    "https://ga.jspm.io/npm:@hotwired/turbo@8.0.5/dist/turbo.es2017-esm.js": "sha384-X0tpH4zny/Ei/nRQDzJetxNnASrfOb+3HbVmlQqsylGFgvEXR8pv83YKCs+82aOf"
-  }
-}
+          {
+            "imports": {
+              "@hotwired/stimulus": "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js",
+              "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.5/dist/turbo.es2017-esm.js",
+              "controllers/": "/assets/controllers/"
+            },
+            "integrity": {
+              "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js": "sha384-NStGXzUH4pFNGrLRkzXYz7zzDn8S6MvFPwfKSuYf6TlX25BrNVP4oCN2S04XUuOI",
+              "https://ga.jspm.io/npm:@hotwired/turbo@8.0.5/dist/turbo.es2017-esm.js": "sha384-X0tpH4zny/Ei/nRQDzJetxNnASrfOb+3HbVmlQqsylGFgvEXR8pv83YKCs+82aOf"
+            }
+          }
         </script>
         <!-- ES Module Shims import maps polyfills -->
         <script async
@@ -36,7 +36,7 @@
                 <a href="/envelopes">Envelopes</a>
                 <a href="/goals">Goals</a>
             </nav>
-            <main class="@sm:overflow-y-scroll @sm:pb-1">
+            <main class="@lg:overflow-y-auto @lg:pb-0 @sm:overflow-y-scroll @sm:pb-1">
                 {% block content %}
                 {% endblock content %}
             </main>
@@ -51,14 +51,14 @@
             </nav>
         </div>
         <script type="module">
-      import * as Turbo from "@hotwired/turbo"
-      import { Application, Controller } from "@hotwired/stimulus"
-      import FormatterController from "controllers/formatter_controller.js"
-      import ModalController from "controllers/modal_controller.js"
-      
-      window.Stimulus = Application.start()
-      Stimulus.register("modal", ModalController)
-      Stimulus.register("formatter", FormatterController)
+          import * as Turbo from "@hotwired/turbo"
+          import { Application, Controller } from "@hotwired/stimulus"
+          import FormatterController from "controllers/formatter_controller.js"
+          import ModalController from "controllers/modal_controller.js"
+          
+          window.Stimulus = Application.start()
+          Stimulus.register("modal", ModalController)
+          Stimulus.register("formatter", FormatterController)
         </script>
         <!-- <turbo-stream-source src="ws://localhost:8000/ws" signed-stream-name="test" /> -->
         <turbo-frame data-controller="modal" class="absolute w-full top-0" id="confirmation-modal"></turbo-frame>

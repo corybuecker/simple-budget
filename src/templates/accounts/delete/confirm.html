@@ -1,0 +1,4 @@
+{% extends "delete_confirmation.html" %}
+{% block prompt %}Are you sure you want to delete the "{{ account.name }}" account?{% endblock %}
+{% block entity %}account{% endblock %}
+{% block action %}/accounts/{{ account._id["$oid"] }}{% endblock %}

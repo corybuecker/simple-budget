@@ -91,21 +91,19 @@ pub async fn action(
 #[cfg(test)]
 mod tests {
     use crate::{
-        authenticated::UserExtension, models::envelope::Envelope, mongo_client, SharedState,
+        models::envelope::Envelope,
+        test_utils::test_utils::{state_for_tests, user_for_tests},
     };
-    use axum::{
-        http::{Method, Request, StatusCode},
-        Extension,
-    };
-    use axum_extra::extract::cookie::Key;
+    use axum::http::{Method, Request, StatusCode};
+    
     use mongodb::bson::doc;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_update_envelope() {
+        let shared_state = state_for_tests().await;
         // Set up the database connection
-        let client = mongo_client().await.unwrap();
-        let db = client.default_database().unwrap();
+        let db = shared_state.mongo.default_database().unwrap();
         let envelopes_collection: mongodb::Collection<Envelope> = db.collection("envelopes");
 
         // Create a test envelope
@@ -122,13 +120,6 @@ mod tests {
             .await
             .unwrap();
 
-        // Set up the SharedState
-        let shared_state = SharedState {
-            mongo: client,
-            key: Key::generate(),
-            tera: tera::Tera::new("templates/**/*").unwrap(),
-        };
-
         let request = Request::builder()
             .method(Method::POST)
             .uri(format!("/envelopes/{}", envelope_id.to_hex()))
@@ -143,10 +134,7 @@ mod tests {
                 axum::routing::post(crate::authenticated::envelopes::update::action),
             )
             .with_state(shared_state)
-            .layer(Extension(UserExtension {
-                id: user_id.to_string(),
-                csrf: "test".to_string(),
-            }));
+            .layer(user_for_tests(&user_id.to_hex()));
 
         let response = app.oneshot(request).await.unwrap();
 

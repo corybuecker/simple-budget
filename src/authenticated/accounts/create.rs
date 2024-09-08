@@ -78,42 +78,36 @@ pub async fn page(
 
 #[cfg(test)]
 mod tests {
-    use std::str::from_utf8;
-
     use super::*;
-    use crate::{digest_asset, mongo_client};
+    use crate::test_utils::test_utils::{state_for_tests, user_for_tests};
+    
     use axum::body::{to_bytes, Body};
     use axum::http::{Request, StatusCode};
     use axum::routing::post;
     use axum::Router;
-    use axum_extra::extract::cookie::Key;
+    
     use bson::doc;
+    use std::str::from_utf8;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_create_account_success() {
-        let client = mongo_client().await.unwrap();
-        let accounts: Collection<Account> =
-            client.default_database().unwrap().collection("accounts");
+        let shared_state = state_for_tests().await;
+        let accounts: Collection<Account> = shared_state
+            .mongo
+            .default_database()
+            .unwrap()
+            .collection("accounts");
 
         accounts
             .delete_one(doc! {"name": "test_create_account_success"})
             .await
             .unwrap();
 
-        let shared_state = SharedState {
-            mongo: client.clone(),
-            tera: tera::Tera::new("src/templates/**/*.html").unwrap(),
-            key: Key::generate(),
-        };
-
         let app = Router::new()
             .route("/accounts/create", post(page))
-            .layer(Extension(UserExtension {
-                id: ObjectId::new().to_string(),
-                csrf: String::new(),
-            }))
-            .with_state(shared_state);
+            .with_state(shared_state)
+            .layer(user_for_tests(&ObjectId::new().to_hex()));
 
         let form_data = "name=test_create_account_success&amount=100.00&debt=false";
         let request = Request::builder()
@@ -139,24 +133,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_account_validation_error() {
-        let client = mongo_client().await.unwrap();
-
-        let mut tera = tera::Tera::new("src/templates/**/*").unwrap();
-        tera.register_function("digest_asset", digest_asset());
-
-        let shared_state = SharedState {
-            mongo: client,
-            tera,
-            key: Key::generate(),
-        };
+        let shared_state = state_for_tests().await;
 
         let app = Router::new()
             .route("/accounts/create", post(page))
-            .layer(Extension(UserExtension {
-                id: ObjectId::new().to_string(),
-                csrf: String::from("test"),
-            }))
-            .with_state(shared_state);
+            .with_state(shared_state)
+            .layer(user_for_tests(&ObjectId::new().to_hex()));
 
         let form_data = "name=test&amount=1&debt=false";
         let request = Request::builder()
@@ -178,22 +160,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_account_turbo_stream() {
-        let client = mongo_client().await.unwrap();
-        let mut tera = tera::Tera::new("src/templates/**/*").unwrap();
-        tera.register_function("digest_asset", digest_asset());
-        let shared_state = SharedState {
-            mongo: client,
-            tera,
-            key: Key::generate(),
-        };
+        let shared_state = state_for_tests().await;
 
         let app = Router::new()
             .route("/accounts/create", post(page))
-            .layer(Extension(UserExtension {
-                id: ObjectId::new().to_string(),
-                csrf: String::new(),
-            }))
-            .with_state(shared_state);
+            .with_state(shared_state)
+            .layer(user_for_tests(&ObjectId::new().to_hex()));
 
         let form_data = "name=test&amount=1&debt=false";
         let request = Request::builder()

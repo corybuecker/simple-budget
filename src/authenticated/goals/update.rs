@@ -94,23 +94,20 @@ pub async fn action(
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Add;
-
-    use crate::{authenticated::UserExtension, models::goal::Goal, mongo_client, SharedState};
-    use axum::{
-        http::{Method, Request, StatusCode},
-        Extension,
+    use crate::{
+        models::goal::Goal,
+        test_utils::test_utils::{self, user_for_tests},
     };
-    use axum_extra::extract::cookie::Key;
+    use axum::http::{Method, Request, StatusCode};
     use chrono::Duration;
     use mongodb::bson::doc;
+    use std::ops::Add;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_update_goal() {
-        // Set up the database connection
-        let client = mongo_client().await.unwrap();
-        let db = client.default_database().unwrap();
+        let shared_state = test_utils::state_for_tests().await;
+        let db = shared_state.mongo.default_database().unwrap();
         let goals_collection: mongodb::Collection<Goal> = db.collection("goals");
 
         // Create a test goal
@@ -125,13 +122,6 @@ mod tests {
             target_date: chrono::Utc::now().add(Duration::seconds(2000)),
         };
         goals_collection.insert_one(test_goal).await.unwrap();
-
-        // Set up the SharedState
-        let shared_state = SharedState {
-            mongo: client,
-            key: Key::generate(),
-            tera: tera::Tera::new("templates/**/*").unwrap(),
-        };
 
         let request = Request::builder()
             .method(Method::POST)
@@ -150,10 +140,7 @@ mod tests {
                 axum::routing::post(crate::authenticated::goals::update::action),
             )
             .with_state(shared_state)
-            .layer(Extension(UserExtension {
-                id: user_id.to_string(),
-                csrf: "test".to_string(),
-            }));
+            .layer(user_for_tests(&user_id.to_string()));
 
         let response = app.oneshot(request).await.unwrap();
 

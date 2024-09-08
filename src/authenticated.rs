@@ -1,6 +1,6 @@
 use crate::SharedState;
 use axum::{
-    extract::{Request, State},
+    extract::{ws::WebSocket, Request, State, WebSocketUpgrade},
     http::{HeaderMap, Method, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Redirect, Response},
@@ -12,6 +12,7 @@ use axum_extra::extract::{
     SignedCookieJar,
 };
 use chrono::{DateTime, Utc};
+use futures_util::{stream::StreamExt, SinkExt};
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Uuid},
     options::FindOneOptions,
@@ -19,6 +20,8 @@ use mongodb::{
 };
 use serde::{Deserialize, Serialize};
 use std::env;
+use tokio::{spawn, sync::watch};
+use tracing::debug;
 mod accounts;
 mod dashboard;
 mod envelopes;
@@ -43,8 +46,12 @@ struct User {
 
 #[derive(Debug, Clone)]
 pub struct UserExtension {
-    id: String,
-    csrf: String,
+    pub id: String,
+    pub csrf: String,
+    pub channel_sender: watch::Sender<String>,
+
+    #[allow(dead_code)]
+    pub channel_receiver: watch::Receiver<String>,
 }
 
 async fn validate_csrf(
@@ -66,9 +73,7 @@ async fn validate_csrf(
                 StatusCode::BAD_REQUEST.into_response()
             }
         }
-        _ => {
-            next.run(request).await
-        }
+        _ => next.run(request).await,
     }
 }
 
@@ -93,14 +98,16 @@ async fn authenticated(
         .await;
 
     if let Ok(Some(user)) = user {
+        let (tx, rx) = watch::channel(String::new());
         request.extensions_mut().insert(UserExtension {
             id: user._id.to_hex(),
             csrf: user.sessions[0].csrf.clone(),
+            channel_sender: tx,
+            channel_receiver: rx,
         });
         Ok((jar, next.run(request).await))
     } else {
-        let secure = env::var("SECURE")
-            .unwrap_or("false".to_string());
+        let secure = env::var("SECURE").unwrap_or("false".to_string());
 
         let redirect_cookie = Cookie::build(("redirect_to", request.uri().path().to_owned()))
             .expires(None)
@@ -117,12 +124,45 @@ async fn authenticated(
     }
 }
 
+async fn message_handler(socket: WebSocket, user: UserExtension, state: SharedState) {
+    let (mut sender, mut receiver) = socket.split();
+
+    let listener = spawn(async move {
+        while let Some(message) = receiver.next().await {
+            if let Ok(message) = message {
+                debug!("{:#?}", message);
+                let _ = user.channel_sender.send("test".to_owned());
+                let _ = sender.send("test received".into()).await;
+                let _ = state.broker.sender.send("IN BROKER!!!".to_owned()).await;
+            } else {
+                return;
+            };
+        }
+    });
+
+    match tokio::join!(listener) {
+        (Ok(_),) => {}
+        (Err(join_error),) => {
+            tracing::error!("{}", join_error);
+        }
+    }
+}
+
+async fn websocket_upgrade(
+    ws: WebSocketUpgrade,
+    Extension(user): Extension<UserExtension>,
+    State(state): State<SharedState>,
+) -> Response {
+    ws.on_upgrade(|socket| message_handler(socket, user, state))
+}
+
 pub fn authenticated_router(state: SharedState) -> Router<SharedState> {
     Router::new()
         .nest("/accounts", accounts::accounts_router())
         .nest("/goals", goals::goals_router())
         .nest("/envelopes", envelopes::envelopes_router())
         .route("/reports", get(dashboard::index))
+        .route("/ws", get(websocket_upgrade))
         .route_layer(middleware::from_fn(validate_csrf))
         .route_layer(middleware::from_fn_with_state(state, authenticated))
 }

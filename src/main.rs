@@ -1,6 +1,7 @@
 mod authentication;
 mod errors;
 mod jobs;
+mod test_utils;
 use axum::{extract::FromRef, Router};
 use axum_extra::extract::cookie::Key;
 use bson::{doc, oid::ObjectId};
@@ -13,19 +14,26 @@ use std::{
     time::{Duration, SystemTime},
 };
 use tera::Tera;
+use tokio::sync::mpsc;
 mod authenticated;
 use tower_http::{
     services::ServeDir,
     trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer},
 };
-use tracing::Level;
+use tracing::{debug, Level};
 mod models;
+
+#[derive(Clone)]
+struct Broker {
+    sender: mpsc::Sender<String>,
+}
 
 #[derive(Clone)]
 struct SharedState {
     tera: Tera,
     mongo: Client,
     key: Key,
+    broker: Broker,
 }
 
 impl FromRef<SharedState> for Key {
@@ -120,6 +128,16 @@ fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     })
 }
 
+fn start_broker(mut receiver: mpsc::Receiver<String>) -> tokio::task::JoinHandle<()> {
+    tokio::spawn(async move {
+        loop {
+            if let Some(message) = receiver.recv().await {
+                debug!("{}", message);
+            }
+        }
+    })
+}
+
 #[tokio::main]
 async fn main() {
     let tracing_fmt = tracing_subscriber::fmt::format().pretty();
@@ -135,8 +153,14 @@ async fn main() {
 
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
+    let (sender, receiver) = mpsc::channel::<String>(100);
 
-    let shared_state = SharedState { tera, mongo, key };
+    let shared_state = SharedState {
+        tera,
+        mongo,
+        key,
+        broker: Broker { sender },
+    };
     let app = Router::new()
         .nest("/authentication", authentication::authentication_router())
         .nest(
@@ -156,10 +180,10 @@ async fn main() {
     let server_handle = tokio::spawn(async {
         axum::serve(listener, app).await.unwrap();
     });
-
     let background_jobs_handle = start_background_jobs();
+    let broker_handle = start_broker(receiver);
 
-    match tokio::try_join!(server_handle, background_jobs_handle) {
+    match tokio::try_join!(server_handle, background_jobs_handle, broker_handle) {
         Ok(_) => {}
         Err(err) => {
             println!("{}", err);

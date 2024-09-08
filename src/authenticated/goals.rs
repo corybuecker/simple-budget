@@ -27,4 +27,5 @@ pub fn goals_router() -> Router<SharedState> {
             get(edit::page).put(update::action).delete(delete::action),
         )
         .route("/new", get(new::page))
+        .route("/:id/delete", get(delete::modal))
 }

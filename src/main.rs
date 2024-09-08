@@ -3,10 +3,10 @@ mod errors;
 mod jobs;
 use axum::{extract::FromRef, Router};
 use axum_extra::extract::cookie::Key;
-use bson::{doc, oid::ObjectId};
-use chrono::{DateTime, Local, Utc};
+use bson::doc;
+use chrono::{Local, Utc};
+use models::user::User;
 use mongodb::Client;
-use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     env, thread,
@@ -70,22 +70,6 @@ pub fn digest_asset() -> impl tera::Function {
 
 async fn current_time() {
     println!("{}", Local::now())
-}
-
-#[derive(Deserialize, Serialize)]
-struct Session {
-    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
-    expiration: DateTime<Utc>,
-    id: bson::Uuid,
-    csrf: String,
-}
-
-#[derive(Deserialize, Serialize)]
-struct User {
-    subject: String,
-    email: String,
-    sessions: Vec<Session>,
-    _id: ObjectId,
 }
 
 async fn clear_sessions() {

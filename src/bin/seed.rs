@@ -1,4 +1,5 @@
 use bson::{doc, oid::ObjectId};
+use chrono::{Duration, Utc};
 use rand::{thread_rng, Rng};
 use simple_budget::models::{account::Account, envelope::Envelope, goal::Goal, user::User};
 
@@ -41,14 +42,32 @@ async fn main() {
     let _ = goals.drop().await;
 
     let mut account_seeds = Vec::<Account>::new();
+    let mut goal_seeds = Vec::<Goal>::new();
 
     for i in 0..15 {
         account_seeds.push(account_generator(i + 1, user._id.clone()))
     }
+    for i in 0..5 {
+        goal_seeds.push(goal_generator(i + 1, user._id.clone()))
+    }
 
     let _ = accounts.insert_many(account_seeds).await;
+    let _ = goals.insert_many(goal_seeds).await;
 }
 
+fn goal_generator(index: u32, user_id: String) -> Goal {
+    let mut trng = thread_rng();
+    let rnd: f64 = trng.gen();
+
+    Goal {
+        _id: ObjectId::new().to_string(),
+        user_id,
+        name: format!("Test goal {}", index),
+        target_date: Utc::now() + Duration::days(1),
+        target: 10.0 * rnd,
+        recurrence: simple_budget::models::goal::Recurrence::Daily,
+    }
+}
 fn account_generator(index: u32, user_id: String) -> Account {
     let mut trng = thread_rng();
     let rnd: f64 = trng.gen();

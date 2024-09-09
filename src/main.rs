@@ -9,11 +9,17 @@ use models::user::User;
 use mongodb::Client;
 use std::{
     collections::HashMap,
-    env, thread,
+    env,
     time::{Duration, SystemTime},
 };
 use tera::Tera;
-use tokio::sync::mpsc;
+use tokio::{
+    select,
+    signal::unix::{signal, SignalKind},
+    spawn,
+    sync::mpsc,
+    time::interval,
+};
 mod authenticated;
 use tower_http::{
     services::ServeDir,
@@ -99,20 +105,22 @@ async fn convert_goals_wrapper() {
 }
 
 fn start_background_jobs() -> tokio::task::JoinHandle<()> {
-    tokio::spawn(async {
+    spawn(async {
+        let mut interval = interval(Duration::from_millis(60000));
+
         loop {
             let h1 = async { current_time().await };
             let h2 = async { current_time().await };
 
-            tokio::join!(h1, h2, clear_sessions(), convert_goals_wrapper());
+            interval.tick().await;
 
-            thread::sleep(Duration::from_millis(60000))
+            tokio::join!(h1, h2, clear_sessions(), convert_goals_wrapper());
         }
     })
 }
 
 fn start_broker(mut receiver: mpsc::Receiver<String>) -> tokio::task::JoinHandle<()> {
-    tokio::spawn(async move {
+    spawn(async move {
         loop {
             if let Some(message) = receiver.recv().await {
                 debug!("{}", message);
@@ -160,20 +168,26 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
 
-    let server_handle = tokio::spawn(async {
+    let server_handle = spawn(async {
         axum::serve(listener, app).await.unwrap();
     });
-    let background_jobs_handle = start_background_jobs();
+    let background_jobs = start_background_jobs();
     let broker_handle = start_broker(receiver);
 
-    match tokio::try_join!(server_handle, background_jobs_handle, broker_handle) {
-        Ok(_) => {}
-        Err(err) => {
-            println!("{}", err);
-        }
-    };
+    let mut signal = signal(SignalKind::terminate()).unwrap();
 
-    return;
+    let signal_listener = spawn(async move {
+        signal.recv().await;
+        debug!("received SIGTERM");
+        0
+    });
+
+    select! {
+        _ = signal_listener => {},
+        _ = background_jobs => {},
+        _ = server_handle => {},
+        _ = broker_handle => {},
+    }
 }
 
 async fn mongo_client() -> Result<mongodb::Client, mongodb::error::Error> {

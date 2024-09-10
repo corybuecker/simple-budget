@@ -15,6 +15,7 @@ FROM node:alpine AS frontend_builder
 RUN mkdir /build
 COPY src/templates /build/src/templates
 COPY src/input.css /build/src/input.css
+COPY src/google.css /build/src/google.css
 COPY tailwind.config.js /build
 WORKDIR /build
 RUN npm install tailwindcss @tailwindcss/container-queries @tailwindcss/forms
@@ -25,6 +26,7 @@ COPY --from=backend_builder /build/simple-budget /app/simple-budget
 COPY src/templates /app/src/templates
 COPY controllers /app/static/controllers
 COPY --from=frontend_builder /build/app.css /app/static/app.css
+COPY --from=frontend_builder /build/src/google.css /app/static/google.css
 
 WORKDIR /app
 CMD ["/app/simple-budget"]

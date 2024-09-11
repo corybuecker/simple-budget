@@ -78,7 +78,7 @@ mod tests {
     use super::*;
     use crate::models::account::Account;
 
-    use crate::test_utils::test_utils::{state_for_tests, user_for_tests};
+    use crate::test_utils::{state_for_tests, user_for_tests};
     use axum::body::Body;
     use axum::http::Request;
     use axum::Router;

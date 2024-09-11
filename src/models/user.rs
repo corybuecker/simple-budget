@@ -3,7 +3,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
-pub struct Preferences {}
+pub struct Preferences {
+    pub timezone: Option<String>,
+}
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Session {

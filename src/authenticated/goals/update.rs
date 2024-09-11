@@ -96,7 +96,7 @@ pub async fn action(
 mod tests {
     use crate::{
         models::goal::Goal,
-        test_utils::test_utils::{self, user_for_tests},
+        test_utils::{self, user_for_tests},
     };
     use axum::http::{Method, Request, StatusCode};
     use chrono::Duration;

@@ -26,6 +26,7 @@ mod accounts;
 mod dashboard;
 mod envelopes;
 mod goals;
+mod preferences;
 
 #[derive(Deserialize, Serialize, Debug)]
 struct Session {
@@ -160,6 +161,7 @@ pub fn authenticated_router(state: SharedState) -> Router<SharedState> {
     Router::new()
         .nest("/accounts", accounts::accounts_router())
         .nest("/goals", goals::goals_router())
+        .nest("/preferences", preferences::preferences_router())
         .nest("/envelopes", envelopes::envelopes_router())
         .route("/reports", get(dashboard::index))
         .route("/ws", get(websocket_upgrade))

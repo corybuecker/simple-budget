@@ -79,13 +79,13 @@ pub async fn page(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::test_utils::{state_for_tests, user_for_tests};
-    
+    use crate::test_utils::{state_for_tests, user_for_tests};
+
     use axum::body::{to_bytes, Body};
     use axum::http::{Request, StatusCode};
     use axum::routing::post;
     use axum::Router;
-    
+
     use bson::doc;
     use std::str::from_utf8;
     use tower::ServiceExt;

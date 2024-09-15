@@ -198,7 +198,8 @@ async fn mongo_client() -> Result<mongodb::Client, mongodb::error::Error> {
 }
 
 #[cfg(test)]
-pub mod test_utils;
+mod test_utils;
+
 #[cfg(test)]
 mod tests {
     use super::*;

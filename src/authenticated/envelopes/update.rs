@@ -92,10 +92,10 @@ pub async fn action(
 mod tests {
     use crate::{
         models::envelope::Envelope,
-        test_utils::test_utils::{state_for_tests, user_for_tests},
+        test_utils::{state_for_tests, user_for_tests},
     };
     use axum::http::{Method, Request, StatusCode};
-    
+
     use mongodb::bson::doc;
     use tower::ServiceExt;
 

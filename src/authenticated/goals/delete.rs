@@ -77,7 +77,7 @@ pub async fn action(
 #[cfg(test)]
 mod tests {
     use crate::models::goal::Goal;
-    use crate::test_utils::test_utils::{state_for_tests, user_for_tests};
+    use crate::test_utils::{state_for_tests, user_for_tests};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use axum::Router;

@@ -44,3 +44,20 @@ impl From<mongodb::error::Error> for FormError {
         }
     }
 }
+
+#[derive(Debug)]
+pub enum ModelError {
+    MissingDefaultDatabase,
+
+    #[allow(dead_code)]
+    OidParsingError(bson::oid::Error),
+
+    #[allow(dead_code)]
+    DatabaseError(mongodb::error::Error),
+}
+
+impl From<mongodb::error::Error> for ModelError {
+    fn from(err: mongodb::error::Error) -> ModelError {
+        ModelError::DatabaseError(err)
+    }
+}

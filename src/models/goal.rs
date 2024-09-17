@@ -1,4 +1,5 @@
-use bson::{doc, serde_helpers::hex_string_as_object_id};
+use crate::errors::ModelError;
+use bson::{doc, oid::ObjectId, serde_helpers::hex_string_as_object_id};
 use chrono::{DateTime, Datelike, Days, Duration, Local, Months, TimeDelta, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 use std::ops::Add;
@@ -51,6 +52,29 @@ pub struct Goal {
 }
 
 impl Goal {
+    pub async fn get_by_user_id(
+        client: &mongodb::Client,
+        user_id: &str,
+    ) -> Result<Vec<Self>, ModelError> {
+        let database = client
+            .default_database()
+            .ok_or(ModelError::MissingDefaultDatabase)?;
+
+        let user_id = ObjectId::parse_str(user_id).map_err(ModelError::OidParsingError)?;
+
+        let collection = database.collection::<Goal>("goals");
+
+        let mut cursor = collection.find(doc! {"user_id": &user_id}).await?;
+        let mut goals = Vec::new();
+        while cursor.advance().await? {
+            let goal = cursor.deserialize_current()?;
+
+            goals.push(goal);
+        }
+
+        Ok(goals)
+    }
+
     pub fn increment(&self) -> Self {
         let mut goal = Goal {
             _id: self._id.clone(),
@@ -104,7 +128,7 @@ impl Goal {
 
     fn elapsed_time(&self) -> TimeDelta {
         let start_at = self.start_at();
-        
+
         Local::now() - start_at
     }
 

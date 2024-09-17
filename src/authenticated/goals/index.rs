@@ -1,10 +1,18 @@
-use crate::{authenticated::UserExtension, errors::FormError, models::goal::Goal, SharedState};
+use crate::{
+    authenticated::UserExtension,
+    errors::FormError,
+    models::{
+        goal::Goal,
+        user::{GoalHeader, User},
+    },
+    SharedState,
+};
 use axum::{
     extract::State,
     response::{Html, IntoResponse, Response},
     Extension,
 };
-use bson::{doc, oid::ObjectId};
+use chrono::Utc;
 use std::collections::HashMap;
 use tera::Context;
 
@@ -12,42 +20,41 @@ pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
 ) -> Result<Response, FormError> {
-    let user_id = ObjectId::parse_str(&user.id)?;
-
-    let collection = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection::<Goal>("goals");
-
     let mut context = Context::new();
-    let mut goals: Vec<Goal> = Vec::new();
-
     let mut accumulations: HashMap<String, f64> = HashMap::new();
+    let mut days_remainings: HashMap<String, i16> = HashMap::new();
 
     context.insert("csrf", &user.csrf);
 
-    match collection.find(doc! {"user_id": &user_id}).await {
-        Ok(mut cursor) => {
-            while cursor.advance().await.unwrap() {
-                match cursor.deserialize_current() {
-                    Ok(goal) => {
-                        accumulations.insert(goal._id.clone(), goal.accumulated());
-                        goals.push(goal);
-                    }
-                    Err(e) => {
-                        log::error!("{:#?}", e);
-                    }
-                }
-            }
-        }
-        Err(e) => {
-            log::error!("{:#?}", e);
-        }
+    let user = User::get_by_id(&shared_state.mongo, &user.id)
+        .await
+        .unwrap();
+
+    let goal_header = &user.preferences.goal_header;
+
+    context.insert(
+        "goal_header",
+        goal_header.as_ref().unwrap_or(&GoalHeader::Accumulated),
+    );
+
+    let goals = Goal::get_by_user_id(&shared_state.mongo, &user._id)
+        .await
+        .unwrap();
+
+    for goal in &goals {
+        accumulations.insert(goal._id.clone(), goal.accumulated());
+        days_remainings.insert(
+            goal._id.clone(),
+            (goal.target_date - Utc::now())
+                .num_days()
+                .try_into()
+                .unwrap(),
+        );
     }
 
     context.insert("goals", &goals);
     context.insert("accumulations", &accumulations);
+    context.insert("days_remainings", &days_remainings);
 
     let content = shared_state.tera.render("goals/index.html", &context)?;
 

@@ -1,8 +1,12 @@
 use crate::SharedState;
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, put},
+    Router,
+};
 mod create;
 mod delete;
 mod edit;
+mod header;
 mod index;
 mod new;
 mod update;
@@ -26,6 +30,7 @@ pub fn goals_router() -> Router<SharedState> {
             "/:id",
             get(edit::page).put(update::action).delete(delete::action),
         )
+        .route("/header", put(header::action))
         .route("/new", get(new::page))
         .route("/:id/delete", get(delete::modal))
 }

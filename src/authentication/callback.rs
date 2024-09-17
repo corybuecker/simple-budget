@@ -198,7 +198,10 @@ async fn upsert_subject(
                 let user = User {
                     subject,
                     email,
-                    preferences: Preferences { timezone: None },
+                    preferences: Preferences {
+                        timezone: None,
+                        goal_header: None,
+                    },
                     sessions: Some(Vec::new()),
                     _id: ObjectId::new().to_string(),
                 };

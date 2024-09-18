@@ -8,7 +8,7 @@ use axum::{
 };
 use bson::{doc, oid::ObjectId};
 use chrono::{DateTime, Datelike, Duration, Local, Months, NaiveTime, TimeDelta, Timelike};
-use mongodb::Collection;
+use mongodb::{Client, Collection};
 use serde::Deserialize;
 use std::{ops::Sub, str::FromStr};
 use tera::Context;
@@ -19,7 +19,8 @@ pub async fn index(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
 ) -> Result<Response, FormError> {
-    let Ok(user_id) = ObjectId::from_str(&user.id) else {
+    let csrf = user.csrf.clone();
+    let Ok(_user_id) = ObjectId::from_str(&user.id) else {
         return Err(FormError {
             message: "forbidden".to_owned(),
             status_code: Some(StatusCode::FORBIDDEN),
@@ -41,15 +42,25 @@ pub async fn index(
         });
     };
 
+    let mut context = generate_dashboard_context_for(user, &shared_state.mongo).await;
+    context.insert("csrf", &csrf);
+    let content = shared_state
+        .tera
+        .render("dashboard.html", &context)
+        .unwrap();
+
+    Ok(Html::from(content).into_response())
+}
+
+pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Context {
+    let mut context = Context::new();
+    let user_id = ObjectId::from_str(&user._id).unwrap();
+
     let preferences = &user.preferences;
     let timezone = preferences.timezone.clone().unwrap_or(String::from("UTC"));
     let timezone: Tz = timezone.parse().unwrap();
 
-    let mut context = Context::new();
-
-    let goals = goals::goals(&shared_state.mongo, &user_id)
-        .await
-        .unwrap_or(Vec::new());
+    let goals = goals::goals(client, &user_id).await.unwrap_or(Vec::new());
 
     let goals_accumulated = goals
         .iter()
@@ -62,13 +73,15 @@ pub async fn index(
         .reduce(|memo, a| memo + a)
         .unwrap_or(0.0);
 
-    let envelopes_total = envelopes_total(&shared_state.mongo, &user_id).await;
-    let accounts_total = accounts_total(&shared_state.mongo, &user_id).await;
+    let envelopes_total = envelopes_total(client, &user_id).await;
+    let accounts_total = accounts_total(client, &user_id).await;
 
     let remaining_total = accounts_total - envelopes_total - goals_total;
 
+    let forecast_offset = user.preferences.forecast_offset.unwrap_or(1);
+
     let now = Local::now().with_timezone(&timezone);
-    let tomorrow = (now + Duration::days(1))
+    let tomorrow = (now + Duration::days(forecast_offset))
         .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
         .unwrap();
 
@@ -86,13 +99,9 @@ pub async fn index(
     context.insert("remaining_days", &remaining_seconds(&timezone).num_days());
     context.insert("remaining_minutes", &duration_until_tomorrow.num_minutes());
     context.insert("remaining_total", &remaining_total);
+    context.insert("forecast_offset", &forecast_offset);
 
-    let content = shared_state
-        .tera
-        .render("dashboard.html", &context)
-        .unwrap();
-
-    Ok(Html::from(content).into_response())
+    context
 }
 
 #[derive(Deserialize, Debug)]

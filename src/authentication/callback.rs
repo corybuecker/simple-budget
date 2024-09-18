@@ -201,6 +201,7 @@ async fn upsert_subject(
                     preferences: Preferences {
                         timezone: None,
                         goal_header: None,
+                        forecast_offset: None,
                     },
                     sessions: Some(Vec::new()),
                     _id: ObjectId::new().to_string(),

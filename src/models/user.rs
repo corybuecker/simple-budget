@@ -35,6 +35,7 @@ impl From<GoalHeader> for Bson {
 pub struct Preferences {
     pub timezone: Option<String>,
     pub goal_header: Option<GoalHeader>,
+    pub forecast_offset: Option<i64>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

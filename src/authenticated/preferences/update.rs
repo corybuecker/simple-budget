@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use super::PreferencesForm;
 use crate::{
@@ -12,6 +12,7 @@ use axum::{
     response::{Html, IntoResponse, Response},
     Extension, Form,
 };
+use bson::oid::ObjectId;
 use chrono::Utc;
 use mongodb::bson::doc;
 use tera::Context;
@@ -33,13 +34,15 @@ pub async fn action(
                 user.preferences.timezone = Some(string.clone())
             }
         }
-        None => user.preferences.timezone = None,
+        None => {}
     }
 
-    user.preferences.goal_header = form.goal_header.clone();
+    if let Some(goal_header) = &form.goal_header {
+        user.preferences.goal_header = Some(goal_header.to_owned());
+    }
 
     match form.forecast_offset {
-        None => user.preferences.forecast_offset = None,
+        None => {}
         Some(forecast_offset) => {
             if forecast_offset + 1 > 3 {
                 user.preferences.forecast_offset = Some(1)
@@ -56,7 +59,10 @@ pub async fn action(
         .collection::<User>("users");
 
     let _ = collection
-        .replace_one(doc! {"_id": &user._id}, &user)
+        .update_one(doc! {"_id": ObjectId::from_str(&user._id).unwrap()}, doc! {
+            "$set":doc! {
+            "preferences": doc! {"timezone": &user.preferences.timezone, 
+            "forecast_offset": &user.preferences.forecast_offset, "goal_header": &user.preferences.goal_header}}})
         .await?;
 
     let tera = &shared_state.tera;

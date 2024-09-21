@@ -163,7 +163,7 @@ pub fn authenticated_router(state: SharedState) -> Router<SharedState> {
         .nest("/goals", goals::goals_router())
         .nest("/preferences", preferences::preferences_router())
         .nest("/envelopes", envelopes::envelopes_router())
-        .route("/reports", get(dashboard::index))
+        .route("/", get(dashboard::index))
         .route("/ws", get(websocket_upgrade))
         .route_layer(middleware::from_fn(validate_csrf))
         .route_layer(middleware::from_fn_with_state(state, authenticated))

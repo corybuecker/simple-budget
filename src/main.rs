@@ -1,18 +1,24 @@
 mod authentication;
 mod errors;
 mod jobs;
-use axum::{extract::FromRef, Router};
+use axum::{
+    extract::{FromRef, Request},
+    middleware::{from_fn, Next},
+    response::Response,
+    Router,
+};
 use axum_extra::extract::cookie::Key;
 use bson::doc;
 use chrono::{Local, Utc};
 use models::user::User;
 use mongodb::Client;
+use serde::Serialize;
 use std::{
     collections::HashMap,
     env,
     time::{Duration, SystemTime},
 };
-use tera::Tera;
+use tera::{Context, Tera};
 use tokio::{
     select,
     signal::unix::{signal, SignalKind},
@@ -27,6 +33,20 @@ use tower_http::{
 };
 use tracing::{debug, Level};
 mod models;
+
+#[derive(Serialize, Debug, Clone)]
+pub enum Section {
+    Reports,
+    Accounts,
+    Envelopes,
+    Goals,
+    Preferences,
+}
+
+#[derive(Debug, Clone)]
+pub struct ContextExtension {
+    pub context: Context,
+}
 
 #[derive(Clone)]
 struct Broker {
@@ -129,6 +149,15 @@ fn start_broker(mut receiver: mpsc::Receiver<String>) -> tokio::task::JoinHandle
     })
 }
 
+async fn inject_context(mut request: Request, next: Next) -> Response {
+    let context = Context::new();
+    let context_extension = ContextExtension { context };
+
+    request.extensions_mut().insert(context_extension);
+
+    next.run(request).await
+}
+
 #[tokio::main]
 async fn main() {
     let tracing_fmt = tracing_subscriber::fmt::format().pretty();
@@ -152,6 +181,7 @@ async fn main() {
         key,
         broker: Broker { sender },
     };
+
     let app = Router::new()
         .nest("/authentication", authentication::authentication_router())
         .nest(
@@ -160,6 +190,7 @@ async fn main() {
         )
         .nest_service("/assets", ServeDir::new("static"))
         .with_state(shared_state)
+        .layer(from_fn(inject_context))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().level(tracing::Level::INFO))

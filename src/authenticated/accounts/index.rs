@@ -6,7 +6,6 @@ use axum::{
     response::{Html, IntoResponse, Response},
     Extension,
 };
-use log::debug;
 use log::error;
 use mongodb::bson::{doc, oid::ObjectId};
 use std::str::FromStr;
@@ -15,9 +14,8 @@ use tera::Context;
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
+    Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
-    debug!("{:#?}", user);
-
     let user_id = ObjectId::from_str(&user.id)?;
 
     let collection = shared_state
@@ -25,9 +23,6 @@ pub async fn page(
         .default_database()
         .unwrap()
         .collection::<Account>("accounts");
-
-    let mut context = Context::new();
-    context.insert("csrf", &user.csrf);
 
     let mut accounts: Vec<Account> = Vec::new();
 

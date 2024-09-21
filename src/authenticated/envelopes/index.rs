@@ -14,6 +14,7 @@ use tera::Context;
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
+    Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
     let user_id = ObjectId::from_str(&user.id)?;
 
@@ -23,8 +24,6 @@ pub async fn page(
         .unwrap()
         .collection("envelopes");
 
-    let mut context = Context::new();
-    context.insert("csrf", &user.csrf);
     let mut envelopes: Vec<Envelope> = Vec::new();
 
     match collection.find(doc! {"user_id": &user_id}).await {

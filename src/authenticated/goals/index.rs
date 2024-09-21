@@ -18,13 +18,11 @@ use tera::Context;
 
 pub async fn page(
     shared_state: State<SharedState>,
+    mut context: Extension<Context>,
     user: Extension<UserExtension>,
 ) -> Result<Response, FormError> {
-    let mut context = Context::new();
     let mut accumulations: HashMap<String, f64> = HashMap::new();
     let mut days_remainings: HashMap<String, i16> = HashMap::new();
-
-    context.insert("csrf", &user.csrf);
 
     let user = User::get_by_id(&shared_state.mongo, &user.id)
         .await

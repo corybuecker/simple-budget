@@ -15,6 +15,7 @@ pub async fn page(
     shared_state: State<SharedState>,
     Path(id): Path<String>,
     user: Extension<UserExtension>,
+    Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
     let envelopes: mongodb::Collection<Envelope> = shared_state
         .mongo
@@ -31,9 +32,6 @@ pub async fn page(
             status_code: Some(StatusCode::NOT_FOUND),
         });
     };
-
-    let mut context = Context::new();
-    context.insert("csrf", &user.csrf);
 
     context.insert("id", &envelope._id);
     context.insert("name", &envelope.name);

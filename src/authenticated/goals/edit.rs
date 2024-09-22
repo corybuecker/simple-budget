@@ -12,7 +12,8 @@ use tera::Context;
 pub async fn page(
     shared_state: State<SharedState>,
     Path(id): Path<String>,
-    user: Extension<UserExtension>,
+    Extension(user_extension): Extension<UserExtension>,
+    Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
     let goals: mongodb::Collection<Goal> = shared_state
         .mongo
@@ -22,7 +23,7 @@ pub async fn page(
 
     let goal = goals
         .find_one(
-            doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()})
+            doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user_extension.id).unwrap()})
         .await?;
 
     let Some(goal) = goal else {
@@ -32,9 +33,6 @@ pub async fn page(
         });
     };
 
-    let mut context = Context::new();
-
-    context.insert("csrf", &user.csrf);
     context.insert("id", &goal._id);
     context.insert("name", &goal.name);
     context.insert("target", &goal.target);

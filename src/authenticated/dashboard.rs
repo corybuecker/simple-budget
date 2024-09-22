@@ -1,5 +1,5 @@
 use super::UserExtension;
-use crate::{errors::FormError, models::user::User, SharedState};
+use crate::{errors::FormError, models::user::User, Section, SharedState};
 use axum::{
     extract::State,
     http::StatusCode,
@@ -44,6 +44,7 @@ pub async fn index(
 
     let mut context = generate_dashboard_context_for(user, &shared_state.mongo).await;
     context.insert("csrf", &csrf);
+    context.insert("section", &Section::Reports);
     let content = shared_state
         .tera
         .render("dashboard.html", &context)

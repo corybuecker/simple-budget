@@ -10,9 +10,7 @@
         <div class="text-2xl"
              data-controller="formatter"
              data-formatter-currency-value="{{ tomorrow_remaining_total / (remaining_days - forecast_offset) }}"
-             data-formatter-currency-precision-value="3">
-            {{ tomorrow_remaining_total / (remaining_days - forecast_offset) }}
-        </div>
+             data-formatter-currency-precision-value="3"></div>
         <div class="text-sm text-slate-600">
             <form method="PUT" action="/preferences">
                 <input name="forecast_offset" type="hidden" value="{{ forecast_offset }}">
@@ -32,13 +30,13 @@
         <div data-controller="formatter"
              data-formatter-currency-value="{{ goals_accumulated_per_day }}"
              data-formatter-currency-precision-value="3"
-             class="text-2xl">{{ goals_accumulated_per_day }}</div>
+             class="text-2xl"></div>
         <div class="text-sm text-slate-600">Goals per day</div>
     </div>
     <div class="flex flex-col items-center">
         <div class="text-2xl"
              data-controller="formatter"
-             data-formatter-currency-value="{{ remaining_total }}">{{ remaining_total }}</div>
+             data-formatter-currency-value="{{ remaining_total }}"></div>
         <div class="text-sm text-slate-600">Remaining</div>
     </div>
     <div class="flex flex-col items-center">
@@ -53,14 +51,14 @@
         <div class="text-2xl"
              data-controller="formatter"
              data-formatter-currency-value="{{ envelopes_total }}"
-             data-formatter-currency-precision-value="2">{{ envelopes_total }}</div>
+             data-formatter-currency-precision-value="2"></div>
         <div class="text-sm text-slate-600">Envelopes</div>
     </div>
     <div class="flex flex-col items-center">
         <div data-controller="formatter"
              data-formatter-currency-value="{{ goals_total }}"
              data-formatter-currency-precision-value="2"
-             class="text-2xl">{{ goals_total }}</div>
+             class="text-2xl"></div>
         <div class="text-sm text-slate-600">Goals</div>
     </div>
 </div>

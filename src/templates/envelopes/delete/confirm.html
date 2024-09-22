@@ -1,0 +1,4 @@
+{% extends "delete_confirmation.html" %}
+{% block prompt %}Are you sure you want to delete the "{{ envelope.name }}" envelope?{% endblock %}
+{% block entity %}envelope{% endblock %}
+{% block action %}/envelopes/{{ envelope._id["$oid"] }}{% endblock %}

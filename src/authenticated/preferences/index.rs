@@ -12,10 +12,8 @@ use tera::{Context, Tera};
 pub async fn action(
     state: State<SharedState>,
     user: Extension<UserExtension>,
+    Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
-    let mut context = Context::new();
-    context.insert("csrf", &user.csrf);
-
     let client: &Client = &state.mongo;
 
     let user = client

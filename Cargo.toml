@@ -1,13 +1,13 @@
 [package]
 name = "simple-budget"
 default-run = "simple-budget"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 resolver = "2"
 
 [dependencies]
-axum = { version = "0.7.5", features = ["ws"] }
-axum-extra = { version = "0.9.3", features = ["cookie-signed", "query"] }
+axum = { version = "0.7.6", features = ["ws"] }
+axum-extra = { version = "0.9.4", features = ["cookie-signed", "query"] }
 bson = { version = "2.13.0", features = ["serde_with-3", "chrono-0_4"] }
 chrono = "0.4.38"
 chrono-tz = "0.10.0"
@@ -20,7 +20,7 @@ serde = "1.0.210"
 tera = { version = "1.20.0" }
 tokio = { version = "1.40.0", features = ["full"] }
 tower = { version = "0.5.1", features = ["util"] }
-tower-http = { version = "0.6.0", features = ["fs", "trace"] }
+tower-http = { version = "0.6.1", features = ["fs", "trace"] }
 tower-layer = "0.3.3"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

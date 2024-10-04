@@ -1,4 +1,4 @@
 <turbo-stream action="replace" target="confirmation-modal">
 <template></template>
 </turbo-stream>
-<turbo-stream action="remove" target="envelope_{{ envelope._id["$oid"] }}"></turbo-stream>
+<turbo-stream action="remove" target="envelope_{{ envelope | oid }}"></turbo-stream>

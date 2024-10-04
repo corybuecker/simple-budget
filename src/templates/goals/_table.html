@@ -37,7 +37,7 @@
     <tbody>
         {% for goal in goals %}
             <tr class="odd:bg-white even:bg-gray-50 border-b"
-                id="goal_{{ goal._id["$oid"] }}">
+                id="goal_{{ goal | oid }}">
                 <th scope="row" class="px-6 @sm:px-3 py-2 font-medium text-gray-900">{{ goal.name }}</th>
                 <td class="px-6 @sm:px-3 py-2"
                     data-controller="formatter"
@@ -53,11 +53,11 @@
                 {% endif %}
                 <td class="px-6 @sm:px-3 py-2">
                     <div class="flex @lg:flex-row flex-col items-center gap-4">
-                        <a href="/goals/{{ goal._id["$oid"] }}"
+                        <a href="/goals/{{ goal | oid }}"
                            data-turbo-frame="_top"
                            class="font-medium text-blue-600 hover:underline">Edit</a>
                         <a data-turbo-frame="confirmation-modal"
-                           href="/goals/{{ goal._id["$oid"] }}/delete">Delete</a>
+                           href="/goals/{{ goal | oid }}/delete">Delete</a>
                     </div>
                 </td>
             </tr>

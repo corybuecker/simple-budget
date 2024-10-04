@@ -1,4 +1,5 @@
 #[cfg(test)]
+use crate::extract_id;
 use crate::{authenticated::UserExtension, digest_asset, mongo_client, Broker, SharedState};
 use axum::Extension;
 use axum_extra::extract::cookie::Key;
@@ -10,6 +11,7 @@ pub async fn state_for_tests() -> SharedState {
     let mut tera = tera::Tera::new("src/templates/**/*.html").unwrap();
 
     tera.register_function("digest_asset", digest_asset());
+    tera.register_filter("oid", extract_id());
 
     SharedState {
         mongo: client,

@@ -67,6 +67,24 @@ impl FromRef<SharedState> for Key {
     }
 }
 
+pub fn extract_id() -> impl tera::Filter {
+    return |value: &tera::Value,
+            args: &HashMap<String, tera::Value>|
+     -> tera::Result<tera::Value> {
+        debug!("{}", value);
+        debug!("{:#?}", args);
+
+        let id = value.get("_id");
+
+        match id {
+            None => Err(tera::Error::msg("could not find id field".to_string())),
+            Some(id) => Ok(tera::Value::String(
+                id["$oid"].to_string().replace("\"", ""),
+            )),
+        }
+    };
+}
+
 pub fn digest_asset() -> impl tera::Function {
     let key = SystemTime::now();
     let key = key
@@ -168,6 +186,7 @@ async fn main() {
 
     let mut tera = Tera::new("src/templates/**/*.html").expect("cannot initialize Tera");
     tera.register_function("digest_asset", digest_asset());
+    tera.register_filter("oid", extract_id());
 
     let mongo = mongo_client().await.expect("cannot create Mongo client");
 

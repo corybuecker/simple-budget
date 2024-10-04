@@ -18,7 +18,7 @@
                     <tbody>
                         {% for envelope in envelopes %}
                             <tr class="odd:bg-white even:bg-gray-50 border-b"
-                                id="envelope_{{ envelope._id["$oid"] }}">
+                                id="envelope_{{ envelope | oid }}">
                                 <th scope="row"
                                     class="px-6 @sm:px-3 py-2 font-medium text-gray-900 whitespace-nowrap">
                                     {{ envelope.name }}
@@ -28,10 +28,10 @@
                                     data-formatter-currency-value="{{ envelope.amount }}">{{ envelope.amount }}</td>
                                 <td class="px-6 @sm:px-3 py-2">
                                     <div class="flex @lg:flex-row flex-col items-center gap-4">
-                                        <a href="/envelopes/{{ envelope._id["$oid"] }}"
+                                        <a href="/envelopes/{{ envelope | oid }}"
                                            class="font-medium text-blue-600 hover:underline">Edit</a>
                                         <a data-turbo-frame="confirmation-modal"
-                                           href="/envelopes/{{ envelope._id["$oid"] }}/delete">Delete</a>
+                                           href="/envelopes/{{ envelope | oid }}/delete">Delete</a>
                                     </div>
                                 </td>
                             </tr>

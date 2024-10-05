@@ -1,6 +1,7 @@
 mod authentication;
 mod errors;
 mod jobs;
+mod utilities;
 use axum::{
     extract::{FromRef, Request},
     middleware::{from_fn, Next},

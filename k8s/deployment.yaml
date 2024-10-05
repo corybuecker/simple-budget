@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-budget
+  namespace: simple-budget
+  labels:
+    app: simple-budget
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: simple-budget
+  template:
+    metadata:
+      labels:
+        app: simple-budget
+    spec:
+      containers:
+      - name: simple-budget
+        image: ${IMAGE}/simple-budget:latest
+        ports:
+        - name: http
+          containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: simple-budget
+        resources:
+          limits:
+            memory: 256M
+            cpu: 25m
+          requests:
+            memory: 256M
+            cpu: 25m
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - simple-budget
+            topologyKey: "kubernetes.io/hostname"

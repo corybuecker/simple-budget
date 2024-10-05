@@ -12,4 +12,4 @@ target/
 .env
 
 /static
-/k8s
+/k8s/output

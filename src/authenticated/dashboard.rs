@@ -1,4 +1,7 @@
 use super::UserExtension;
+use crate::models::account::accounts_total_for;
+use crate::models::envelope::envelopes_total_for;
+use crate::utilities::dates::{remaining_seconds, TimeProvider};
 use crate::{errors::FormError, models::user::User, Section, SharedState};
 use axum::{
     extract::State,
@@ -7,10 +10,9 @@ use axum::{
     Extension,
 };
 use bson::{doc, oid::ObjectId};
-use chrono::{DateTime, Datelike, Duration, Local, Months, NaiveTime, TimeDelta, Timelike};
-use mongodb::{Client, Collection};
-use serde::Deserialize;
-use std::{ops::Sub, str::FromStr};
+use chrono::{Duration, Local, NaiveTime};
+use mongodb::Client;
+use std::str::FromStr;
 use tera::Context;
 mod goals;
 use chrono_tz::Tz;
@@ -56,6 +58,7 @@ pub async fn index(
 pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Context {
     let mut context = Context::new();
     let user_id = ObjectId::from_str(&user._id).unwrap();
+    let time_provider = &TimeProvider {};
 
     let preferences = &user.preferences;
     let timezone = preferences.timezone.clone().unwrap_or(String::from("UTC"));
@@ -74,8 +77,8 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Con
         .reduce(|memo, a| memo + a)
         .unwrap_or(0.0);
 
-    let envelopes_total = envelopes_total(client, &user_id).await;
-    let accounts_total = accounts_total(client, &user_id).await;
+    let envelopes_total = envelopes_total_for(&user_id, client).await;
+    let accounts_total = accounts_total_for(&user_id, client).await;
 
     let remaining_total = accounts_total - envelopes_total - goals_total;
 
@@ -97,127 +100,13 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Con
     context.insert("envelopes_total", &envelopes_total);
     context.insert("goals_accumulated_per_day", &goals_accumulated);
     context.insert("goals_total", &goals_total);
-    context.insert("remaining_days", &remaining_seconds(&timezone).num_days());
+    context.insert(
+        "remaining_days",
+        &remaining_seconds(time_provider, &timezone).num_days(),
+    );
     context.insert("remaining_minutes", &duration_until_tomorrow.num_minutes());
     context.insert("remaining_total", &remaining_total);
     context.insert("forecast_offset", &forecast_offset);
 
     context
-}
-
-#[derive(Deserialize, Debug)]
-struct Envelope {
-    amount: f64,
-}
-#[derive(Deserialize, Debug)]
-struct Account {
-    amount: f64,
-    debt: bool,
-}
-
-async fn accounts_total(client: &mongodb::Client, user_id: &ObjectId) -> f64 {
-    let collection: Collection<Account> = client.default_database().unwrap().collection("accounts");
-
-    let mut accounts: Vec<Account> = Vec::new();
-    match collection.find(doc! {"user_id": user_id}).await {
-        Ok(mut cursor) => {
-            while cursor.advance().await.unwrap() {
-                match cursor.deserialize_current() {
-                    Ok(account) => {
-                        accounts.push(account);
-                    }
-                    Err(e) => {
-                        log::error!("{}", e);
-                    }
-                }
-            }
-        }
-        Err(e) => {
-            log::error!("{}", e);
-        }
-    }
-
-    let debt = accounts
-        .iter()
-        .filter(|a| a.debt)
-        .map(|e| e.amount)
-        .reduce(|memo, amount| memo + amount)
-        .unwrap_or(0.0);
-    let non_debt = accounts
-        .iter()
-        .filter(|a| !a.debt)
-        .map(|e| e.amount)
-        .reduce(|memo, amount| memo + amount)
-        .unwrap_or(0.0);
-
-    non_debt - debt
-}
-async fn envelopes_total(client: &mongodb::Client, user_id: &ObjectId) -> f64 {
-    let collection: Collection<Envelope> =
-        client.default_database().unwrap().collection("envelopes");
-
-    let mut envelopes: Vec<Envelope> = Vec::new();
-    match collection.find(doc! {"user_id": user_id}).await {
-        Ok(mut cursor) => {
-            while cursor.advance().await.unwrap() {
-                match cursor.deserialize_current() {
-                    Ok(envelope) => {
-                        envelopes.push(envelope);
-                    }
-                    Err(e) => {
-                        log::error!("{}", e);
-                    }
-                }
-            }
-        }
-        Err(e) => {
-            log::error!("{}", e);
-        }
-    }
-
-    let total = envelopes
-        .iter()
-        .map(|e| e.amount)
-        .reduce(|memo, amount| memo + amount);
-
-    total.unwrap_or(0.0)
-}
-
-fn remaining_seconds(timezone: &Tz) -> TimeDelta {
-    let now = Local::now().with_timezone(timezone);
-    let end_of_month = end_of_month(timezone).expect("could not determine end of month");
-    let end_of_next_month =
-        end_of_next_month(timezone).expect("could not determine end of next month");
-    let days = end_of_month - now;
-
-    if days.num_days() == 0 {
-        end_of_next_month - now
-    } else {
-        end_of_month - now
-    }
-}
-
-fn end_of_next_month(timezone: &Tz) -> Result<DateTime<Tz>, String> {
-    let now = Local::now()
-        .with_timezone(timezone)
-        .checked_add_months(Months::new(2))
-        .expect("failed to build datetime");
-    let now = now.with_hour(0).ok_or("could not set time");
-    let now = now?.with_minute(0).ok_or("could not set time");
-    let now = now?.with_second(0).ok_or("could not set time");
-    let now = now?.with_day0(0).ok_or("could not set day to zero");
-    let now = now?.sub(TimeDelta::new(1, 0).unwrap());
-    Ok(now)
-}
-fn end_of_month(timezone: &Tz) -> Result<DateTime<Tz>, String> {
-    let now = Local::now()
-        .with_timezone(timezone)
-        .checked_add_months(Months::new(1))
-        .expect("failed to build datetime");
-    let now = now.with_hour(0).ok_or("could not set time");
-    let now = now?.with_minute(0).ok_or("could not set time");
-    let now = now?.with_second(0).ok_or("could not set time");
-    let now = now?.with_day0(0).ok_or("could not set day to zero");
-    let now = now?.sub(TimeDelta::new(1, 0).unwrap());
-    Ok(now)
 }

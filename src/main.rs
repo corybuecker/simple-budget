@@ -10,15 +10,13 @@ use axum::{
 };
 use axum_extra::extract::cookie::Key;
 use bson::doc;
-use chrono::{Local, Utc};
-use models::user::User;
+use jobs::{
+    clear_sessions::{clear_sessions},
+    convert_goals::convert_goals,
+};
 use mongodb::Client;
 use serde::Serialize;
-use std::{
-    collections::HashMap,
-    env,
-    time::{Duration, SystemTime},
-};
+use std::{env, time::Duration};
 use tera::{Context, Tera};
 use tokio::{
     select,
@@ -27,6 +25,7 @@ use tokio::{
     sync::mpsc,
     time::interval,
 };
+use utilities::tera::{digest_asset, extract_id};
 mod authenticated;
 use tower_http::{
     services::ServeDir,
@@ -68,92 +67,14 @@ impl FromRef<SharedState> for Key {
     }
 }
 
-pub fn extract_id() -> impl tera::Filter {
-    return |value: &tera::Value,
-            args: &HashMap<String, tera::Value>|
-     -> tera::Result<tera::Value> {
-        debug!("{}", value);
-        debug!("{:#?}", args);
-
-        let id = value.get("_id");
-
-        match id {
-            None => Err(tera::Error::msg("could not find id field".to_string())),
-            Some(id) => Ok(tera::Value::String(
-                id["$oid"].to_string().replace("\"", ""),
-            )),
-        }
-    };
-}
-
-pub fn digest_asset() -> impl tera::Function {
-    let key = SystemTime::now();
-    let key = key
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .expect("could not generate asset timestamp");
-    let key = key.as_secs().to_string();
-
-    return move |args: &HashMap<String, tera::Value>| -> tera::Result<tera::Value> {
-        match args.get("file") {
-            Some(file) => {
-                let mut path = "/assets/".to_string();
-
-                let Some(file) = file.as_str() else {
-                    return Err("".to_string().into());
-                };
-
-                path.push_str(file);
-                path.push_str("?v=");
-                path.push_str(&key);
-
-                Ok(path.into())
-            }
-            None => Err("".to_string().into()),
-        }
-    };
-}
-
-async fn current_time() {
-    println!("{}", Local::now())
-}
-
-async fn clear_sessions() {
-    let mongo = mongo_client().await.unwrap();
-
-    let update_result = mongo
-        .default_database()
-        .unwrap()
-        .collection::<User>("users")
-        .update_many(
-            doc! {},
-            doc! {"$pull": doc! {"sessions": doc! {"expiration": doc! { "$lte": Utc::now()}}}},
-        )
-        .await;
-
-    match update_result {
-        Ok(_) => {}
-        Err(err) => {
-            println!("{}", err);
-        }
-    }
-}
-
-async fn convert_goals_wrapper() {
-    let mongo = mongo_client().await.unwrap();
-    let _ = jobs::convert_goals::convert_goals(mongo.start_session().await.unwrap()).await;
-}
-
 fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     spawn(async {
         let mut interval = interval(Duration::from_millis(60000));
 
         loop {
-            let h1 = async { current_time().await };
-            let h2 = async { current_time().await };
-
             interval.tick().await;
 
-            tokio::join!(h1, h2, clear_sessions(), convert_goals_wrapper());
+            let _result = tokio::join!(clear_sessions(), convert_goals());
         }
     })
 }

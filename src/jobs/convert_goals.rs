@@ -1,10 +1,18 @@
-use crate::models::{envelope::Envelope, goal::Goal};
+use crate::{
+    models::{envelope::Envelope, goal::Goal},
+    mongo_client,
+};
 use bson::{doc, oid::ObjectId};
 use chrono::Utc;
-use mongodb::ClientSession;
 use std::str::FromStr;
+use tracing::info;
 
-pub async fn convert_goals(mut session: ClientSession) -> Result<f64, mongodb::error::Error> {
+pub async fn convert_goals() -> Result<f64, mongodb::error::Error> {
+    info!("converting goals to envelopes at {}", Utc::now());
+
+    let mongo = mongo_client().await?;
+    let mut session = mongo.start_session().await?;
+
     session.start_transaction().await?;
 
     let envelopes = session
@@ -101,9 +109,7 @@ mod tests {
             .await
             .unwrap();
 
-        let session = client.start_session().await.unwrap();
-
-        match convert_goals(session).await {
+        match convert_goals().await {
             Ok(result) => println!("{}", result),
             Err(error) => println!("conversion error: {}", error),
         };

@@ -1,0 +1,42 @@
+name: SimpleBudget
+options:
+  bundleIdPrefix: dev.corybuecker
+  xcodeVersion: 16.0
+settings:
+  DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM}
+targets:
+  simple-budget:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    supportedDestinations: [iOS]
+    dependencies:
+      - package: GoogleSignIn
+      - package: GoogleSignInSwift
+    settings:
+      SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: false
+      SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: false
+    sources:
+      - path: Sources
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: en
+        CFBundleDisplayName: Simple Budget
+        CFBundleIdentifier: dev.corybuecker.simple-budget
+        CFBundleShortVersionString: 1.0.4
+        CFBundleVersion: 1.0.4
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        GIDClientID: ${IOS_CLIENT_ID}
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+            - ${IOS_CLIENT_ID_REVERSED}
+packages:
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 7.0.0
+  GoogleSignInSwift:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 7.0.0

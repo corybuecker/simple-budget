@@ -1,12 +1,8 @@
 use std::{collections::HashMap, time::SystemTime};
 use tera::{Filter, Value};
-use tracing::debug;
 
 pub fn extract_id() -> impl Filter {
-    return |value: &Value, args: &HashMap<String, tera::Value>| -> tera::Result<tera::Value> {
-        debug!("{}", value);
-        debug!("{:#?}", args);
-
+    return |value: &Value, _args: &HashMap<String, tera::Value>| -> tera::Result<tera::Value> {
         let id = value.get("_id");
 
         match id {

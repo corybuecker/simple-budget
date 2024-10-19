@@ -30,6 +30,7 @@ COPY src/favicon.svg /static/favicon.svg
 COPY src/favicon.png /static/favicon.png
 COPY etc_passwd /etc/passwd
 COPY --from=frontend_builder /build/app.css /static/app.css
+COPY --from=frontend_builder /build/app.css.gz /static/app.css.gz
 COPY --from=frontend_builder /build/src/google.css /static/google.css
 COPY --from=backend_builder /lib/x86_64-linux-gnu/libgcc_s.so.1 /lib/x86_64-linux-gnu/libgcc_s.so.1
 COPY --from=backend_builder /lib/x86_64-linux-gnu/libm.so.6 /lib/x86_64-linux-gnu/libm.so.6

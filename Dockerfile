@@ -19,11 +19,13 @@ COPY tailwind.config.js /build
 WORKDIR /build
 RUN npm install tailwindcss @tailwindcss/container-queries @tailwindcss/forms
 RUN npx tailwindcss -i src/input.css -o app.css
+COPY controllers /build/controllers
+RUN gzip -k app.css controllers/*.js
 
 FROM scratch
 COPY --from=backend_builder /build/simple-budget /simple-budget
 COPY src/templates /src/templates
-COPY controllers /static/controllers
+COPY --from=frontend_builder /build/controllers /static/controllers
 COPY src/favicon.svg /static/favicon.svg
 COPY src/favicon.png /static/favicon.png
 COPY etc_passwd /etc/passwd

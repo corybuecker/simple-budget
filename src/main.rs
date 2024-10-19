@@ -4,16 +4,14 @@ mod jobs;
 mod utilities;
 use axum::{
     extract::{FromRef, Request},
+    http::HeaderValue,
     middleware::{from_fn, Next},
     response::Response,
     Router,
 };
 use axum_extra::extract::cookie::Key;
 use bson::doc;
-use jobs::{
-    clear_sessions::{clear_sessions},
-    convert_goals::convert_goals,
-};
+use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
 use mongodb::Client;
 use serde::Serialize;
 use std::{env, time::Duration};
@@ -25,6 +23,7 @@ use tokio::{
     sync::mpsc,
     time::interval,
 };
+use tower::ServiceBuilder;
 use utilities::tera::{digest_asset, extract_id};
 mod authenticated;
 use tower_http::{
@@ -98,6 +97,16 @@ async fn inject_context(mut request: Request, next: Next) -> Response {
     next.run(request).await
 }
 
+async fn cache_header(request: Request, next: Next) -> Response {
+    let mut response = next.run(request).await;
+    let headers = response.headers_mut();
+    headers.insert(
+        "cache-control",
+        HeaderValue::from_str("public, max-age=31536000").unwrap(),
+    );
+    response
+}
+
 #[tokio::main]
 async fn main() {
     let tracing_fmt = tracing_subscriber::fmt::format().pretty();
@@ -129,7 +138,12 @@ async fn main() {
             "/",
             authenticated::authenticated_router(shared_state.clone()),
         )
-        .nest_service("/assets", ServeDir::new("static"))
+        .nest_service(
+            "/assets",
+            ServiceBuilder::new()
+                .layer(from_fn(cache_header))
+                .service(ServeDir::new("static").precompressed_gzip()),
+        )
         .with_state(shared_state)
         .layer(from_fn(inject_context))
         .layer(

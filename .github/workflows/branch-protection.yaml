@@ -1,5 +1,8 @@
 name: branch-protection
-on: [push]
+on:
+  push:
+    branches-ignore:
+      - main
 jobs:
   lint:
     runs-on: ubuntu-latest

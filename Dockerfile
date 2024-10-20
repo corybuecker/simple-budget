@@ -26,7 +26,6 @@ FROM scratch
 COPY --from=backend_builder /build/simple-budget /simple-budget
 COPY src/templates /src/templates
 COPY --from=frontend_builder /build/controllers /static/controllers
-COPY src/favicon.svg /static/favicon.svg
 COPY src/favicon.png /static/favicon.png
 COPY etc_passwd /etc/passwd
 COPY --from=frontend_builder /build/app.css /static/app.css

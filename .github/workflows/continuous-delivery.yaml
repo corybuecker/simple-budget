@@ -1,5 +1,8 @@
 name: continuous-delivery
-on: workflow_dispatch
+on:
+  push:
+    branches:
+      - main
 jobs:
   build-image:
     runs-on: ubuntu-latest

@@ -1,7 +1,7 @@
 use super::UserExtension;
 use crate::models::account::accounts_total_for;
 use crate::models::envelope::envelopes_total_for;
-use crate::utilities::dates::{remaining_seconds, TimeProvider};
+use crate::utilities::dates::{TimeProvider, TimeUtilities};
 use crate::{errors::FormError, models::user::User, Section, SharedState};
 use axum::{
     extract::State,
@@ -58,11 +58,11 @@ pub async fn index(
 pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Context {
     let mut context = Context::new();
     let user_id = ObjectId::from_str(&user._id).unwrap();
-    let time_provider = &TimeProvider {};
-
     let preferences = &user.preferences;
     let timezone = preferences.timezone.clone().unwrap_or(String::from("UTC"));
     let timezone: Tz = timezone.parse().unwrap();
+    let time_provider = TimeProvider {};
+    let time_utilities = &TimeUtilities { timezone };
 
     let goals = goals::goals(client, &user_id).await.unwrap_or(Vec::new());
 
@@ -102,7 +102,7 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Con
     context.insert("goals_total", &goals_total);
     context.insert(
         "remaining_days",
-        &remaining_seconds(time_provider, &timezone).num_days(),
+        &time_utilities.remaining_seconds(&time_provider).num_days(),
     );
     context.insert("remaining_minutes", &duration_until_tomorrow.num_minutes());
     context.insert("remaining_total", &remaining_total);

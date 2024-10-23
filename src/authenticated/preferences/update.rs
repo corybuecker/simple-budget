@@ -26,15 +26,12 @@ pub async fn action(
         .await
         .unwrap();
 
-    match &form.timezone {
-        Some(string) => {
-            if string.is_empty() {
-                user.preferences.timezone = None
-            } else {
-                user.preferences.timezone = Some(string.clone())
-            }
+    if let Some(string) = &form.timezone {
+        if string.is_empty() {
+            user.preferences.timezone = None
+        } else {
+            user.preferences.timezone = Some(string.clone())
         }
-        None => {}
     }
 
     if let Some(goal_header) = &form.goal_header {

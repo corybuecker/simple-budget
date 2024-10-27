@@ -1,6 +1,7 @@
 use crate::errors::ModelError;
 use bson::{doc, oid::ObjectId, serde_helpers::hex_string_as_object_id};
 use chrono::{DateTime, Datelike, Days, Duration, Local, Months, TimeDelta, Timelike, Utc};
+use mongodb::results::{InsertOneResult, UpdateResult};
 use serde::{Deserialize, Serialize};
 use std::ops::Add;
 
@@ -52,6 +53,27 @@ pub struct Goal {
 }
 
 impl Goal {
+    pub async fn create(&self, client: &mongodb::Client) -> Result<InsertOneResult, ModelError> {
+        Ok(client
+            .default_database()
+            .ok_or_else(|| ModelError::MissingDefaultDatabase)?
+            .collection::<Goal>("goals")
+            .insert_one(self)
+            .await?)
+    }
+
+    pub async fn update(&self, client: &mongodb::Client) -> Result<UpdateResult, ModelError> {
+        Ok(client
+            .default_database()
+            .ok_or_else(|| ModelError::MissingDefaultDatabase)?
+            .collection::<Goal>("goals")
+            .replace_one(
+                doc! {"_id": ObjectId::parse_str(&self._id)?, "user_id": ObjectId::parse_str(&self.user_id)?},
+                self
+            )
+            .await?)
+    }
+
     pub async fn get_by_user_id(
         client: &mongodb::Client,
         user_id: &str,

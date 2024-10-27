@@ -30,14 +30,15 @@ impl Account {
             .insert_one(self)
             .await?)
     }
+
     pub async fn update(&self, client: &mongodb::Client) -> Result<UpdateResult, ModelError> {
         Ok(client
             .default_database()
             .ok_or_else(|| ModelError::MissingDefaultDatabase)?
             .collection::<Account>("accounts")
-            .update_one(
+            .replace_one(
                 doc! {"_id": ObjectId::parse_str(&self._id)?, "user_id": ObjectId::parse_str(&self.user_id)?},
-                doc! {"$set": doc! {"name": &self.name, "amount": &self.amount, "debt": &self.debt}},
+                self
             )
             .await?)
     }
@@ -71,6 +72,7 @@ impl Account {
             .map(|e| e.amount)
             .reduce(|memo, amount| memo + amount)
             .unwrap_or(0.0);
+
         let non_debt = accounts
             .iter()
             .filter(|a| !a.debt)

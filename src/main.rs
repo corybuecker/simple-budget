@@ -3,14 +3,17 @@ mod errors;
 mod jobs;
 mod utilities;
 use axum::{
-    extract::{FromRef, Request},
-    http::HeaderValue,
+    body::Body,
+    extract::{FromRef, Path, Request},
+    http::{HeaderValue, StatusCode},
     middleware::{from_fn, Next},
-    response::Response,
+    response::{IntoResponse, Response},
+    routing::get,
     Router,
 };
 use axum_extra::extract::cookie::Key;
 use bson::doc;
+use include_dir::{include_dir, Dir};
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
 use mongodb::Client;
 use serde::Serialize;
@@ -23,13 +26,9 @@ use tokio::{
     sync::mpsc,
     time::interval,
 };
-use tower::ServiceBuilder;
 use utilities::tera::{digest_asset, extract_id};
 mod authenticated;
-use tower_http::{
-    services::ServeDir,
-    trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer},
-};
+use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::{debug, Level};
 mod models;
 
@@ -107,6 +106,37 @@ async fn cache_header(request: Request, next: Next) -> Response {
     response
 }
 
+async fn fetch_asset(Path(file): Path<String>) -> Response {
+    debug!("{}", file);
+
+    let mut content_type: &str = "text/plain";
+
+    if file.ends_with(".png") {
+        content_type = "image/png"
+    };
+
+    if file.ends_with(".js") {
+        content_type = "application/javascript"
+    };
+
+    if file.ends_with(".css") {
+        content_type = "text/css"
+    };
+
+    match ASSETS.get_file(&file) {
+        Some(asset) => {
+            let mut response = Body::from(asset.contents()).into_response();
+            let headers = response.headers_mut();
+            headers.insert("content-type", HeaderValue::from_str(content_type).unwrap());
+            response
+        }
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+static TEMPLATES: Dir = include_dir!("templates");
+static ASSETS: Dir = include_dir!("static");
+
 #[tokio::main]
 async fn main() {
     let tracing_fmt = tracing_subscriber::fmt::format().pretty();
@@ -115,9 +145,21 @@ async fn main() {
         .event_format(tracing_fmt)
         .init();
 
-    let mut tera = Tera::new("src/templates/**/*.html").expect("cannot initialize Tera");
+    let mut tera = Tera::default();
     tera.register_function("digest_asset", digest_asset());
     tera.register_filter("oid", extract_id());
+
+    for template in TEMPLATES.find("**/*.html").unwrap() {
+        debug!("{:#?}", template);
+        let _ = tera.add_raw_template(
+            template.path().to_str().unwrap(),
+            TEMPLATES
+                .get_file(template.path())
+                .unwrap()
+                .contents_utf8()
+                .unwrap(),
+        );
+    }
 
     let mongo = mongo_client().await.expect("cannot create Mongo client");
 
@@ -138,11 +180,11 @@ async fn main() {
             "/",
             authenticated::authenticated_router(shared_state.clone()),
         )
-        .nest_service(
+        .nest(
             "/assets",
-            ServiceBuilder::new()
-                .layer(from_fn(cache_header))
-                .service(ServeDir::new("static").precompressed_gzip()),
+            Router::new()
+                .route("/*file", get(fetch_asset))
+                .layer(from_fn(cache_header)),
         )
         .with_state(shared_state)
         .layer(from_fn(inject_context))

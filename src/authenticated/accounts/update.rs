@@ -8,8 +8,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };
-use mongodb::bson::{doc, oid::ObjectId};
-use std::str::FromStr;
+use mongodb::bson::oid::ObjectId;
 use tera::Context;
 use validator::Validate;
 
@@ -59,28 +58,15 @@ pub async fn action(
         }
     }
 
-    let accounts: mongodb::Collection<Account> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("accounts");
-
-    let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
-
-    let account = accounts.find_one(filter.clone()).await?;
-
-    let Some(mut account) = account else {
-        return Err(FormError {
-            message: "could not find account".to_string(),
-            status_code: Some(StatusCode::NOT_FOUND),
-        });
+    let account = Account {
+        _id: ObjectId::parse_str(id)?.to_string(),
+        user_id: ObjectId::parse_str(&user.id)?.to_string(),
+        name: form.name.to_owned(),
+        amount: form.amount.to_owned(),
+        debt: form.debt.unwrap_or(false),
     };
 
-    account.name = form.name.clone();
-    account.amount = form.amount;
-    account.debt = form.debt.unwrap_or(false);
-
-    let _ = accounts.replace_one(filter, account).await?;
+    account.update(&shared_state.mongo).await?;
 
     Ok(Redirect::to("/accounts").into_response())
 }

@@ -24,9 +24,7 @@ pub async fn modal(
         .collection("accounts");
 
     let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
-
     let account = accounts.find_one(filter.clone()).await?;
-
     let Some(_) = account else {
         return Err(FormError {
             message: "could not find account".to_string(),

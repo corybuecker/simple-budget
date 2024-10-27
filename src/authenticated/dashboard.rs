@@ -1,5 +1,5 @@
 use super::UserExtension;
-use crate::models::account::accounts_total_for;
+use crate::models::account::Account;
 use crate::models::envelope::envelopes_total_for;
 use crate::utilities::dates::{TimeProvider, TimeUtilities};
 use crate::{errors::FormError, models::user::User, Section, SharedState};
@@ -78,7 +78,7 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Con
         .unwrap_or(0.0);
 
     let envelopes_total = envelopes_total_for(&user_id, client).await;
-    let accounts_total = accounts_total_for(&user_id, client).await;
+    let accounts_total = Account::accounts_total_for(&user_id, client).await;
 
     let remaining_total = accounts_total - envelopes_total - goals_total;
 

@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use tokio::{spawn, sync::watch};
 use tracing::debug;
-mod accounts;
+pub mod accounts;
 mod dashboard;
 mod envelopes;
 mod goals;

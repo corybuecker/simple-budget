@@ -11,5 +11,5 @@ target/
 
 .env
 
-/static
+/static/app.css
 /k8s/output

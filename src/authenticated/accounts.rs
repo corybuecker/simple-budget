@@ -20,10 +20,10 @@ mod update;
 #[derive(Debug, Validate, Deserialize)]
 pub struct AccountForm {
     #[validate(length(min = 5))]
-    name: String,
+    pub name: String,
     #[validate(range(min = 0.0))]
-    amount: f64,
-    debt: Option<bool>,
+    pub amount: f64,
+    pub debt: Option<bool>,
 }
 
 async fn initialize_context(

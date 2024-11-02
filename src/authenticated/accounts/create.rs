@@ -7,8 +7,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };
-use mongodb::{bson::oid::ObjectId, Collection};
-use std::str::FromStr;
+use mongodb::bson::oid::ObjectId;
 use tera::Context;
 use validator::Validate;
 
@@ -62,16 +61,10 @@ pub async fn page(
         name: form.name.to_owned(),
         amount: form.amount.to_owned(),
         debt: form.debt.unwrap_or(false),
-        user_id: ObjectId::from_str(&user.id).unwrap().to_string(),
+        user_id: ObjectId::parse_str(&user.id)?.to_string(),
     };
 
-    let accounts: Collection<Account> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("accounts");
-
-    let _ = accounts.insert_one(account_record).await?;
+    account_record.create(&shared_state.mongo).await?;
 
     Ok(Redirect::to("/accounts").into_response())
 }
@@ -87,6 +80,7 @@ mod tests {
     use axum::Router;
 
     use bson::doc;
+    use mongodb::Collection;
     use std::str::from_utf8;
     use tower::ServiceExt;
 

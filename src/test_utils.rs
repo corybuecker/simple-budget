@@ -8,7 +8,7 @@ use tokio::sync::{mpsc, watch};
 pub async fn state_for_tests() -> SharedState {
     let client = mongo_client().await.unwrap();
     let (sender, _rx) = mpsc::channel(1);
-    let mut tera = tera::Tera::new("src/templates/**/*.html").unwrap();
+    let mut tera = tera::Tera::new("templates/**/*.html").unwrap();
 
     tera.register_function("digest_asset", digest_asset());
     tera.register_filter("oid", extract_id());

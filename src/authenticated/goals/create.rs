@@ -13,7 +13,6 @@ use axum::{
 };
 use bson::oid::ObjectId;
 use chrono::{NaiveDateTime, NaiveTime};
-use mongodb::Collection;
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
@@ -77,13 +76,7 @@ pub async fn page(
         user_id: ObjectId::from_str(&user.id).unwrap().to_string(),
     };
 
-    let goals: Collection<Goal> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("goals");
-
-    let _ = goals.insert_one(goal_record).await?;
+    goal_record.create(&shared_state.mongo).await?;
 
     Ok(Redirect::to("/goals").into_response())
 }
@@ -98,6 +91,7 @@ mod tests {
     use axum::Router;
     use bson::doc;
     use chrono::{Duration, Utc};
+    use mongodb::Collection;
     use std::ops::Add;
     use std::str::from_utf8;
     use tower::ServiceExt;

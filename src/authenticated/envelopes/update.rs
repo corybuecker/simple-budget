@@ -8,7 +8,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };
-use bson::{doc, oid::ObjectId};
+use bson::oid::ObjectId;
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
@@ -63,27 +63,14 @@ pub async fn action(
         }
     }
 
-    let envelopes: mongodb::Collection<Envelope> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("envelopes");
-
-    let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
-    log::debug!("{:?}", filter);
-
-    let envelope = envelopes.find_one(filter.clone()).await?;
-
-    let Some(mut envelope) = envelope else {
-        return Err(FormError {
-            message: "could not update envelope".to_string(),
-            status_code: Some(StatusCode::NOT_FOUND),
-        });
+    let envelope = Envelope {
+        _id: ObjectId::from_str(&id)?.to_string(),
+        name: form.name.to_owned(),
+        amount: form.amount.to_owned(),
+        user_id: ObjectId::from_str(&user.id).unwrap().to_string(),
     };
 
-    envelope.name = form.name.clone();
-    envelope.amount = form.amount;
-    let _ = envelopes.replace_one(filter, envelope).await;
+    envelope.update(&shared_state.mongo).await?;
 
     Ok(Redirect::to("/envelopes").into_response())
 }

@@ -9,7 +9,6 @@ use axum::{
     Extension, Form,
 };
 use bson::oid::ObjectId;
-use mongodb::Collection;
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
@@ -58,19 +57,14 @@ pub async fn page(
         }
     }
 
-    let goal_record = Envelope {
+    let envelope = Envelope {
         _id: ObjectId::new().to_string(),
         name: form.name.to_owned(),
         amount: form.amount.to_owned(),
         user_id: ObjectId::from_str(&user.id).unwrap().to_string(),
     };
-    let goals: Collection<Envelope> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("envelopes");
 
-    let _ = goals.insert_one(goal_record).await?;
+    envelope.create(&shared_state.mongo).await?;
 
     Ok(Redirect::to("/envelopes").into_response())
 }
@@ -84,8 +78,8 @@ mod tests {
     use axum::routing::post;
     use axum::Router;
     use bson::doc;
-    
-    
+    use mongodb::Collection;
+
     use std::str::from_utf8;
     use tower::ServiceExt;
 

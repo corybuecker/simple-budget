@@ -11,7 +11,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
     Extension, Form,
 };
-use bson::{doc, oid::ObjectId};
+use bson::oid::ObjectId;
 use chrono::{NaiveDateTime, NaiveTime};
 use std::str::FromStr;
 use tera::Context;
@@ -65,29 +65,16 @@ pub async fn action(
         }
     }
 
-    let goals: mongodb::Collection<Goal> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("goals");
-
-    let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
-    log::debug!("{:?}", filter);
-
-    let goal = goals.find_one(filter.clone()).await?;
-
-    let Some(mut goal) = goal else {
-        return Err(FormError {
-            message: "could not find goal".to_string(),
-            status_code: Some(StatusCode::NOT_FOUND),
-        });
+    let goal_record = Goal {
+        _id: ObjectId::from_str(&id)?.to_string(),
+        name: form.name.to_owned(),
+        target: form.target.to_owned(),
+        recurrence: Recurrence::from_str(&form.recurrence).unwrap(),
+        target_date: NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc(),
+        user_id: ObjectId::from_str(&user.id)?.to_string(),
     };
 
-    goal.name = form.name.clone();
-    goal.target = form.target;
-    goal.target_date = NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc();
-    goal.recurrence = Recurrence::from_str(&form.recurrence).unwrap();
-    let _ = goals.replace_one(filter, goal).await?;
+    goal_record.update(&shared_state.mongo).await?;
 
     Ok(Redirect::to("/goals").into_response())
 }

@@ -6,7 +6,7 @@ metadata:
   labels:
     app: simple-budget
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: simple-budget
@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: simple-budget
-        image: ${IMAGE}/simple-budget:latest
+        image: ghcr.io/corybuecker/simple-budget:latest
         ports:
         - name: http
           containerPort: 8000
@@ -39,15 +39,3 @@ spec:
           runAsNonRoot: true
           seccompProfile:
             type: RuntimeDefault
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                    - simple-budget
-                topologyKey: "kubernetes.io/hostname"

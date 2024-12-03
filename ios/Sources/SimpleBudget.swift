@@ -2,7 +2,7 @@ import SwiftUI
 import GoogleSignIn
 
 class UserModel: ObservableObject {
-  @Published var name: String?
+  @Published var idToken: String?
 }
 
 @main
@@ -17,8 +17,8 @@ struct SimpleBudget: App {
       }).onAppear(perform: {
         GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
           guard error == nil else { return }
-          
-          userModel.name = user?.profile?.name
+          print("here")
+          userModel.idToken = user?.idToken?.tokenString
         }
       })
       .environmentObject(userModel)

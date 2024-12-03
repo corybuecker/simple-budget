@@ -18,6 +18,7 @@ spec:
       containers:
       - name: simple-budget
         image: ghcr.io/corybuecker/simple-budget:latest
+        imagePullPolicy: Always
         ports:
         - name: http
           containerPort: 8000
@@ -26,11 +27,11 @@ spec:
             name: simple-budget
         resources:
           limits:
-            memory: 256M
-            cpu: 25m
+            memory: 512M
+            cpu: 100m
           requests:
-            memory: 256M
-            cpu: 25m
+            memory: 512M
+            cpu: 100m
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

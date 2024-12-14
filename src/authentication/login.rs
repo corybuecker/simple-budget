@@ -71,8 +71,8 @@ pub async fn redirect(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response
         .secure(secure == *"true")
         .build();
 
-    return Ok((
+    Ok((
         jar.add(cookie),
         Redirect::to(auth_url.as_str()).into_response(),
-    ));
+    ))
 }

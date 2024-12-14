@@ -2,7 +2,7 @@ use std::{collections::HashMap, time::SystemTime};
 use tera::{Filter, Value};
 
 pub fn extract_id() -> impl Filter {
-    return |value: &Value, _args: &HashMap<String, tera::Value>| -> tera::Result<tera::Value> {
+    |value: &Value, _args: &HashMap<String, tera::Value>| -> tera::Result<tera::Value> {
         let id = value.get("_id");
 
         match id {
@@ -11,7 +11,7 @@ pub fn extract_id() -> impl Filter {
                 id["$oid"].to_string().replace("\"", ""),
             )),
         }
-    };
+    }
 }
 
 pub fn digest_asset() -> impl tera::Function {
@@ -21,7 +21,7 @@ pub fn digest_asset() -> impl tera::Function {
         .expect("could not generate asset timestamp");
     let key = key.as_secs().to_string();
 
-    return move |args: &HashMap<String, tera::Value>| -> tera::Result<tera::Value> {
+    move |args: &HashMap<String, tera::Value>| -> tera::Result<tera::Value> {
         match args.get("file") {
             Some(file) => {
                 let mut path = "/assets/".to_string();
@@ -38,5 +38,5 @@ pub fn digest_asset() -> impl tera::Function {
             }
             None => Err("".to_string().into()),
         }
-    };
+    }
 }

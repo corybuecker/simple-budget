@@ -104,7 +104,7 @@ mod tests {
         accounts.insert_one(account).await.unwrap();
 
         let app = Router::new()
-            .route("/accounts/:id", axum::routing::delete(action))
+            .route("/accounts/{id}", axum::routing::delete(action))
             .layer(user_for_tests(&user_id.to_hex()))
             .with_state(shared_state);
 

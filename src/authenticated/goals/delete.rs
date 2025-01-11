@@ -117,7 +117,7 @@ mod tests {
 
         // Create a router with the delete route
         let app = Router::new()
-            .route("/goals/:id", axum::routing::delete(super::action))
+            .route("/goals/{id}", axum::routing::delete(super::action))
             .layer(user_for_tests(&user_id.to_hex()))
             .with_state(shared_state);
 

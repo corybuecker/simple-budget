@@ -123,7 +123,7 @@ mod tests {
         // Create a test app and call the action
         let app = axum::Router::new()
             .route(
-                "/goals/:id",
+                "/goals/{id}",
                 axum::routing::post(crate::authenticated::goals::update::action),
             )
             .with_state(shared_state)

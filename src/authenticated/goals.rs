@@ -45,10 +45,10 @@ pub fn goals_router() -> Router<SharedState> {
     Router::new()
         .route("/", get(index::page).post(create::page))
         .route(
-            "/:id",
+            "/{id}",
             get(edit::page).put(update::action).delete(delete::action),
         )
         .route("/new", get(new::page))
-        .route("/:id/delete", get(delete::modal))
+        .route("/{id}/delete", get(delete::modal))
         .route_layer(from_fn(initialize_context))
 }

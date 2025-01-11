@@ -175,15 +175,11 @@ async fn main() {
     };
 
     let app = Router::new()
-        .nest("/authentication", authentication::authentication_router())
-        .nest(
-            "/",
-            authenticated::authenticated_router(shared_state.clone()),
-        )
-        .nest(
-            "/assets",
+        .merge(authentication::authentication_router())
+        .merge(authenticated::authenticated_router(shared_state.clone()))
+        .merge(
             Router::new()
-                .route("/*file", get(fetch_asset))
+                .route("/assets/{*file}", get(fetch_asset))
                 .layer(from_fn(cache_header)),
         )
         .with_state(shared_state)

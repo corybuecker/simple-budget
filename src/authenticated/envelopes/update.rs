@@ -117,7 +117,7 @@ mod tests {
         // Create a test app and call the action
         let app = axum::Router::new()
             .route(
-                "/envelopes/:id",
+                "/envelopes/{id}",
                 axum::routing::post(crate::authenticated::envelopes::update::action),
             )
             .with_state(shared_state)

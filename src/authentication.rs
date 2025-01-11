@@ -9,8 +9,8 @@ mod token;
 
 pub fn authentication_router() -> Router<SharedState> {
     Router::new()
-        .route("/login", get(login::login))
-        .route("/token", post(token::token))
-        .route("/redirect", get(login::redirect))
-        .route("/callback", get(callback::callback))
+        .route("/authentication/login", get(login::login))
+        .route("/authentication/token", post(token::token))
+        .route("/authentication/redirect", get(login::redirect))
+        .route("/authentication/callback", get(callback::callback))
 }

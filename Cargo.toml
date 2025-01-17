@@ -14,7 +14,7 @@ chrono-tz = { version = "0.10.0" }
 futures-util = { version = "0.3.31" }
 include_dir = { version = "0.7.4", features = ["glob"] }
 jsonwebtoken = { version = "9.3.0" }
-log = { version = "0.4.24" }
+log = { version = "0.4.25" }
 mongodb = { version = "3.1.1" }
 serde_json = "1.0.135"
 openidconnect = { version = "3.5.0", features = ["reqwest"] }

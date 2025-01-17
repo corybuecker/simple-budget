@@ -55,7 +55,11 @@ func handleSignInButton(_ userModel: UserModel) -> () -> Void {
     
     if let windowScene = scene as? UIWindowScene {
       guard let controller = windowScene.keyWindow?.rootViewController else { return }
-      GIDSignIn.sharedInstance.signIn(withPresenting: controller)
+        GIDSignIn.sharedInstance.signIn(withPresenting: controller) { signInResult, error in
+            guard error == nil else { return }
+            guard let signInResult = signInResult else { return }
+            userModel.idToken = signInResult.user.idToken?.tokenString
+        }
     }
   }
 }

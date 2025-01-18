@@ -15,10 +15,10 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - uses: docker/setup-qemu-action@v3
     - uses: docker/setup-buildx-action@v3
     - uses: docker/build-push-action@v6
       with:
-        platforms: linux/arm64/v8
         push: true
         tags: ghcr.io/corybuecker/simple-budget:latest
+        cache-from: type=registry,ref=ghcr.io/corybuecker/simple-budget:latest
+        cache-to: type=inline

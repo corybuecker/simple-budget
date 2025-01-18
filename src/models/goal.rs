@@ -1,7 +1,10 @@
 use crate::errors::ModelError;
 use bson::{doc, oid::ObjectId, serde_helpers::hex_string_as_object_id};
 use chrono::{DateTime, Datelike, Days, Duration, Local, Months, TimeDelta, Timelike, Utc};
-use mongodb::results::{InsertOneResult, UpdateResult};
+use mongodb::{
+    options::FindOptions,
+    results::{InsertOneResult, UpdateResult},
+};
 use serde::{Deserialize, Serialize};
 use std::ops::Add;
 
@@ -86,7 +89,12 @@ impl Goal {
 
         let collection = database.collection::<Goal>("goals");
 
-        let mut cursor = collection.find(doc! {"user_id": &user_id}).await?;
+        let mut find_options = FindOptions::default();
+        find_options.sort = Some(doc! {"name": 1});
+        let mut cursor = collection
+            .find(doc! {"user_id": &user_id})
+            .with_options(find_options)
+            .await?;
         let mut goals = Vec::new();
         while cursor.advance().await? {
             let goal = cursor.deserialize_current()?;

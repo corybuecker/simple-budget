@@ -12,7 +12,7 @@ RUN mkdir /app
 WORKDIR /app
 COPY Cargo.toml Cargo.lock /app
 RUN mkdir src
-RUN touch src/main.rs
+RUN echo "fn main() {}" > src/main.rs
 RUN cargo build --release
 COPY src /app/src
 COPY templates /app/templates

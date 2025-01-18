@@ -7,7 +7,7 @@ use axum::{
     Extension,
 };
 use bson::{doc, oid::ObjectId};
-use mongodb::Collection;
+use mongodb::{options::FindOptions, Collection};
 use std::str::FromStr;
 use tera::Context;
 
@@ -25,8 +25,14 @@ pub async fn page(
         .collection("envelopes");
 
     let mut envelopes: Vec<Envelope> = Vec::new();
+    let mut find_options = FindOptions::default();
+    find_options.sort = Some(doc! {"name": 1});
 
-    match collection.find(doc! {"user_id": &user_id}).await {
+    match collection
+        .find(doc! {"user_id": &user_id})
+        .with_options(find_options)
+        .await
+    {
         Ok(mut cursor) => {
             while cursor.advance().await.unwrap() {
                 match cursor.deserialize_current() {

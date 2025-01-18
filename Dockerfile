@@ -11,6 +11,9 @@ FROM rust:1.84.0-slim AS builder
 RUN mkdir /app
 WORKDIR /app
 COPY Cargo.toml Cargo.lock /app
+RUN mkdir src
+RUN touch src/main.rs
+RUN cargo build --release
 COPY src /app/src
 COPY templates /app/templates
 COPY static /app/static

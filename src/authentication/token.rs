@@ -10,7 +10,7 @@ use bson::{doc, oid::ObjectId, Uuid};
 use chrono::{Days, Utc};
 use jsonwebtoken::{decode, jwk::Jwk, Algorithm, DecodingKey, Validation};
 use mongodb::{Client, Collection};
-use openidconnect::{core::CoreProviderMetadata, reqwest::async_http_client, IssuerUrl};
+use openidconnect::{core::CoreProviderMetadata, IssuerUrl};
 use rand::{
     distributions::{Alphanumeric, DistString},
     thread_rng,
@@ -51,8 +51,10 @@ pub async fn token(
         });
     };
 
+    let async_http_client = openidconnect::reqwest::Client::builder().build().unwrap();
+
     let Ok(provider_metadata) =
-        CoreProviderMetadata::discover_async(issuer_url, async_http_client).await
+        CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await
     else {
         return Err(FormError {
             message: String::new(),

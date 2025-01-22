@@ -7,11 +7,11 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
     SignedCookieJar,
 };
+use openidconnect::RedirectUrl;
 use openidconnect::{
     core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata},
     ClientId, ClientSecret, CsrfToken, IssuerUrl, Nonce, Scope,
 };
-use openidconnect::{reqwest::async_http_client, RedirectUrl};
 use std::env;
 use tera::Context;
 
@@ -33,8 +33,10 @@ pub async fn redirect(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response
         return Err(StatusCode::SERVICE_UNAVAILABLE);
     };
 
+    let async_http_client = openidconnect::reqwest::Client::builder().build().unwrap();
+
     let Ok(provider_metadata) =
-        CoreProviderMetadata::discover_async(issuer_url, async_http_client).await
+        CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await
     else {
         return Err(StatusCode::SERVICE_UNAVAILABLE);
     };
@@ -61,8 +63,7 @@ pub async fn redirect(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response
         .add_scope(Scope::new("openid".to_string()))
         .url();
 
-    let secure = env::var("SECURE")
-        .unwrap_or("false".to_string());
+    let secure = env::var("SECURE").unwrap_or("false".to_string());
     let cookie = Cookie::build(("nonce", nonce.secret().clone()))
         .expires(None)
         .http_only(true)

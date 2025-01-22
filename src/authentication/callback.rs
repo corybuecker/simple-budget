@@ -17,11 +17,11 @@ use mongodb::{
     bson::{doc, oid::ObjectId, Uuid},
     Client, Collection,
 };
+use openidconnect::RedirectUrl;
 use openidconnect::{
     core::{CoreClient, CoreProviderMetadata},
     AuthorizationCode, ClientId, ClientSecret, IssuerUrl, Nonce, TokenResponse,
 };
-use openidconnect::{reqwest::async_http_client, RedirectUrl};
 use rand::{
     distributions::{Alphanumeric, DistString},
     thread_rng,
@@ -50,8 +50,10 @@ pub async fn callback(
         });
     };
 
+    let async_http_client = openidconnect::reqwest::Client::builder().build().unwrap();
+
     let Ok(provider_metadata) =
-        CoreProviderMetadata::discover_async(issuer_url, async_http_client).await
+        CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await
     else {
         return Err(FormError {
             message: String::new(),
@@ -92,7 +94,8 @@ pub async fn callback(
 
     let Ok(token_response) = client
         .exchange_code(AuthorizationCode::new(query.code.to_string()))
-        .request_async(async_http_client)
+        .unwrap()
+        .request_async(&async_http_client)
         .await
     else {
         return Err(FormError {

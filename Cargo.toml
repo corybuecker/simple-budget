@@ -6,7 +6,7 @@ edition = "2021"
 resolver = "2"
 
 [dependencies]
-axum = { version = "0.8.0", features = ["ws"] }
+axum = { version = "0.8.2", features = ["ws"] }
 axum-extra = { version = "0.10.0", features = ["cookie-signed", "query"] }
 bson = { version = "2.13.0", features = ["serde_with-3", "chrono-0_4"] }
 chrono = { version = "0.4.39" }

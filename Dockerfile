@@ -4,7 +4,7 @@ COPY input.css tailwind.config.js /app
 COPY templates /app/templates
 COPY static /app/static
 WORKDIR /app
-RUN npm install tailwindcss @tailwindcss/typography @tailwindcss/forms @tailwindcss/aspect-ratio @tailwindcss/container-queries
+RUN npm install tailwindcss @tailwindcss/typography @tailwindcss/forms @tailwindcss/aspect-ratio @tailwindcss/container-queries @tailwindcss/cli
 RUN npx tailwindcss -i input.css -o static/app.css
 
 FROM rust:1.84.0-slim AS builder

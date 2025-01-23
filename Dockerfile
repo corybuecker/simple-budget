@@ -1,6 +1,6 @@
 FROM node AS frontend
 RUN mkdir -p /app/static
-COPY input.css tailwind.config.js /app
+COPY input.css /app
 COPY templates /app/templates
 COPY static /app/static
 WORKDIR /app

@@ -23,6 +23,7 @@ pub async fn page(
 ) -> Result<Response, FormError> {
     let mut accumulations: HashMap<String, f64> = HashMap::new();
     let mut days_remainings: HashMap<String, i16> = HashMap::new();
+    let mut per_days: HashMap<String, f64> = HashMap::new();
 
     let user = User::get_by_id(&shared_state.mongo, &user.id)
         .await
@@ -41,6 +42,7 @@ pub async fn page(
 
     for goal in &goals {
         accumulations.insert(goal._id.clone(), goal.accumulated());
+        per_days.insert(goal._id.clone(), goal.accumulated_per_day());
         days_remainings.insert(
             goal._id.clone(),
             (goal.target_date - Utc::now())
@@ -53,6 +55,7 @@ pub async fn page(
     context.insert("goals", &goals);
     context.insert("accumulations", &accumulations);
     context.insert("days_remainings", &days_remainings);
+    context.insert("per_days", &per_days);
 
     let content = shared_state.tera.render("goals/index.html", &context)?;
 

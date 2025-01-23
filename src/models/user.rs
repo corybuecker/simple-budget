@@ -20,6 +20,7 @@ impl Error for NotFoundError {}
 pub enum GoalHeader {
     Accumulated,
     DaysRemaining,
+    PerDay,
 }
 
 impl From<GoalHeader> for Bson {
@@ -27,6 +28,7 @@ impl From<GoalHeader> for Bson {
         match goal_header {
             GoalHeader::Accumulated => String::from("Accumulated").into(),
             GoalHeader::DaysRemaining => String::from("DaysRemaining").into(),
+            GoalHeader::PerDay => String::from("PerDay").into(),
         }
     }
 }

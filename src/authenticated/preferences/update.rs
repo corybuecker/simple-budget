@@ -67,6 +67,7 @@ pub async fn action(
     let goal_header = &user.preferences.goal_header;
     let mut accumulations: HashMap<String, f64> = HashMap::new();
     let mut days_remainings: HashMap<String, i64> = HashMap::new();
+    let mut per_days: HashMap<String, f64> = HashMap::new();
     let goals = Goal::get_by_user_id(&shared_state.mongo, &user._id)
         .await
         .unwrap();
@@ -75,12 +76,14 @@ pub async fn action(
 
     for goal in &goals {
         accumulations.insert(goal._id.clone(), goal.accumulated());
+        per_days.insert(goal._id.clone(), goal.accumulated_per_day());
         days_remainings.insert(goal._id.clone(), (goal.target_date - Utc::now()).num_days());
     }
 
     goals_context.insert("goals", &goals);
     goals_context.insert("accumulations", &accumulations);
     goals_context.insert("days_remainings", &days_remainings);
+    goals_context.insert("per_days", &per_days);
     goals_context.insert("goals", &goals);
 
     let goals_html = tera.render("goals/_table.html", &goals_context)?;

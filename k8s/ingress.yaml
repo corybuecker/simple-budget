@@ -4,14 +4,12 @@ metadata:
   name: simple-budget
   namespace: simple-budget
 spec:
-  entryPoints:
-  - web
   routes:
-  - kind: Rule
-    match: Host(`$HOST`)
-    services:
-    - kind: Service
-      name: simple-budget
-      namespace: simple-budget
-      passHostHeader: true
-      port: 8000
+    - kind: Rule
+      match: Host(`budget.corybuecker.com`)
+      services:
+        - kind: Service
+          name: simple-budget
+          namespace: simple-budget
+          passHostHeader: true
+          port: http

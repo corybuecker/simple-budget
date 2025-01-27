@@ -23,8 +23,8 @@ use openidconnect::{
     AuthorizationCode, ClientId, ClientSecret, IssuerUrl, Nonce, TokenResponse,
 };
 use rand::{
-    distributions::{Alphanumeric, DistString},
-    thread_rng,
+    distr::{Alphanumeric, SampleString},
+    rng,
 };
 use serde::Deserialize;
 use std::env;
@@ -148,7 +148,7 @@ async fn create_session(
     email: String,
 ) -> Result<String, mongodb::error::Error> {
     let user_collection: Collection<User> = mongo.default_database().unwrap().collection("users");
-    let csrf = Alphanumeric.sample_string(&mut thread_rng(), 32);
+    let csrf = Alphanumeric.sample_string(&mut rng(), 32);
 
     let user = upsert_subject(mongo, subject, email).await?;
 

@@ -12,8 +12,8 @@ use jsonwebtoken::{decode, jwk::Jwk, Algorithm, DecodingKey, Validation};
 use mongodb::{Client, Collection};
 use openidconnect::{core::CoreProviderMetadata, IssuerUrl};
 use rand::{
-    distributions::{Alphanumeric, DistString},
-    thread_rng,
+    distr::{Alphanumeric, SampleString},
+    rng,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -105,7 +105,7 @@ async fn create_session(
     email: &str,
 ) -> Result<String, mongodb::error::Error> {
     let user_collection: Collection<User> = mongo.default_database().unwrap().collection("users");
-    let csrf = Alphanumeric.sample_string(&mut thread_rng(), 32);
+    let csrf = Alphanumeric.sample_string(&mut rng(), 32);
 
     let user = upsert_subject(mongo, subject.to_owned(), email.to_owned()).await?;
 

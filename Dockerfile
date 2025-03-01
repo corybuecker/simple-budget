@@ -14,7 +14,7 @@ COPY Cargo.toml Cargo.lock /app/
 RUN echo "fn main(){}" > /app/src/main.rs
 RUN cargo build --release
 COPY src /app/src
-RUN touch src/app/main.rs
+RUN touch /app/src/main.rs
 COPY templates /app/templates
 COPY static /app/static
 COPY --from=frontend /app/static/app.css /app/static/app.css

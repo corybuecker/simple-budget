@@ -1,16 +1,16 @@
 use crate::{
+    SharedState,
     authenticated::UserExtension,
     errors::FormError,
     models::{
         goal::Goal,
         user::{GoalHeader, User},
     },
-    SharedState,
 };
 use axum::{
+    Extension,
     extract::State,
     response::{Html, IntoResponse, Response},
-    Extension,
 };
 use chrono::Utc;
 use std::collections::HashMap;
@@ -21,30 +21,31 @@ pub async fn page(
     mut context: Extension<Context>,
     user: Extension<UserExtension>,
 ) -> Result<Response, FormError> {
-    let mut accumulations: HashMap<String, f64> = HashMap::new();
-    let mut days_remainings: HashMap<String, i16> = HashMap::new();
-    let mut per_days: HashMap<String, f64> = HashMap::new();
+    let mut accumulations: HashMap<i32, f64> = HashMap::new();
+    let mut days_remainings: HashMap<i32, i16> = HashMap::new();
+    let mut per_days: HashMap<i32, f64> = HashMap::new();
 
-    let user = User::get_by_id(&shared_state.mongo, &user.id)
+    let user = User::get_by_id(&shared_state.client, user.id)
         .await
         .unwrap();
 
-    let goal_header = &user.preferences.goal_header;
+    let goal_header = match user.preferences {
+        Some(preferences) => preferences.0.goal_header,
+        None => Some(GoalHeader::Accumulated),
+    };
 
     context.insert(
         "goal_header",
-        goal_header.as_ref().unwrap_or(&GoalHeader::Accumulated),
+        &goal_header.or(Some(GoalHeader::Accumulated)),
     );
 
-    let goals = Goal::get_by_user_id(&shared_state.mongo, &user._id)
-        .await
-        .unwrap();
+    let goals = Goal::get_all(&shared_state.client, user.id).await.unwrap();
 
     for goal in &goals {
-        accumulations.insert(goal._id.clone(), goal.accumulated());
-        per_days.insert(goal._id.clone(), goal.accumulated_per_day());
+        accumulations.insert(goal.id.unwrap(), goal.accumulated());
+        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day());
         days_remainings.insert(
-            goal._id.clone(),
+            goal.id.unwrap(),
             (goal.target_date - Utc::now())
                 .num_days()
                 .try_into()

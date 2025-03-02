@@ -1,21 +1,20 @@
+use crate::{SharedState, errors::FormError};
 use axum::{
     extract::State,
     http::StatusCode,
     response::{Html, IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
-    cookie::{Cookie, SameSite},
     SignedCookieJar,
+    cookie::{Cookie, SameSite},
 };
 use openidconnect::RedirectUrl;
 use openidconnect::{
-    core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata},
     ClientId, ClientSecret, CsrfToken, IssuerUrl, Nonce, Scope,
+    core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata},
 };
 use std::env;
 use tera::Context;
-
-use crate::{errors::FormError, SharedState};
 
 pub async fn login(state: State<SharedState>) -> Result<Response, FormError> {
     let tera = &state.tera;

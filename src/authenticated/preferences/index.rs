@@ -1,30 +1,32 @@
-use crate::{authenticated::UserExtension, errors::FormError, models::user::User, SharedState};
+use crate::{
+    SharedState,
+    authenticated::UserExtension,
+    errors::FormError,
+    models::user::{Preferences, User},
+};
 use axum::{
+    Extension,
     extract::State,
     response::{Html, IntoResponse, Response},
-    Extension,
 };
-use bson::{doc, oid::ObjectId};
-use mongodb::Client;
-use std::str::FromStr;
+use postgres_types::Json;
 use tera::{Context, Tera};
+use tokio_postgres::Client;
 
 pub async fn action(
     state: State<SharedState>,
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
-    let client: &Client = &state.mongo;
+    let client: &Client = &state.client;
 
-    let user = client
-        .default_database()
-        .expect("could not connect")
-        .collection::<User>("users")
-        .find_one(doc! {"_id": ObjectId::from_str(&user.id)?})
-        .await?
-        .expect("could not find user");
+    let user = User::get_by_id(client, user.id).await?;
+    let preferences = user
+        .preferences
+        .unwrap_or(Json(Preferences::default()))
+        .0;
 
-    context.insert("timezone", &user.preferences.timezone);
+    context.insert("timezone", &preferences.timezone);
 
     let tera: &Tera = &state.tera;
     let content = tera.render("preferences/index.html", &context)?;

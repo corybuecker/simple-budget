@@ -1,39 +1,19 @@
-use crate::{authenticated::UserExtension, errors::FormError, models::goal::Goal, SharedState};
+use crate::{SharedState, authenticated::UserExtension, errors::FormError, models::goal::Goal};
 use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::{Html, IntoResponse, Response},
     Extension,
+    extract::{Path, State},
+    response::{Html, IntoResponse, Response},
 };
-use bson::{doc, oid::ObjectId};
-use std::str::FromStr;
 use tera::Context;
 
 pub async fn page(
     shared_state: State<SharedState>,
-    Path(id): Path<String>,
-    Extension(user_extension): Extension<UserExtension>,
+    Path(id): Path<i32>,
+    Extension(user): Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
-    let goals: mongodb::Collection<Goal> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("goals");
-
-    let goal = goals
-        .find_one(
-            doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user_extension.id).unwrap()})
-        .await?;
-
-    let Some(goal) = goal else {
-        return Err(FormError {
-            message: "could not find goal".to_string(),
-            status_code: Some(StatusCode::NOT_FOUND),
-        });
-    };
-
-    context.insert("id", &goal._id);
+    let goal = Goal::get_one(&shared_state.client, id, user.id).await?;
+    context.insert("id", &goal.id);
     context.insert("name", &goal.name);
     context.insert("target", &goal.target);
     context.insert("target_date", &goal.target_date.date_naive());

@@ -19,7 +19,7 @@
                     <tbody>
                         {% for account in accounts %}
                             <tr class="odd:bg-white even:bg-gray-50 border-b"
-                                id="account_{{ account | oid }}">
+                                id="account_{{ account.id }}">
                                 <th scope="row" class="px-6 @sm:px-3 py-2 font-medium text-gray-900">{{ account.name }}</th>
                                 <td class="px-6 @sm:px-3 py-2"
                                     data-controller="formatter"
@@ -33,10 +33,10 @@
                                 </td>
                                 <td class="px-6 @sm:px-3 py-2">
                                     <div class="flex @lg:flex-row flex-col items-center gap-4">
-                                        <a href="/accounts/{{ account | oid }}"
+                                        <a href="/accounts/{{ account.id }}"
                                            class="font-medium text-blue-600 hover:underline">Edit</a>
                                         <a data-turbo-frame="confirmation-modal"
-                                           href="/accounts/{{ account | oid }}/delete">Delete</a>
+                                           href="/accounts/{{ account.id }}/delete">Delete</a>
                                     </div>
                                 </td>
                             </tr>

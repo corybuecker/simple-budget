@@ -1,37 +1,22 @@
 use crate::{
-    authenticated::UserExtension, errors::FormError, models::envelope::Envelope, SharedState,
+    SharedState, authenticated::UserExtension, errors::FormError, models::envelope::Envelope,
 };
+use anyhow::Result;
 use axum::{
+    Extension,
     extract::{Path, State},
     http::StatusCode,
     response::{Html, IntoResponse, Response},
-    Extension,
 };
-use mongodb::bson::{doc, oid::ObjectId};
-use std::str::FromStr;
 use tera::Context;
 
 pub async fn modal(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
-    Path(id): Path<String>,
+    Path(id): Path<i32>,
 ) -> Result<Response, FormError> {
-    let envelopes: mongodb::Collection<Envelope> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("envelopes");
+    let envelope = Envelope::get_by_user_id(&shared_state.client, id, user.id).await?;
 
-    let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
-
-    let envelope = envelopes.find_one(filter.clone()).await?;
-
-    let Some(_) = envelope else {
-        return Err(FormError {
-            message: "could not find envelope".to_string(),
-            status_code: Some(StatusCode::NOT_FOUND),
-        });
-    };
     let tera = shared_state.tera.clone();
     let mut context = Context::new();
     context.insert("envelope", &envelope);
@@ -43,20 +28,11 @@ pub async fn modal(
 pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
-    Path(id): Path<String>,
+    Path(id): Path<i32>,
 ) -> Result<Response, FormError> {
-    let envelopes: mongodb::Collection<Envelope> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("envelopes");
+    let envelope = Envelope::get_by_user_id(&shared_state.client, id, user.id).await?;
 
-    let filter = doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()};
-    let envelope = envelopes.find_one(filter.clone()).await?;
-    let Some(_) = envelope else {
-        return Ok((StatusCode::NOT_FOUND, Html::from("Not Found")).into_response());
-    };
-    let _ = envelopes.delete_one(filter).await?;
+    envelope.delete(&shared_state.client).await?;
 
     let tera = shared_state.tera.clone();
     let mut context = Context::new();

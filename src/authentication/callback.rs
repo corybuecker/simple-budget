@@ -1,26 +1,23 @@
 use crate::{
-    errors::FormError,
-    models::user::{Preferences, Session, User},
     SharedState,
+    errors::FormError,
+    models::user::{Session, User},
 };
+use anyhow::{Result, anyhow};
 use axum::{
     extract::State,
     http::StatusCode,
     response::{IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
-    cookie::{Cookie, SameSite},
     Query, SignedCookieJar,
+    cookie::{Cookie, SameSite},
 };
 use chrono::{Days, Utc};
-use mongodb::{
-    bson::{doc, oid::ObjectId, Uuid},
-    Client, Collection,
-};
 use openidconnect::RedirectUrl;
 use openidconnect::{
-    core::{CoreClient, CoreProviderMetadata},
     AuthorizationCode, ClientId, ClientSecret, IssuerUrl, Nonce, TokenResponse,
+    core::{CoreClient, CoreProviderMetadata},
 };
 use rand::{
     distr::{Alphanumeric, SampleString},
@@ -28,6 +25,9 @@ use rand::{
 };
 use serde::Deserialize;
 use std::env;
+use tokio_postgres::Client;
+use tracing::debug;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct GoogleCallback {
@@ -123,9 +123,9 @@ pub async fn callback(
     let email = email.to_string();
     let secure = env::var("SECURE").unwrap_or("false".to_string());
 
-    match create_session(shared_state.mongo.clone(), subject, email).await {
+    match create_session(&shared_state.client, &subject, &email).await {
         Ok(id) => {
-            let cookie = Cookie::build(("session_id", id))
+            let cookie = Cookie::build(("session_id", id.to_string()))
                 .expires(None)
                 .http_only(true)
                 .path("/")
@@ -142,77 +142,31 @@ pub async fn callback(
     }
 }
 
-async fn create_session(
-    mongo: Client,
-    subject: String,
-    email: String,
-) -> Result<String, mongodb::error::Error> {
-    let user_collection: Collection<User> = mongo.default_database().unwrap().collection("users");
+async fn create_session(client: &Client, subject: &str, email: &str) -> Result<Uuid> {
     let csrf = Alphanumeric.sample_string(&mut rng(), 32);
 
-    let user = upsert_subject(mongo, subject, email).await?;
+    let user = upsert_subject(client, subject.to_owned(), email.to_owned()).await?;
 
     let expiration = Utc::now().checked_add_days(Days::new(1)).expect("msg");
-    let session = Session {
-        _id: ObjectId::new().to_string(),
-        id: Uuid::new(),
+    let mut session = Session {
+        id: None,
+        user_id: user.id,
         expiration,
         csrf: csrf.clone(),
     };
-    let _result = user_collection
-        .update_one(
-            doc! {"subject": user.subject},
-            doc! {"$push": doc! {"sessions": doc! {"expiration": session.expiration, "id": session.id, "_id": ObjectId::new(), "csrf": session.csrf}}}
-        )
-        .await?;
 
-    Ok(session.id.to_string())
+    session.create(client).await?;
+    let id = session.id.to_owned();
+
+    id.ok_or(anyhow!("could not create a session"))
 }
 
-async fn upsert_subject(
-    mongo: Client,
-    subject: String,
-    email: String,
-) -> Result<User, mongodb::error::Error> {
-    let user_collection: Collection<User> = mongo.default_database().unwrap().collection("users");
-    let existing_user = user_collection.find_one(doc! {"subject": &subject}).await;
-
-    if existing_user.is_err() {
-        Err(existing_user.err().unwrap())
-    } else {
-        match existing_user.unwrap() {
-            Some(user) => {
-                let update = user_collection
-                    .update_one(
-                        doc! {"subject": &subject},
-                        doc! {"$set": doc! {"email": email}},
-                    )
-                    .await;
-
-                if update.is_err() {
-                    let error = update.err();
-                    log::info!("{:?}", &error);
-                    return Err(error.unwrap());
-                }
-
-                Ok(user)
-            }
-            None => {
-                let user = User {
-                    subject,
-                    email,
-                    preferences: Preferences {
-                        timezone: None,
-                        goal_header: None,
-                        forecast_offset: None,
-                    },
-                    sessions: Some(Vec::new()),
-                    _id: ObjectId::new().to_string(),
-                };
-                let result = user_collection.insert_one(&user).await;
-                log::info!("{:?}", result);
-                Ok(user)
-            }
+async fn upsert_subject(client: &Client, subject: String, email: String) -> Result<User> {
+    match User::get_by_subject(client, subject.clone()).await {
+        Ok(user) => Ok(user),
+        Err(e) => {
+            debug!("🚧 {:#?}", e);
+            Ok(User::create(client, email, subject).await?)
         }
     }
 }

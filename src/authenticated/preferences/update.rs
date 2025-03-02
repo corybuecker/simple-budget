@@ -1,20 +1,21 @@
-use std::{collections::HashMap, str::FromStr};
-
 use super::PreferencesForm;
 use crate::{
-    authenticated::{dashboard::generate_dashboard_context_for, UserExtension},
-    errors::FormError,
-    models::{goal::Goal, user::User},
     SharedState,
+    authenticated::{UserExtension, dashboard::generate_dashboard_context_for},
+    errors::FormError,
+    models::{
+        goal::Goal,
+        user::{Preferences, User},
+    },
 };
 use axum::{
+    Extension, Form,
     extract::State,
     response::{Html, IntoResponse, Response},
-    Extension, Form,
 };
-use bson::oid::ObjectId;
 use chrono::Utc;
-use mongodb::bson::doc;
+use postgres_types::Json;
+use std::collections::HashMap;
 use tera::Context;
 
 pub async fn action(
@@ -22,62 +23,60 @@ pub async fn action(
     user: Extension<UserExtension>,
     form: Form<PreferencesForm>,
 ) -> Result<Response, FormError> {
-    let mut user = User::get_by_id(&shared_state.mongo, &user.id)
+    let mut user = User::get_by_id(&shared_state.client, user.id)
         .await
         .unwrap();
 
+    let mut preferences = match user.preferences {
+        Some(preferences) => preferences.0.clone(),
+        None => Preferences {
+            goal_header: None,
+            timezone: None,
+            forecast_offset: None,
+        },
+    };
+
     if let Some(string) = &form.timezone {
         if string.is_empty() {
-            user.preferences.timezone = None
+            preferences.timezone = None
         } else {
-            user.preferences.timezone = Some(string.clone())
+            preferences.timezone = Some(string.clone())
         }
     }
 
     if let Some(goal_header) = &form.goal_header {
-        user.preferences.goal_header = Some(goal_header.to_owned());
+        let goal_header = goal_header.to_owned();
+        preferences.goal_header = Some(goal_header);
     }
 
     match form.forecast_offset {
         None => {}
         Some(forecast_offset) => {
             if forecast_offset + 1 > 3 {
-                user.preferences.forecast_offset = Some(1)
+                preferences.forecast_offset = Some(1)
             } else {
-                user.preferences.forecast_offset = Some(forecast_offset + 1)
+                preferences.forecast_offset = Some(forecast_offset + 1)
             }
         }
     };
 
-    let collection = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection::<User>("users");
-
-    let _ = collection
-        .update_one(doc! {"_id": ObjectId::from_str(&user._id).unwrap()}, doc! {
-            "$set":doc! {
-            "preferences": doc! {"timezone": &user.preferences.timezone, 
-            "forecast_offset": &user.preferences.forecast_offset, "goal_header": &user.preferences.goal_header}}})
-        .await?;
+    user.preferences = Some(Json(preferences.clone()));
+    user.update(&shared_state.client).await?;
 
     let tera = &shared_state.tera;
     let mut goals_context = Context::new();
-    let goal_header = &user.preferences.goal_header;
-    let mut accumulations: HashMap<String, f64> = HashMap::new();
-    let mut days_remainings: HashMap<String, i64> = HashMap::new();
-    let mut per_days: HashMap<String, f64> = HashMap::new();
-    let goals = Goal::get_by_user_id(&shared_state.mongo, &user._id)
-        .await
-        .unwrap();
+    let goal_header = preferences.goal_header.clone();
+    let mut accumulations: HashMap<i32, f64> = HashMap::new();
+    let mut days_remainings: HashMap<i32, i64> = HashMap::new();
+    let mut per_days: HashMap<i32, f64> = HashMap::new();
+    let goals = Goal::get_all(&shared_state.client, user.id).await.unwrap();
 
-    goals_context.insert("goal_header", goal_header);
+    goals_context.insert("goal_header", &goal_header);
 
     for goal in &goals {
-        accumulations.insert(goal._id.clone(), goal.accumulated());
-        per_days.insert(goal._id.clone(), goal.accumulated_per_day());
-        days_remainings.insert(goal._id.clone(), (goal.target_date - Utc::now()).num_days());
+        accumulations.insert(goal.id.unwrap(), goal.accumulated());
+        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day());
+        days_remainings.insert(goal.id.unwrap(), (goal.target_date - Utc::now()).num_days());
     }
 
     goals_context.insert("goals", &goals);
@@ -88,7 +87,7 @@ pub async fn action(
 
     let goals_html = tera.render("goals/_table.html", &goals_context)?;
 
-    let dashboard_context = generate_dashboard_context_for(&user, &shared_state.mongo).await;
+    let dashboard_context = generate_dashboard_context_for(&user, &shared_state.client).await;
 
     let dashboard_content = shared_state
         .tera

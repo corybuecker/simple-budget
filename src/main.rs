@@ -1,36 +1,36 @@
-mod authentication;
-mod errors;
-mod jobs;
-mod utilities;
 use axum::{
+    Router,
     body::Body,
     extract::{FromRef, Path, Request},
     http::{HeaderValue, StatusCode},
-    middleware::{from_fn, Next},
+    middleware::{Next, from_fn},
     response::{IntoResponse, Response},
     routing::get,
-    Router,
 };
 use axum_extra::extract::cookie::Key;
-use bson::doc;
-use include_dir::{include_dir, Dir};
+use include_dir::{Dir, include_dir};
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
-use mongodb::Client;
 use serde::Serialize;
-use std::{env, time::Duration};
+use std::{env, sync::Arc, time::Duration};
 use tera::{Context, Tera};
 use tokio::{
     select,
-    signal::unix::{signal, SignalKind},
+    signal::unix::{SignalKind, signal},
     spawn,
     sync::mpsc,
     time::interval,
 };
-use utilities::tera::{digest_asset, extract_id};
-mod authenticated;
+use tokio_postgres::{Client, NoTls};
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
-use tracing::{debug, Level};
+use tracing::{Level, debug};
+use utilities::tera::{digest_asset, extract_id};
+
+mod authenticated;
+mod authentication;
+mod errors;
+mod jobs;
 mod models;
+mod utilities;
 
 #[derive(Serialize, Debug, Clone)]
 pub enum Section {
@@ -51,10 +51,9 @@ struct Broker {
     sender: mpsc::Sender<String>,
 }
 
-#[derive(Clone)]
 pub struct SharedState {
     tera: Tera,
-    mongo: Client,
+    client: Client,
     key: Key,
     broker: Broker,
 }
@@ -161,22 +160,24 @@ async fn main() {
         );
     }
 
-    let mongo = mongo_client().await.expect("cannot create Mongo client");
-
+    let (client, connection) = tokio_postgres::connect(&env::var("DATABASE_URL").unwrap(), NoTls)
+        .await
+        .unwrap();
+    spawn(connection);
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
     let (sender, receiver) = mpsc::channel::<String>(100);
 
-    let shared_state = SharedState {
+    let shared_state = Arc::new(SharedState {
         tera,
-        mongo,
+        client,
         key,
         broker: Broker { sender },
-    };
+    });
 
     let app = Router::new()
-        .merge(authentication::authentication_router())
-        .merge(authenticated::authenticated_router(shared_state.clone()))
+        // .merge(authentication::authentication_router())
+        //  .merge(authenticated::authenticated_router(shared_state.clone()))
         .merge(
             Router::new()
                 .route("/assets/{*file}", get(fetch_asset))
@@ -214,26 +215,5 @@ async fn main() {
     }
 }
 
-async fn mongo_client() -> Result<mongodb::Client, mongodb::error::Error> {
-    let mongo_connection_string =
-        env::var("DATABASE_URL").expect("could not find database connection URL");
-
-    Client::with_uri_str(mongo_connection_string).await
-}
-
 #[cfg(test)]
 mod test_utils;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_mongo_client() {
-        let client = mongo_client().await;
-        assert!(client.is_ok());
-        let client = client.unwrap();
-        let databases = client.list_databases().await;
-        assert!(databases.is_ok())
-    }
-}

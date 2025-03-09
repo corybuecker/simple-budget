@@ -4,7 +4,7 @@ use core::fmt;
 use postgres_types::Json;
 use serde::Deserialize;
 use std::error::Error;
-use tokio_postgres::Client;
+use tokio_postgres::{Client, row};
 
 #[derive(Debug)]
 pub struct NotFoundError {}
@@ -85,7 +85,7 @@ pub struct User {
     pub email: String,
     pub subject: String,
     pub sessions: Option<Vec<Session>>,
-    pub preferences: Json<Preferences>,
+    pub preferences: Option<Json<Preferences>>,
 }
 
 impl TryInto<User> for tokio_postgres::Row {
@@ -105,13 +105,15 @@ impl TryInto<User> for tokio_postgres::Row {
 impl User {
     pub async fn create(client: &Client, email: String, subject: String) -> Result<Self> {
         let id = client
-            .execute(
+            .query_one(
                 "INSERT INTO users (email, subject) VALUES ($1, $2) RETURNING id",
-                &[&&email, &subject],
+                &[&email, &subject],
             )
             .await?;
 
-        Self::get_by_id(client, id as i32).await
+        let id: i32 = id.get("id");
+
+        Self::get_by_id(client, id).await
     }
 
     pub async fn get_by_subject(client: &Client, subject: String) -> Result<Self> {
@@ -120,6 +122,7 @@ impl User {
             .await?
             .try_into()
     }
+
     pub async fn get_by_id(client: &Client, id: i32) -> Result<Self> {
         client
             .query_one("SELECT * FROM users WHERE id = $1", &[&id])

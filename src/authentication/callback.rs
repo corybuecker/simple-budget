@@ -26,6 +26,7 @@ use rand::{
 use serde::Deserialize;
 use std::env;
 use tokio_postgres::Client;
+use tracing::debug;
 
 #[derive(Deserialize)]
 pub struct GoogleCallback {
@@ -161,6 +162,9 @@ async fn create_session(client: &Client, subject: &str, email: &str) -> Result<i
 async fn upsert_subject(client: &Client, subject: String, email: String) -> Result<User> {
     match User::get_by_subject(client, subject.clone()).await {
         Ok(user) => Ok(user),
-        Err(_) => Ok(User::create(client, email, subject).await?),
+        Err(e) => {
+            debug!("🚧 {:#?}", e);
+            Ok(User::create(client, email, subject).await?)
+        }
     }
 }

@@ -1,9 +1,10 @@
 use anyhow::Result;
 use chrono::{DateTime, Datelike, Days, Local, Months, TimeDelta, Timelike, Utc};
 use postgres_types::{FromSql, ToSql};
+use serde::Serialize;
 use tokio_postgres::Client;
 
-#[derive(Debug, Clone, FromSql, ToSql)]
+#[derive(Debug, Clone, Serialize, FromSql, ToSql)]
 pub enum Recurrence {
     Never,
     Daily,
@@ -13,7 +14,7 @@ pub enum Recurrence {
     Yearly,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub struct Goal {
     pub id: i32,
     pub user_id: i32,
@@ -49,7 +50,29 @@ impl Goal {
         Ok(())
     }
 
-    pub async fn get_by_user_id(client: &Client, user_id: i32) -> Result<Vec<Self>> {
+    pub async fn delete(&self, client: &Client) -> Result<()> {
+        client
+            .execute(
+                "DELETE FROM goals WHERE user_id = $1 and id = $2",
+                &[&self.user_id, &self.id],
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub async fn get_one(client: &Client, id: i32, user_id: i32) -> Result<Self> {
+        client
+            .query_one(
+                "SELECT goals.* FROM goals
+                INNER JOIN users ON users.id = goals.user_id
+                WHERE users.id = $1 AND goals.id = $2",
+                &[&user_id, &id],
+            )
+            .await?
+            .try_into()
+    }
+
+    pub async fn get_all(client: &Client, user_id: i32) -> Result<Vec<Self>> {
         let rows = client
             .query(
                 "SELECT goals.* FROM goals INNER

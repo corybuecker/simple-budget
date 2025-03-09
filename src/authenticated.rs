@@ -1,7 +1,4 @@
-use crate::{
-    SharedState,
-    models::user::Session,
-};
+use crate::{SharedState, models::user::Session};
 use axum::{
     Extension, Router,
     extract::{Request, State},
@@ -19,12 +16,12 @@ use tokio::sync::watch;
 //pub mod accounts;
 //mod dashboard;
 mod envelopes;
-//mod goals;
+mod goals;
 //mod preferences;
 
 #[derive(Debug, Clone)]
 pub struct UserExtension {
-    pub id: String,
+    pub id: i32,
     pub csrf: String,
     pub channel_sender: watch::Sender<String>,
 
@@ -72,7 +69,7 @@ async fn authenticated(
     if let Ok(session) = session {
         let (tx, rx) = watch::channel(String::new());
         request.extensions_mut().insert(UserExtension {
-            id: session.user_id.to_string(),
+            id: session.user_id,
             csrf: session.csrf.clone(),
             channel_sender: tx,
             channel_receiver: rx,
@@ -99,7 +96,7 @@ async fn authenticated(
 pub fn authenticated_router(state: SharedState) -> Router<SharedState> {
     Router::new()
         // .nest("/accounts", accounts::accounts_router())
-        // .nest("/goals", goals::goals_router())
+        .nest("/goals", goals::goals_router())
         // .nest("/preferences", preferences::preferences_router())
         .nest("/envelopes", envelopes::envelopes_router())
         // .route("/", get(dashboard::index))

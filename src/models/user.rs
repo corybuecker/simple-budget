@@ -2,7 +2,7 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use core::fmt;
 use postgres_types::Json;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use tokio_postgres::{Client, row};
 
@@ -17,7 +17,7 @@ impl fmt::Display for NotFoundError {
 
 impl Error for NotFoundError {}
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum GoalHeader {
     Accumulated,
     DaysRemaining,

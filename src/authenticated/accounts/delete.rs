@@ -1,14 +1,12 @@
 use crate::{
-    authenticated::UserExtension, errors::FormError, models::account::Account, SharedState,
+    SharedState, authenticated::UserExtension, errors::FormError, models::account::Account,
 };
 use axum::{
+    Extension,
     extract::{Path, State},
     http::StatusCode,
     response::{Html, IntoResponse, Response},
-    Extension,
 };
-use mongodb::bson::{doc, oid::ObjectId};
-use std::str::FromStr;
 use tera::Context;
 use tracing::info;
 
@@ -78,9 +76,9 @@ mod tests {
     use crate::models::account::Account;
 
     use crate::test_utils::{state_for_tests, user_for_tests};
+    use axum::Router;
     use axum::body::Body;
     use axum::http::Request;
-    use axum::Router;
 
     use tower::ServiceExt;
 

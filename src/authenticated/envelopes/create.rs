@@ -59,7 +59,7 @@ pub async fn page(
         id: None,
         name: form.name.to_owned(),
         amount: form.amount.to_owned(),
-        user_id: Some(user.id.parse().unwrap()),
+        user_id: Some(user.id),
     };
 
     envelope.create(&shared_state.client).await?;

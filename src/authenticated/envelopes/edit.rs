@@ -1,8 +1,5 @@
 use crate::{
-    SharedState,
-    authenticated::UserExtension,
-    errors::FormError,
-    models::envelope::{Envelope},
+    SharedState, authenticated::UserExtension, errors::FormError, models::envelope::Envelope,
 };
 use anyhow::Result;
 use axum::{
@@ -18,8 +15,7 @@ pub async fn page(
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
-    let envelope =
-        Envelope::get_by_user_id(&shared_state.client, id, user.id.parse::<i32>().unwrap()).await?;
+    let envelope = Envelope::get_by_user_id(&shared_state.client, id, user.id).await?;
 
     context.insert("id", &envelope.id);
     context.insert("name", &envelope.name);

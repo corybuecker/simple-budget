@@ -5,6 +5,7 @@ use axum::{
     http::{HeaderMap, Method, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Redirect, Response},
+    routing::get,
 };
 use axum_extra::extract::{
     SignedCookieJar,
@@ -13,11 +14,11 @@ use axum_extra::extract::{
 use std::env;
 use tokio::sync::watch;
 
-//pub mod accounts;
-//mod dashboard;
+pub mod accounts;
+mod dashboard;
 mod envelopes;
 mod goals;
-//mod preferences;
+mod preferences;
 
 #[derive(Debug, Clone)]
 pub struct UserExtension {
@@ -95,11 +96,11 @@ async fn authenticated(
 
 pub fn authenticated_router(state: SharedState) -> Router<SharedState> {
     Router::new()
-        // .nest("/accounts", accounts::accounts_router())
+        .nest("/accounts", accounts::accounts_router())
         .nest("/goals", goals::goals_router())
-        // .nest("/preferences", preferences::preferences_router())
+        .nest("/preferences", preferences::preferences_router())
         .nest("/envelopes", envelopes::envelopes_router())
-        // .route("/", get(dashboard::index))
+        .route("/", get(dashboard::index))
         .route_layer(middleware::from_fn(validate_csrf))
         .route_layer(middleware::from_fn_with_state(state, authenticated))
 }

@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
 use tracing::info;
 
@@ -22,7 +22,10 @@ pub async fn convert_goals() -> Result<f64> {
             id: None,
             name: goal.name.clone(),
             amount: goal.target,
-            user_id: Some(goal.user_id),
+            user_id: Some(
+                goal.user_id
+                    .ok_or(anyhow!("envelope must have a user ID"))?,
+            ),
         };
 
         envelope.create(transaction.client()).await?;

@@ -13,11 +13,28 @@ pub enum Recurrence {
     Quarterly,
     Yearly,
 }
+#[derive(Debug)]
+pub struct RecurrenceError {}
 
+impl std::str::FromStr for Recurrence {
+    fn from_str(string: &str) -> Result<Self, RecurrenceError> {
+        match string {
+            "never" => Ok(Self::Never),
+            "daily" => Ok(Self::Daily),
+            "weekly" => Ok(Self::Weekly),
+            "monthly" => Ok(Self::Monthly),
+            "quarterly" => Ok(Self::Quarterly),
+            "yearly" => Ok(Self::Yearly),
+            _ => Err(RecurrenceError {}),
+        }
+    }
+
+    type Err = RecurrenceError;
+}
 #[derive(Serialize, Debug)]
 pub struct Goal {
-    pub id: i32,
-    pub user_id: i32,
+    pub id: Option<i32>,
+    pub user_id: Option<i32>,
     pub name: String,
     pub recurrence: Recurrence,
     pub target_date: DateTime<Utc>,

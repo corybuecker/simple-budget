@@ -13,14 +13,14 @@ CREATE TABLE users (
 
 CREATE TABLE sessions (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
+    user_id INTEGER REFERENCES users(id) NOT NULL,
     expiration TIMESTAMP WITH TIME ZONE NOT NULL,
     csrf TEXT NOT NULL
 );
 
 CREATE TABLE envelopes (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
+    user_id INTEGER REFERENCES users(id) NOT NULL,
     name TEXT NOT NULL,
     amount DECIMAL(10, 2) NOT NULL
 );
@@ -29,7 +29,7 @@ CREATE TYPE goal_recurrence AS ENUM ('daily', 'weekly', 'monthly', 'yearly', 'ne
 
 CREATE TABLE goals (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
+    user_id INTEGER REFERENCES users(id) NOT NULL,
     name TEXT NOT NULL,
     target DECIMAL(10, 2) NOT NULL,
     target_date DATE NOT NULL,

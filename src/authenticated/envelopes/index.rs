@@ -13,8 +13,7 @@ pub async fn page(
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
-    let envelopes =
-        Envelope::get_all(&shared_state.client, user.id.parse::<i32>().unwrap()).await?;
+    let envelopes = Envelope::get_all(&shared_state.client, user.id).await?;
     context.insert("envelopes", &envelopes);
     let content = shared_state.tera.render("envelopes/index.html", &context)?;
 

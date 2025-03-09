@@ -13,7 +13,7 @@ use openidconnect::{
     ClientId, ClientSecret, CsrfToken, IssuerUrl, Nonce, Scope,
     core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata},
 };
-use std::{env, sync::Arc};
+use std::env;
 use tera::Context;
 
 pub async fn login(state: State<SharedState>) -> Result<Response, FormError> {

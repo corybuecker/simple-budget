@@ -1,4 +1,3 @@
-use crate::errors::ModelError;
 use anyhow::Result;
 use chrono::{DateTime, Datelike, Days, Local, Months, TimeDelta, Timelike, Utc};
 use postgres_types::{FromSql, ToSql};
@@ -87,7 +86,7 @@ impl Goal {
         let mut goal = Goal {
             id: self.id,
             target: self.target,
-            user_id: self.user_id.clone(),
+            user_id: self.user_id,
             recurrence: self.recurrence.clone(),
             name: self.name.clone(),
             target_date: self.target_date,

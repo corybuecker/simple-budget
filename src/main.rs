@@ -12,7 +12,7 @@ use axum_extra::extract::cookie::Key;
 use include_dir::{Dir, include_dir};
 use jobs::{
     clear_sessions::clear_sessions,
-    convert_goals::{self, convert_goals},
+    convert_goals::{convert_goals},
 };
 use serde::Serialize;
 use std::{env, sync::Arc, time::Duration};

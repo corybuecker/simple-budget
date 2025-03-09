@@ -3,7 +3,6 @@ use axum::{
     Router,
     routing::{get, post},
 };
-use std::sync::Arc;
 mod callback;
 mod login;
 mod token;

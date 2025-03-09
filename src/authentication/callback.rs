@@ -1,7 +1,7 @@
 use crate::{
     SharedState,
     errors::FormError,
-    models::user::{Preferences, Session, User},
+    models::user::{Session, User},
 };
 use anyhow::{Result, anyhow};
 use axum::{
@@ -24,7 +24,7 @@ use rand::{
     rng,
 };
 use serde::Deserialize;
-use std::{env, sync::Arc};
+use std::env;
 use tokio_postgres::Client;
 
 #[derive(Deserialize)]
@@ -153,7 +153,7 @@ async fn create_session(client: &Client, subject: &str, email: &str) -> Result<i
         csrf: csrf.clone(),
     };
 
-    &session.create(client).await?;
+    session.create(client).await?;
     let id = session.id.to_owned();
     id.ok_or(anyhow!("could not create a session"))
 }

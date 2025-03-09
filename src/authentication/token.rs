@@ -14,7 +14,7 @@ use rand::{
 };
 use serde::Deserialize;
 use serde_json::json;
-use std::{env, sync::Arc};
+use std::env;
 use tokio_postgres::Client;
 use tracing::debug;
 
@@ -101,7 +101,7 @@ async fn create_session(client: &Client, subject: &str, email: &str) -> Result<i
         csrf: csrf.clone(),
     };
 
-    &session.create(client).await?;
+    session.create(client).await?;
     let id = session.id.to_owned();
     id.ok_or(anyhow!("could not create a session"))
 }

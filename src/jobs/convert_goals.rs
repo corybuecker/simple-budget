@@ -13,7 +13,7 @@ pub async fn convert_goals() -> Result<f64> {
     let mut client = database_client().await?;
     let transaction = client.transaction().await?;
 
-    let goals = Goal::get_expired(&transaction.client())
+    let goals = Goal::get_expired(transaction.client())
         .await
         .context("convert goals")?;
 
@@ -22,14 +22,14 @@ pub async fn convert_goals() -> Result<f64> {
             id: None,
             name: goal.name.clone(),
             amount: goal.target,
-            user_id: goal.user_id.clone(),
+            user_id: goal.user_id,
         };
 
-        envelope.create(&transaction.client()).await?;
+        envelope.create(transaction.client()).await?;
 
         let new_goal = goal.increment();
 
-        new_goal.update(&transaction.client()).await?;
+        new_goal.update(transaction.client()).await?;
     }
     Ok(1.0)
 }

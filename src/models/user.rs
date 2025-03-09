@@ -107,15 +107,15 @@ impl User {
         Self::get_by_id(client, id as i32).await
     }
     pub async fn get_by_subject(client: &Client, subject: String) -> Result<Self> {
-        Ok(client
+        client
             .query_one("SELECT * FROM users WHERE subject = $1", &[&subject])
             .await?
-            .try_into()?)
+            .try_into()
     }
     pub async fn get_by_id(client: &Client, id: i32) -> Result<Self> {
-        Ok(client
+        client
             .query_one("SELECT * FROM users WHERE id = $1", &[&id])
             .await?
-            .try_into()?)
+            .try_into()
     }
 }

@@ -12,38 +12,16 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
 };
 use chrono::{DateTime, Utc};
-use futures_util::{SinkExt, stream::StreamExt};
-use mongodb::{
-    Collection,
-    bson::{self, Uuid, doc, oid::ObjectId},
-    options::FindOneOptions,
-};
 use serde::{Deserialize, Serialize};
 use std::env;
 use tokio::{spawn, sync::watch};
 use tracing::debug;
-pub mod accounts;
-mod dashboard;
+
+//pub mod accounts;
+//mod dashboard;
 mod envelopes;
-mod goals;
-mod preferences;
-
-#[derive(Deserialize, Serialize, Debug)]
-struct Session {
-    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
-    expiration: DateTime<Utc>,
-    id: bson::Uuid,
-    _id: ObjectId,
-    csrf: String,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-struct User {
-    _id: ObjectId,
-    subject: String,
-    email: String,
-    sessions: Vec<Session>,
-}
+//mod goals;
+//mod preferences;
 
 #[derive(Debug, Clone)]
 pub struct UserExtension {
@@ -125,46 +103,13 @@ async fn authenticated(
     }
 }
 
-async fn message_handler(socket: WebSocket, user: UserExtension, state: SharedState) {
-    let (mut sender, mut receiver) = socket.split();
-
-    let listener = spawn(async move {
-        while let Some(message) = receiver.next().await {
-            if let Ok(message) = message {
-                debug!("{:#?}", message);
-                let _ = user.channel_sender.send("test".to_owned());
-                let _ = sender.send("test received".into()).await;
-                let _ = state.broker.sender.send("IN BROKER!!!".to_owned()).await;
-            } else {
-                return;
-            };
-        }
-    });
-
-    match tokio::join!(listener) {
-        (Ok(_),) => {}
-        (Err(join_error),) => {
-            tracing::error!("{}", join_error);
-        }
-    }
-}
-
-async fn websocket_upgrade(
-    ws: WebSocketUpgrade,
-    Extension(user): Extension<UserExtension>,
-    State(state): State<SharedState>,
-) -> Response {
-    ws.on_upgrade(|socket| message_handler(socket, user, state))
-}
-
 pub fn authenticated_router(state: SharedState) -> Router<SharedState> {
     Router::new()
-        .nest("/accounts", accounts::accounts_router())
-        .nest("/goals", goals::goals_router())
-        .nest("/preferences", preferences::preferences_router())
+        // .nest("/accounts", accounts::accounts_router())
+        // .nest("/goals", goals::goals_router())
+        // .nest("/preferences", preferences::preferences_router())
         .nest("/envelopes", envelopes::envelopes_router())
-        .route("/", get(dashboard::index))
-        .route("/ws", get(websocket_upgrade))
+        // .route("/", get(dashboard::index))
         .route_layer(middleware::from_fn(validate_csrf))
         .route_layer(middleware::from_fn_with_state(state, authenticated))
 }

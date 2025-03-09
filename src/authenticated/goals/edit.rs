@@ -1,12 +1,10 @@
-use crate::{authenticated::UserExtension, errors::FormError, models::goal::Goal, SharedState};
+use crate::{SharedState, authenticated::UserExtension, errors::FormError, models::goal::Goal};
 use axum::{
+    Extension,
     extract::{Path, State},
     http::StatusCode,
     response::{Html, IntoResponse, Response},
-    Extension,
 };
-use bson::{doc, oid::ObjectId};
-use std::str::FromStr;
 use tera::Context;
 
 pub async fn page(

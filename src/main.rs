@@ -10,10 +10,7 @@ use axum::{
 };
 use axum_extra::extract::cookie::Key;
 use include_dir::{Dir, include_dir};
-use jobs::{
-    clear_sessions::clear_sessions,
-    convert_goals::{convert_goals},
-};
+use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
 use serde::Serialize;
 use std::{env, sync::Arc, time::Duration};
 use tera::{Context, Tera};
@@ -29,7 +26,7 @@ use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::{Level, debug};
 use utilities::tera::{digest_asset, extract_id};
 
-// mod authenticated;
+mod authenticated;
 mod authentication;
 mod errors;
 mod jobs;
@@ -182,7 +179,7 @@ async fn main() {
 
     let app = Router::new()
         .merge(authentication::authentication_router())
-        //     .merge(authenticated::authenticated_router(shared_state))
+        .merge(authenticated::authenticated_router(shared_state.clone()))
         .merge(
             Router::new()
                 .route("/assets/{*file}", get(fetch_asset))

@@ -1,24 +1,20 @@
 use crate::{
     SharedState,
-    models::user::{Session, User},
+    models::user::Session,
 };
 use axum::{
     Extension, Router,
-    extract::{Request, State, WebSocketUpgrade, ws::WebSocket},
+    extract::{Request, State},
     http::{HeaderMap, Method, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Redirect, Response},
-    routing::get,
 };
 use axum_extra::extract::{
     SignedCookieJar,
     cookie::{Cookie, SameSite},
 };
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use std::env;
-use tokio::{spawn, sync::watch};
-use tracing::debug;
+use tokio::sync::watch;
 
 //pub mod accounts;
 //mod dashboard;

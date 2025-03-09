@@ -1,10 +1,10 @@
 use super::EnvelopeForm;
 use crate::{
-    SharedState, authenticated::UserExtension, errors::FormError, models::envelope::Envelope,
+    SharedState, errors::FormError, models::envelope::Envelope,
 };
 use anyhow::Result;
 use axum::{
-    Extension, Form,
+    Form,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},

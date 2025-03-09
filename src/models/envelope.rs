@@ -25,7 +25,7 @@ impl TryInto<Envelope> for tokio_postgres::Row {
 
 impl Envelope {
     pub async fn get_by_user_id(client: &Client, id: i32, user_id: i32) -> Result<Self> {
-        Ok(client
+        client
             .query_one(
                 "SELECT envelopes.* FROM envelopes
                 INNER JOIN users ON users.id = envelopes.user_id
@@ -33,7 +33,7 @@ impl Envelope {
                 &[&user_id, &id],
             )
             .await?
-            .try_into()?)
+            .try_into()
     }
 
     pub async fn get_all(client: &Client, user_id: i32) -> Result<Vec<Self>> {

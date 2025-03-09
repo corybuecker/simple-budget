@@ -2,13 +2,12 @@ use crate::{
     SharedState,
     authenticated::UserExtension,
     errors::FormError,
-    models::envelope::{self, Envelope},
+    models::envelope::{Envelope},
 };
 use anyhow::Result;
 use axum::{
     Extension,
     extract::{Path, State},
-    http::StatusCode,
     response::{Html, IntoResponse, Response},
 };
 use tera::Context;

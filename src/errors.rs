@@ -1,4 +1,3 @@
-use anyhow::Error;
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},

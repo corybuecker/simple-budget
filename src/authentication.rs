@@ -1,8 +1,9 @@
 use crate::SharedState;
 use axum::{
-    routing::{get, post},
     Router,
+    routing::{get, post},
 };
+use std::sync::Arc;
 mod callback;
 mod login;
 mod token;

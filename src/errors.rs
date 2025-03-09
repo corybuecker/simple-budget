@@ -2,6 +2,7 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use tracing::error;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -16,28 +17,10 @@ impl IntoResponse for FormError {
     }
 }
 
-impl From<bson::oid::Error> for FormError {
-    fn from(value: bson::oid::Error) -> Self {
-        FormError {
-            message: value.to_string(),
-            status_code: None,
-        }
-    }
-}
-
 impl From<tera::Error> for FormError {
     fn from(value: tera::Error) -> Self {
-        log::error!("{:#?}", value);
+        error!("{:#?}", value);
 
-        FormError {
-            message: value.to_string(),
-            status_code: None,
-        }
-    }
-}
-
-impl From<mongodb::error::Error> for FormError {
-    fn from(value: mongodb::error::Error) -> Self {
         FormError {
             message: value.to_string(),
             status_code: None,
@@ -47,7 +30,7 @@ impl From<mongodb::error::Error> for FormError {
 
 impl From<ModelError> for FormError {
     fn from(value: ModelError) -> Self {
-        log::error!("{:#?}", value);
+        error!("{:#?}", value);
 
         FormError {
             message: value.to_string(),
@@ -59,26 +42,6 @@ impl From<ModelError> for FormError {
 #[derive(Debug)]
 pub enum ModelError {
     MissingDefaultDatabase,
-
-    #[allow(dead_code)]
-    OidError(bson::oid::Error),
-
-    #[allow(dead_code)]
-    OidParsingError(bson::oid::Error),
-
-    #[allow(dead_code)]
-    DatabaseError(mongodb::error::Error),
-}
-
-impl From<bson::oid::Error> for ModelError {
-    fn from(err: bson::oid::Error) -> ModelError {
-        ModelError::OidError(err)
-    }
-}
-impl From<mongodb::error::Error> for ModelError {
-    fn from(err: mongodb::error::Error) -> ModelError {
-        ModelError::DatabaseError(err)
-    }
 }
 
 impl std::fmt::Display for ModelError {
@@ -90,9 +53,6 @@ impl std::fmt::Display for ModelError {
                     "default database not configured, check the connection string"
                 )
             }
-            Self::OidError(bson_error) => write!(f, "{}", bson_error),
-            Self::OidParsingError(bson_error) => write!(f, "{}", bson_error),
-            Self::DatabaseError(mongo_error) => write!(f, "{}", mongo_error),
         }
     }
 }

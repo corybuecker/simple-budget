@@ -1,22 +1,22 @@
 use crate::SharedState;
 use axum::{
-    extract::{ws::WebSocket, Request, State, WebSocketUpgrade},
+    Extension, Router,
+    extract::{Request, State, WebSocketUpgrade, ws::WebSocket},
     http::{HeaderMap, Method, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Redirect, Response},
     routing::get,
-    Extension, Router,
 };
 use axum_extra::extract::{
-    cookie::{Cookie, SameSite},
     SignedCookieJar,
+    cookie::{Cookie, SameSite},
 };
 use chrono::{DateTime, Utc};
-use futures_util::{stream::StreamExt, SinkExt};
+use futures_util::{SinkExt, stream::StreamExt};
 use mongodb::{
-    bson::{self, doc, oid::ObjectId, Uuid},
-    options::FindOneOptions,
     Collection,
+    bson::{self, Uuid, doc, oid::ObjectId},
+    options::FindOneOptions,
 };
 use serde::{Deserialize, Serialize};
 use std::env;

@@ -1,3 +1,4 @@
+use anyhow::Result;
 use axum::{
     Router,
     body::Body,
@@ -9,7 +10,10 @@ use axum::{
 };
 use axum_extra::extract::cookie::Key;
 use include_dir::{Dir, include_dir};
-use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
+use jobs::{
+    clear_sessions::clear_sessions,
+    convert_goals::{self, convert_goals},
+};
 use serde::Serialize;
 use std::{env, sync::Arc, time::Duration};
 use tera::{Context, Tera};
@@ -25,7 +29,7 @@ use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::{Level, debug};
 use utilities::tera::{digest_asset, extract_id};
 
-mod authenticated;
+// mod authenticated;
 mod authentication;
 mod errors;
 mod jobs;
@@ -51,9 +55,10 @@ struct Broker {
     sender: mpsc::Sender<String>,
 }
 
+#[derive(Clone)]
 pub struct SharedState {
     tera: Tera,
-    client: Client,
+    client: Arc<Client>,
     key: Key,
     broker: Broker,
 }
@@ -71,7 +76,11 @@ fn start_background_jobs() -> tokio::task::JoinHandle<()> {
         loop {
             interval.tick().await;
 
-            let _result = tokio::join!(clear_sessions(), convert_goals());
+            let (clear_sessions_result, convert_goals_result) =
+                tokio::join!(clear_sessions(), convert_goals());
+
+            debug!("🚧 {:#?}", convert_goals_result);
+            debug!("🚧 {:#?}", clear_sessions_result);
         }
     })
 }
@@ -160,24 +169,20 @@ async fn main() {
         );
     }
 
-    let (client, connection) = tokio_postgres::connect(&env::var("DATABASE_URL").unwrap(), NoTls)
-        .await
-        .unwrap();
-    spawn(connection);
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
     let (sender, receiver) = mpsc::channel::<String>(100);
-
-    let shared_state = Arc::new(SharedState {
+    let client = database_client().await.unwrap();
+    let shared_state = SharedState {
         tera,
-        client,
+        client: client.into(),
         key,
         broker: Broker { sender },
-    });
+    };
 
     let app = Router::new()
-        // .merge(authentication::authentication_router())
-        //  .merge(authenticated::authenticated_router(shared_state.clone()))
+        .merge(authentication::authentication_router())
+        //     .merge(authenticated::authenticated_router(shared_state))
         .merge(
             Router::new()
                 .route("/assets/{*file}", get(fetch_asset))
@@ -213,6 +218,14 @@ async fn main() {
         _ = server_handle => {},
         _ = broker_handle => {},
     }
+}
+
+pub async fn database_client() -> Result<Client> {
+    let (client, connection) =
+        tokio_postgres::connect(&env::var("DATABASE_URL").unwrap(), NoTls).await?;
+
+    spawn(connection);
+    Ok(client)
 }
 
 #[cfg(test)]

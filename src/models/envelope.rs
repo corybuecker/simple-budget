@@ -1,7 +1,8 @@
 use anyhow::Result;
+use serde::Serialize;
 use tokio_postgres::Client;
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub struct Envelope {
     pub id: Option<i32>,
     pub user_id: Option<i32>,
@@ -34,6 +35,17 @@ impl Envelope {
             .await?
             .try_into()?)
     }
+
+    pub async fn delete(&self, client: &Client) -> Result<()> {
+        client
+            .execute(
+                "DELETE FROM envelopes WHERE user_id = $1 and id = $2",
+                &[&self.user_id, &self.id],
+            )
+            .await?;
+        Ok(())
+    }
+
     pub async fn create(&self, client: &Client) -> Result<()> {
         client
             .query(

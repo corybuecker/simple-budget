@@ -15,16 +15,12 @@ use tera::Context;
 
 pub async fn page(
     shared_state: State<SharedState>,
-    Path(id): Path<String>,
+    Path(id): Path<i32>,
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
-) -> Result<Response> {
-    let envelope = Envelope::get_by_user_id(
-        &shared_state.client,
-        user.id.parse::<i32>()?,
-        id.parse::<i32>()?,
-    )
-    .await?;
+) -> Result<Response, FormError> {
+    let envelope =
+        Envelope::get_by_user_id(&shared_state.client, id, user.id.parse::<i32>().unwrap()).await?;
 
     context.insert("id", &envelope.id);
     context.insert("name", &envelope.name);

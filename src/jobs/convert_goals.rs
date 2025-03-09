@@ -22,7 +22,7 @@ pub async fn convert_goals() -> Result<f64> {
             id: None,
             name: goal.name.clone(),
             amount: goal.target,
-            user_id: goal.user_id,
+            user_id: Some(goal.user_id),
         };
 
         envelope.create(transaction.client()).await?;

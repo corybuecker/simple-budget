@@ -17,7 +17,7 @@ pub async fn action(
     Path(id): Path<i32>,
     headers: HeaderMap,
     form: Form<EnvelopeForm>,
-) -> Result<Response> {
+) -> Result<Response, FormError> {
     let mut turbo = false;
     let accept = headers.get("Accept");
     if let Some(accept) = accept {

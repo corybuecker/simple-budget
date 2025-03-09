@@ -1,17 +1,16 @@
 use super::GoalForm;
 use crate::{
+    SharedState,
     authenticated::UserExtension,
     errors::FormError,
     models::goal::{Goal, Recurrence},
-    SharedState,
 };
 use axum::{
+    Extension, Form,
     extract::State,
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},
-    Extension, Form,
 };
-use bson::oid::ObjectId;
 use chrono::{NaiveDateTime, NaiveTime};
 use std::str::FromStr;
 use tera::Context;
@@ -85,10 +84,10 @@ pub async fn page(
 mod tests {
     use super::*;
     use crate::test_utils::{state_for_tests, user_for_tests};
-    use axum::body::{to_bytes, Body};
+    use axum::Router;
+    use axum::body::{Body, to_bytes};
     use axum::http::{Request, StatusCode};
     use axum::routing::post;
-    use axum::Router;
     use bson::doc;
     use chrono::{Duration, Utc};
     use mongodb::Collection;

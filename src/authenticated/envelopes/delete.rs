@@ -17,9 +17,9 @@ pub async fn modal(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
-) -> Result<Response> {
+) -> Result<Response, FormError> {
     let envelope =
-        Envelope::get_by_user_id(&shared_state.client, id, user.id.parse::<i32>()?).await?;
+        Envelope::get_by_user_id(&shared_state.client, id, user.id.parse::<i32>().unwrap()).await?;
 
     let tera = shared_state.tera.clone();
     let mut context = Context::new();
@@ -33,9 +33,9 @@ pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
-) -> Result<Response> {
+) -> Result<Response, FormError> {
     let envelope =
-        Envelope::get_by_user_id(&shared_state.client, id, user.id.parse::<i32>()?).await?;
+        Envelope::get_by_user_id(&shared_state.client, id, user.id.parse::<i32>().unwrap()).await?;
 
     envelope.delete(&shared_state.client).await?;
 

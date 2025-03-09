@@ -1,3 +1,4 @@
+use anyhow::Error;
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -14,6 +15,17 @@ pub struct FormError {
 impl IntoResponse for FormError {
     fn into_response(self) -> Response {
         (StatusCode::BAD_REQUEST, format!("{:#?}", self)).into_response()
+    }
+}
+
+impl From<anyhow::Error> for FormError {
+    fn from(value: anyhow::Error) -> Self {
+        error!("{:#?}", value);
+
+        FormError {
+            message: value.to_string(),
+            status_code: None,
+        }
     }
 }
 

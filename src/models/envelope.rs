@@ -36,6 +36,23 @@ impl Envelope {
             .try_into()?)
     }
 
+    pub async fn get_all(client: &Client, user_id: i32) -> Result<Vec<Self>> {
+        let rows = client
+            .query(
+                "SELECT envelopes.* FROM envelopes INNER
+            JOIN users ON users.id = envelopes.user_id WHERE users.id = $1",
+                &[&user_id],
+            )
+            .await?;
+
+        let mut envelopes = Vec::with_capacity(rows.len());
+        for row in rows {
+            envelopes.push(row.try_into()?);
+        }
+
+        Ok(envelopes)
+    }
+
     pub async fn delete(&self, client: &Client) -> Result<()> {
         client
             .execute(

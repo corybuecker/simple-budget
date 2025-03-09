@@ -60,6 +60,13 @@ impl Session {
         Ok(rows)
     }
 
+    pub async fn get_by_id(client: &Client, session_id: i32) -> Result<Self> {
+        client
+            .query_one("SELECT * FROM sessions WHERE id = $1", &[&session_id])
+            .await?
+            .try_into()
+    }
+
     pub async fn create(self: &mut Session, client: &Client) -> Result<()> {
         let id = client
             .execute(
@@ -106,6 +113,7 @@ impl User {
 
         Self::get_by_id(client, id as i32).await
     }
+
     pub async fn get_by_subject(client: &Client, subject: String) -> Result<Self> {
         client
             .query_one("SELECT * FROM users WHERE subject = $1", &[&subject])

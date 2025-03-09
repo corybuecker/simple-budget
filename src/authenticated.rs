@@ -1,4 +1,7 @@
-use crate::SharedState;
+use crate::{
+    SharedState,
+    models::user::{Session, User},
+};
 use axum::{
     Extension, Router,
     extract::{Request, State, WebSocketUpgrade, ws::WebSocket},
@@ -66,21 +69,15 @@ async fn authenticated(
         return Ok((jar, Redirect::to("authentication/login").into_response()));
     };
 
-    let session_id = session_id.value();
-    let users: Collection<User> = state.mongo.default_database().unwrap().collection("users");
-    let option = FindOneOptions::builder()
-        .projection(doc! {"sessions.$": 1, "email": 1, "subject": 1})
-        .build();
-    let user = users
-        .find_one(doc! {"sessions.id": Uuid::parse_str(session_id).unwrap(), "sessions.expiration": doc! { "$gte": Utc::now() } })
-        .with_options(option)
-        .await;
+    let session_id = session_id.value().parse::<i32>().unwrap();
 
-    if let Ok(Some(user)) = user {
+    let session = Session::get_by_id(&state.client, session_id).await;
+
+    if let Ok(session) = session {
         let (tx, rx) = watch::channel(String::new());
         request.extensions_mut().insert(UserExtension {
-            id: user._id.to_hex(),
-            csrf: user.sessions[0].csrf.clone(),
+            id: session.user_id.to_string(),
+            csrf: session.csrf.clone(),
             channel_sender: tx,
             channel_receiver: rx,
         });

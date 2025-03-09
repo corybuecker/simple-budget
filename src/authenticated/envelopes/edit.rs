@@ -1,14 +1,12 @@
 use crate::{
-    authenticated::UserExtension, errors::FormError, models::envelope::Envelope, SharedState,
+    SharedState, authenticated::UserExtension, errors::FormError, models::envelope::Envelope,
 };
 use axum::{
+    Extension,
     extract::{Path, State},
     http::StatusCode,
     response::{Html, IntoResponse, Response},
-    Extension,
 };
-use bson::{doc, oid::ObjectId};
-use std::str::FromStr;
 use tera::Context;
 
 pub async fn page(

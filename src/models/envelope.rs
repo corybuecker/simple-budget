@@ -9,7 +9,37 @@ pub struct Envelope {
     pub amount: f64,
 }
 
+impl TryInto<Envelope> for tokio_postgres::Row {
+    type Error = anyhow::Error;
+
+    fn try_into(self: tokio_postgres::Row) -> Result<Envelope> {
+        Ok(Envelope {
+            id: self.try_get("id")?,
+            user_id: self.try_get("user_id")?,
+            name: self.try_get("name")?,
+            amount: self.try_get("amount")?,
+        })
+    }
+}
+
 impl Envelope {
+    pub async fn get_by_user_id(client: &Client, user_id: i32) -> Result<Vec<Self>> {
+        let rows = client
+            .query(
+                "SELECT envelopes.* FROM envelopes
+                INNER JOIN users ON users.id = envelopes.user_id
+                WHERE users.id = $1",
+                &[&user_id],
+            )
+            .await?;
+
+        let mut envelopes = Vec::with_capacity(rows.len());
+        for row in rows {
+            envelopes.push(row.try_into()?);
+        }
+
+        Ok(envelopes)
+    }
     pub async fn create(&self, client: &Client) -> Result<()> {
         client
             .query(

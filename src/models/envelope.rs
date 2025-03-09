@@ -4,7 +4,7 @@ use tokio_postgres::Client;
 #[derive(Debug)]
 pub struct Envelope {
     pub id: Option<i32>,
-    pub user_id: i32,
+    pub user_id: Option<i32>,
     pub name: String,
     pub amount: f64,
 }
@@ -23,22 +23,16 @@ impl TryInto<Envelope> for tokio_postgres::Row {
 }
 
 impl Envelope {
-    pub async fn get_by_user_id(client: &Client, user_id: i32) -> Result<Vec<Self>> {
-        let rows = client
-            .query(
+    pub async fn get_by_user_id(client: &Client, id: i32, user_id: i32) -> Result<Self> {
+        Ok(client
+            .query_one(
                 "SELECT envelopes.* FROM envelopes
                 INNER JOIN users ON users.id = envelopes.user_id
-                WHERE users.id = $1",
-                &[&user_id],
+                WHERE users.id = $1 AND envelopes.id = $2",
+                &[&user_id, &id],
             )
-            .await?;
-
-        let mut envelopes = Vec::with_capacity(rows.len());
-        for row in rows {
-            envelopes.push(row.try_into()?);
-        }
-
-        Ok(envelopes)
+            .await?
+            .try_into()?)
     }
     pub async fn create(&self, client: &Client) -> Result<()> {
         client

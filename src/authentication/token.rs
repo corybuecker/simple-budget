@@ -20,6 +20,7 @@ use tracing::debug;
 
 use crate::{
     SharedState,
+    errors::FormError,
     models::user::{Session, User},
 };
 
@@ -38,15 +39,16 @@ pub async fn token(
     shared_state: State<SharedState>,
     jar: SignedCookieJar,
     Json(token): Json<Payload>,
-) -> Result<Response> {
+) -> Result<Response, FormError> {
     debug!("{:#?}", token);
 
-    let issuer_url = IssuerUrl::new("https://accounts.google.com".to_string())?;
+    let issuer_url = IssuerUrl::new("https://accounts.google.com".to_string()).unwrap();
 
     let async_http_client = openidconnect::reqwest::Client::builder().build().unwrap();
 
-    let provider_metadata =
-        CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await?;
+    let provider_metadata = CoreProviderMetadata::discover_async(issuer_url, &async_http_client)
+        .await
+        .unwrap();
 
     let keys = provider_metadata.jwks().keys();
     let key = json!(keys[0].clone());
@@ -70,7 +72,8 @@ pub async fn token(
         &status.claims.sub,
         &status.claims.email,
     )
-    .await?;
+    .await
+    .unwrap();
 
     let secure = env::var("SECURE").unwrap_or("false".to_string());
 

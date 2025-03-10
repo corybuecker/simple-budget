@@ -2,19 +2,17 @@ use std::{collections::HashMap, str::FromStr};
 
 use super::PreferencesForm;
 use crate::{
-    authenticated::{dashboard::generate_dashboard_context_for, UserExtension},
+    SharedState,
+    authenticated::{UserExtension, dashboard::generate_dashboard_context_for},
     errors::FormError,
     models::{goal::Goal, user::User},
-    SharedState,
 };
 use axum::{
+    Extension, Form,
     extract::State,
     response::{Html, IntoResponse, Response},
-    Extension, Form,
 };
-use bson::oid::ObjectId;
 use chrono::Utc;
-use mongodb::bson::doc;
 use tera::Context;
 
 pub async fn action(

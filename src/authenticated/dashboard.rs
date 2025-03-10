@@ -2,17 +2,14 @@ use super::UserExtension;
 use crate::models::account::Account;
 use crate::models::envelope::envelopes_total_for;
 use crate::utilities::dates::{TimeProvider, TimeUtilities};
-use crate::{errors::FormError, models::user::User, Section, SharedState};
+use crate::{Section, SharedState, errors::FormError, models::user::User};
 use axum::{
+    Extension,
     extract::State,
     http::StatusCode,
     response::{Html, IntoResponse, Response},
-    Extension,
 };
-use bson::{doc, oid::ObjectId};
 use chrono::{Duration, Local, NaiveTime};
-use mongodb::Client;
-use std::str::FromStr;
 use tera::Context;
 mod goals;
 use chrono_tz::Tz;

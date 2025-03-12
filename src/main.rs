@@ -238,7 +238,7 @@ mod tests {
     #[tokio::test]
     async fn test_database_client() {
         let client = database_client(Some(
-            "postgres://postgres@localhost:5432/simple_budget_test",
+            "postgres://simple_budget@localhost:5432/simple_budget_test",
         ))
         .await;
         assert!(client.is_ok());

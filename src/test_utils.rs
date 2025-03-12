@@ -9,7 +9,7 @@ use tokio_postgres::Client;
 
 pub async fn state_for_tests() -> Result<(SharedState, Extension<UserExtension>)> {
     let client = database_client(Some(
-        "postgres://postgres@localhost:5432/simple_budget_test",
+        "postgres://simple_budget@localhost:5432/simple_budget_test",
     ))
     .await?;
 

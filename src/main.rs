@@ -1,36 +1,37 @@
-mod authentication;
-mod errors;
-mod jobs;
-mod utilities;
+use anyhow::Result;
 use axum::{
+    Router,
     body::Body,
     extract::{FromRef, Path, Request},
     http::{HeaderValue, StatusCode},
-    middleware::{from_fn, Next},
+    middleware::{Next, from_fn},
     response::{IntoResponse, Response},
     routing::get,
-    Router,
 };
 use axum_extra::extract::cookie::Key;
-use bson::doc;
-use include_dir::{include_dir, Dir};
+use include_dir::{Dir, include_dir};
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
-use mongodb::Client;
 use serde::Serialize;
-use std::{env, time::Duration};
+use std::{env, sync::Arc, time::Duration};
 use tera::{Context, Tera};
 use tokio::{
     select,
-    signal::unix::{signal, SignalKind},
+    signal::unix::{SignalKind, signal},
     spawn,
     sync::mpsc,
     time::interval,
 };
-use utilities::tera::{digest_asset, extract_id};
-mod authenticated;
+use tokio_postgres::{Client, NoTls};
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
-use tracing::{debug, Level};
+use tracing::{Level, debug};
+use utilities::tera::digest_asset;
+
+mod authenticated;
+mod authentication;
+mod errors;
+mod jobs;
 mod models;
+mod utilities;
 
 #[derive(Serialize, Debug, Clone)]
 pub enum Section {
@@ -54,7 +55,7 @@ struct Broker {
 #[derive(Clone)]
 pub struct SharedState {
     tera: Tera,
-    mongo: Client,
+    client: Arc<Client>,
     key: Key,
     broker: Broker,
 }
@@ -72,7 +73,11 @@ fn start_background_jobs() -> tokio::task::JoinHandle<()> {
         loop {
             interval.tick().await;
 
-            let _result = tokio::join!(clear_sessions(), convert_goals());
+            let (clear_sessions_result, convert_goals_result) =
+                tokio::join!(clear_sessions(), convert_goals());
+
+            debug!("🚧 {:#?}", convert_goals_result);
+            debug!("🚧 {:#?}", clear_sessions_result);
         }
     })
 }
@@ -147,7 +152,6 @@ async fn main() {
 
     let mut tera = Tera::default();
     tera.register_function("digest_asset", digest_asset());
-    tera.register_filter("oid", extract_id());
 
     for template in TEMPLATES.find("**/*.html").unwrap() {
         debug!("{:#?}", template);
@@ -161,15 +165,13 @@ async fn main() {
         );
     }
 
-    let mongo = mongo_client().await.expect("cannot create Mongo client");
-
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
     let (sender, receiver) = mpsc::channel::<String>(100);
-
+    let client = database_client().await.unwrap();
     let shared_state = SharedState {
         tera,
-        mongo,
+        client: client.into(),
         key,
         broker: Broker { sender },
     };
@@ -214,26 +216,13 @@ async fn main() {
     }
 }
 
-async fn mongo_client() -> Result<mongodb::Client, mongodb::error::Error> {
-    let mongo_connection_string =
-        env::var("DATABASE_URL").expect("could not find database connection URL");
+pub async fn database_client() -> Result<Client> {
+    let (client, connection) =
+        tokio_postgres::connect(&env::var("DATABASE_URL").unwrap(), NoTls).await?;
 
-    Client::with_uri_str(mongo_connection_string).await
+    spawn(connection);
+    Ok(client)
 }
 
 #[cfg(test)]
 mod test_utils;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_mongo_client() {
-        let client = mongo_client().await;
-        assert!(client.is_ok());
-        let client = client.unwrap();
-        let databases = client.list_databases().await;
-        assert!(databases.is_ok())
-    }
-}

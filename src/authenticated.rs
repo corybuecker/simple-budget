@@ -1,53 +1,30 @@
-use crate::SharedState;
+use crate::{SharedState, models::user::Session};
 use axum::{
-    extract::{ws::WebSocket, Request, State, WebSocketUpgrade},
+    Extension, Router,
+    extract::{Request, State, WebSocketUpgrade, ws::WebSocket},
     http::{HeaderMap, Method, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Redirect, Response},
     routing::get,
-    Extension, Router,
 };
 use axum_extra::extract::{
-    cookie::{Cookie, SameSite},
     SignedCookieJar,
+    cookie::{Cookie, SameSite},
 };
-use chrono::{DateTime, Utc};
-use futures_util::{stream::StreamExt, SinkExt};
-use mongodb::{
-    bson::{self, doc, oid::ObjectId, Uuid},
-    options::FindOneOptions,
-    Collection,
-};
-use serde::{Deserialize, Serialize};
+use futures_util::{SinkExt, stream::StreamExt};
 use std::env;
 use tokio::{spawn, sync::watch};
 use tracing::debug;
+
 pub mod accounts;
 mod dashboard;
 mod envelopes;
 mod goals;
 mod preferences;
 
-#[derive(Deserialize, Serialize, Debug)]
-struct Session {
-    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
-    expiration: DateTime<Utc>,
-    id: bson::Uuid,
-    _id: ObjectId,
-    csrf: String,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-struct User {
-    _id: ObjectId,
-    subject: String,
-    email: String,
-    sessions: Vec<Session>,
-}
-
 #[derive(Debug, Clone)]
 pub struct UserExtension {
-    pub id: String,
+    pub id: i32,
     pub csrf: String,
     pub channel_sender: watch::Sender<String>,
 
@@ -89,20 +66,14 @@ async fn authenticated(
     };
 
     let session_id = session_id.value();
-    let users: Collection<User> = state.mongo.default_database().unwrap().collection("users");
-    let option = FindOneOptions::builder()
-        .projection(doc! {"sessions.$": 1, "email": 1, "subject": 1})
-        .build();
-    let user = users
-        .find_one(doc! {"sessions.id": Uuid::parse_str(session_id).unwrap(), "sessions.expiration": doc! { "$gte": Utc::now() } })
-        .with_options(option)
-        .await;
 
-    if let Ok(Some(user)) = user {
+    let session = Session::get_by_id(&state.client, session_id).await;
+
+    if let Ok(session) = session {
         let (tx, rx) = watch::channel(String::new());
         request.extensions_mut().insert(UserExtension {
-            id: user._id.to_hex(),
-            csrf: user.sessions[0].csrf.clone(),
+            id: session.user_id,
+            csrf: session.csrf.clone(),
             channel_sender: tx,
             channel_receiver: rx,
         });

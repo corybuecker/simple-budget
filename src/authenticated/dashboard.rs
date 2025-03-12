@@ -1,50 +1,27 @@
 use super::UserExtension;
 use crate::models::account::Account;
 use crate::models::envelope::envelopes_total_for;
+use crate::models::goal::Goal;
+use crate::models::user::Preferences;
 use crate::utilities::dates::{TimeProvider, TimeUtilities};
-use crate::{errors::FormError, models::user::User, Section, SharedState};
+use crate::{Section, SharedState, errors::FormError, models::user::User};
 use axum::{
-    extract::State,
-    http::StatusCode,
-    response::{Html, IntoResponse, Response},
     Extension,
+    extract::State,
+    response::{Html, IntoResponse, Response},
 };
-use bson::{doc, oid::ObjectId};
 use chrono::{Duration, Local, NaiveTime};
-use mongodb::Client;
-use std::str::FromStr;
-use tera::Context;
-mod goals;
 use chrono_tz::Tz;
+use tera::Context;
+use tokio_postgres::Client;
 
 pub async fn index(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
 ) -> Result<Response, FormError> {
     let csrf = user.csrf.clone();
-    let Ok(_user_id) = ObjectId::from_str(&user.id) else {
-        return Err(FormError {
-            message: "forbidden".to_owned(),
-            status_code: Some(StatusCode::FORBIDDEN),
-        });
-    };
-
-    let user = &shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection::<User>("users")
-        .find_one(doc! {"_id": ObjectId::from_str(&user.id).unwrap()})
-        .await?;
-
-    let Some(user) = user else {
-        return Err(FormError {
-            message: "forbidden".to_owned(),
-            status_code: Some(StatusCode::FORBIDDEN),
-        });
-    };
-
-    let mut context = generate_dashboard_context_for(user, &shared_state.mongo).await;
+    let user = User::get_by_id(&shared_state.client, user.id).await?;
+    let mut context = generate_dashboard_context_for(&user, &shared_state.client).await;
     context.insert("csrf", &csrf);
     context.insert("section", &Section::Reports);
     let content = shared_state
@@ -57,14 +34,20 @@ pub async fn index(
 
 pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Context {
     let mut context = Context::new();
-    let user_id = ObjectId::from_str(&user._id).unwrap();
-    let preferences = &user.preferences;
+    let preferences = match &user.preferences {
+        Some(preferences) => &preferences.0,
+        None => &Preferences {
+            goal_header: None,
+            timezone: Some(String::from("UTC")),
+            forecast_offset: None,
+        },
+    };
     let timezone = preferences.timezone.clone().unwrap_or(String::from("UTC"));
     let timezone: Tz = timezone.parse().unwrap();
     let time_provider = TimeProvider {};
     let time_utilities = &TimeUtilities { timezone };
 
-    let goals = goals::goals(client, &user_id).await.unwrap_or(Vec::new());
+    let goals = Goal::get_all(client, user.id).await.unwrap_or(vec![]);
 
     let goals_accumulated = goals
         .iter()
@@ -77,12 +60,12 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Con
         .reduce(|memo, a| memo + a)
         .unwrap_or(0.0);
 
-    let envelopes_total = envelopes_total_for(&user_id, client).await;
-    let accounts_total = Account::accounts_total_for(&user_id, client).await;
+    let envelopes_total = envelopes_total_for(user.id, client).await.unwrap_or(0.0);
+    let accounts_total = Account::accounts_total_for(user.id, client).await;
 
     let remaining_total = accounts_total - envelopes_total - goals_total;
 
-    let forecast_offset = user.preferences.forecast_offset.unwrap_or(1);
+    let forecast_offset = preferences.forecast_offset.unwrap_or(1);
 
     let now = Local::now().with_timezone(&timezone);
     let tomorrow = (now + Duration::days(forecast_offset))

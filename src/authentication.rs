@@ -1,7 +1,7 @@
 use crate::SharedState;
 use axum::{
-    routing::{get, post},
     Router,
+    routing::{get, post},
 };
 mod callback;
 mod login;

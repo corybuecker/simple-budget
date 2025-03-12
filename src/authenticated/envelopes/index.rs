@@ -1,14 +1,11 @@
 use crate::{
-    authenticated::UserExtension, errors::FormError, models::envelope::Envelope, SharedState,
+    SharedState, authenticated::UserExtension, errors::FormError, models::envelope::Envelope,
 };
 use axum::{
+    Extension,
     extract::State,
     response::{Html, IntoResponse, Response},
-    Extension,
 };
-use bson::{doc, oid::ObjectId};
-use mongodb::{options::FindOptions, Collection};
-use std::str::FromStr;
 use tera::Context;
 
 pub async fn page(
@@ -16,40 +13,7 @@ pub async fn page(
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
-    let user_id = ObjectId::from_str(&user.id)?;
-
-    let collection: Collection<Envelope> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("envelopes");
-
-    let mut envelopes: Vec<Envelope> = Vec::new();
-    let mut find_options = FindOptions::default();
-    find_options.sort = Some(doc! {"name": 1});
-
-    match collection
-        .find(doc! {"user_id": &user_id})
-        .with_options(find_options)
-        .await
-    {
-        Ok(mut cursor) => {
-            while cursor.advance().await.unwrap() {
-                match cursor.deserialize_current() {
-                    Ok(envelope) => {
-                        envelopes.push(envelope);
-                    }
-                    Err(e) => {
-                        log::error!("{:#?}", e);
-                    }
-                }
-            }
-        }
-        Err(e) => {
-            log::error!("{:#?}", e);
-        }
-    }
-
+    let envelopes = Envelope::get_all(&shared_state.client, user.id).await?;
     context.insert("envelopes", &envelopes);
     let content = shared_state.tera.render("envelopes/index.html", &context)?;
 

@@ -1,39 +1,23 @@
 use crate::{
-    authenticated::UserExtension, errors::FormError, models::envelope::Envelope, SharedState,
+    SharedState, authenticated::UserExtension, errors::FormError, models::envelope::Envelope,
 };
+use anyhow::Result;
 use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::{Html, IntoResponse, Response},
     Extension,
+    extract::{Path, State},
+    response::{Html, IntoResponse, Response},
 };
-use bson::{doc, oid::ObjectId};
-use std::str::FromStr;
 use tera::Context;
 
 pub async fn page(
     shared_state: State<SharedState>,
-    Path(id): Path<String>,
+    Path(id): Path<i32>,
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
-    let envelopes: mongodb::Collection<Envelope> = shared_state
-        .mongo
-        .default_database()
-        .unwrap()
-        .collection("envelopes");
+    let envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
 
-    let envelope = envelopes
-        .find_one(            doc! {"_id": ObjectId::from_str(&id).unwrap(), "user_id": ObjectId::from_str(&user.id).unwrap()} ).await?;
-
-    let Some(envelope) = envelope else {
-        return Err(FormError {
-            message: "could not find envelope".to_string(),
-            status_code: Some(StatusCode::NOT_FOUND),
-        });
-    };
-
-    context.insert("id", &envelope._id);
+    context.insert("id", &envelope.id);
     context.insert("name", &envelope.name);
     context.insert("amount", &envelope.amount);
 

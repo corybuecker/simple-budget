@@ -1,10 +1,10 @@
 use crate::{Section, SharedState};
 use axum::{
+    Extension, Router,
     extract::Request,
-    middleware::{from_fn, Next},
+    middleware::{Next, from_fn},
     response::Response,
     routing::get,
-    Extension, Router,
 };
 mod create;
 mod delete;

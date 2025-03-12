@@ -1,15 +1,10 @@
-use crate::errors::ModelError;
-use bson::{doc, oid::ObjectId, serde_helpers::hex_string_as_object_id};
-use chrono::{DateTime, Datelike, Days, Duration, Local, Months, TimeDelta, Timelike, Utc};
-use mongodb::{
-    options::FindOptions,
-    results::{InsertOneResult, UpdateResult},
-};
-use serde::{Deserialize, Serialize};
-use std::ops::Add;
+use anyhow::Result;
+use chrono::{DateTime, Datelike, Days, Local, Months, TimeDelta, Timelike, Utc};
+use postgres_types::{FromSql, ToSql};
+use serde::Serialize;
+use tokio_postgres::Client;
 
-#[derive(Deserialize, Serialize, Debug, Copy, Clone)]
-#[serde(rename_all(deserialize = "lowercase", serialize = "lowercase"))]
+#[derive(Debug, Clone, Serialize, FromSql, ToSql)]
 pub enum Recurrence {
     Never,
     Daily,
@@ -18,7 +13,6 @@ pub enum Recurrence {
     Quarterly,
     Yearly,
 }
-
 #[derive(Debug)]
 pub struct RecurrenceError {}
 
@@ -37,69 +31,92 @@ impl std::str::FromStr for Recurrence {
 
     type Err = RecurrenceError;
 }
-
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Serialize, Debug)]
 pub struct Goal {
-    #[serde(with = "hex_string_as_object_id")]
-    pub _id: String,
-
-    #[serde(with = "hex_string_as_object_id")]
-    pub user_id: String,
-
+    pub id: Option<i32>,
+    pub user_id: Option<i32>,
     pub name: String,
     pub recurrence: Recurrence,
-
-    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     pub target_date: DateTime<Utc>,
-
     pub target: f64,
 }
 
+impl TryInto<Goal> for tokio_postgres::Row {
+    type Error = anyhow::Error;
+
+    fn try_into(self: tokio_postgres::Row) -> Result<Goal> {
+        Ok(Goal {
+            id: self.try_get("id")?,
+            user_id: self.try_get("user_id")?,
+            name: self.try_get("name")?,
+            recurrence: self.try_get("recurrence")?,
+            target_date: self.try_get("target_date")?,
+            target: self.try_get("target")?,
+        })
+    }
+}
+
 impl Goal {
-    pub async fn create(&self, client: &mongodb::Client) -> Result<InsertOneResult, ModelError> {
-        Ok(client
-            .default_database()
-            .ok_or_else(|| ModelError::MissingDefaultDatabase)?
-            .collection::<Goal>("goals")
-            .insert_one(self)
-            .await?)
+    pub async fn create(&self, client: &Client) -> Result<()> {
+        client.query("INSERT INTO goals (user_id, name, recurrence, target_date, target) VALUES ($1, $2, $3, $4, $5)", &[&self.user_id, &self.name, &self.recurrence, &self.target_date, &self.target]).await?;
+        Ok(())
     }
 
-    pub async fn update(&self, client: &mongodb::Client) -> Result<UpdateResult, ModelError> {
-        Ok(client
-            .default_database()
-            .ok_or_else(|| ModelError::MissingDefaultDatabase)?
-            .collection::<Goal>("goals")
-            .replace_one(
-                doc! {"_id": ObjectId::parse_str(&self._id)?, "user_id": ObjectId::parse_str(&self.user_id)?},
-                self
+    pub async fn update(&self, client: &Client) -> Result<()> {
+        client.query("UPDATE goals SET name = $1, recurrence = $2, target_date = $3, target = $4 WHERE id = $5 AND user_id = $6", &[&self.name, &self.recurrence, &self.target_date, &self.target, &self.id, &self.user_id]).await?;
+        Ok(())
+    }
+
+    pub async fn delete(&self, client: &Client) -> Result<()> {
+        client
+            .execute(
+                "DELETE FROM goals WHERE user_id = $1 and id = $2",
+                &[&self.user_id, &self.id],
             )
-            .await?)
+            .await?;
+        Ok(())
     }
 
-    pub async fn get_by_user_id(
-        client: &mongodb::Client,
-        user_id: &str,
-    ) -> Result<Vec<Self>, ModelError> {
-        let database = client
-            .default_database()
-            .ok_or(ModelError::MissingDefaultDatabase)?;
+    pub async fn get_one(client: &Client, id: i32, user_id: i32) -> Result<Self> {
+        client
+            .query_one(
+                "SELECT goals.* FROM goals
+                INNER JOIN users ON users.id = goals.user_id
+                WHERE users.id = $1 AND goals.id = $2",
+                &[&user_id, &id],
+            )
+            .await?
+            .try_into()
+    }
 
-        let user_id = ObjectId::parse_str(user_id).map_err(ModelError::OidParsingError)?;
-
-        let collection = database.collection::<Goal>("goals");
-
-        let mut find_options = FindOptions::default();
-        find_options.sort = Some(doc! {"name": 1});
-        let mut cursor = collection
-            .find(doc! {"user_id": &user_id})
-            .with_options(find_options)
+    pub async fn get_all(client: &Client, user_id: i32) -> Result<Vec<Self>> {
+        let rows = client
+            .query(
+                "SELECT goals.* FROM goals INNER
+            JOIN users ON users.id = goals.user_id WHERE users.id = $1",
+                &[&user_id],
+            )
             .await?;
-        let mut goals = Vec::new();
-        while cursor.advance().await? {
-            let goal = cursor.deserialize_current()?;
 
-            goals.push(goal);
+        let mut goals = Vec::with_capacity(rows.len());
+        for row in rows {
+            goals.push(row.try_into()?);
+        }
+
+        Ok(goals)
+    }
+
+    pub async fn get_expired(client: &Client) -> Result<Vec<Self>> {
+        let rows = client
+            .query(
+                "SELECT goals.* FROM goals WHERE recurrence <> 'Never' AND target_date < NOW()",
+                &[],
+            )
+            .await?;
+
+        let mut goals = Vec::with_capacity(rows.len());
+        for row in rows {
+            goals.push(row.try_into()?);
         }
 
         Ok(goals)
@@ -107,21 +124,34 @@ impl Goal {
 
     pub fn increment(&self) -> Self {
         let mut goal = Goal {
-            _id: self._id.clone(),
+            id: self.id,
             target: self.target,
-            user_id: self.user_id.clone(),
-            recurrence: self.recurrence,
+            user_id: self.user_id,
+            recurrence: self.recurrence.clone(),
             name: self.name.clone(),
             target_date: self.target_date,
         };
 
         match self.recurrence {
             Recurrence::Never => goal.target_date = self.target_date,
-            Recurrence::Daily => goal.target_date = self.target_date.add(Duration::days(1)),
-            Recurrence::Weekly => goal.target_date = self.target_date.add(Duration::weeks(1)),
-            Recurrence::Yearly => goal.target_date = self.target_date.add(Duration::days(365)),
-            Recurrence::Monthly => goal.target_date = self.target_date.add(Duration::days(30)),
-            Recurrence::Quarterly => goal.target_date = self.target_date.add(Duration::weeks(12)),
+            Recurrence::Daily => {
+                goal.target_date = self.target_date.checked_add_days(Days::new(1)).unwrap()
+            }
+            Recurrence::Weekly => {
+                goal.target_date = self.target_date.checked_add_days(Days::new(7)).unwrap()
+            }
+            Recurrence::Yearly => {
+                goal.target_date = self
+                    .target_date
+                    .checked_add_months(Months::new(12))
+                    .unwrap()
+            }
+            Recurrence::Monthly => {
+                goal.target_date = self.target_date.checked_add_months(Months::new(1)).unwrap()
+            }
+            Recurrence::Quarterly => {
+                goal.target_date = self.target_date.checked_add_months(Months::new(3)).unwrap()
+            }
         }
 
         goal

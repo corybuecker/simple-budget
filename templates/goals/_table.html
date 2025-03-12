@@ -48,8 +48,7 @@
     </thead>
     <tbody>
         {% for goal in goals %}
-            <tr class="odd:bg-white even:bg-gray-50 border-b"
-                id="goal_{{ goal | oid }}">
+            <tr class="odd:bg-white even:bg-gray-50 border-b" id="goal_{{ goal.id }}">
                 <th scope="row" class="px-6 @sm:px-3 py-2 font-medium text-gray-900">{{ goal.name }}</th>
                 <td class="px-6 @sm:px-3 py-2"
                     data-controller="formatter"
@@ -57,25 +56,23 @@
                 {% if goal_header == "Accumulated" %}
                     <td class="px-6 @sm:px-3 py-2"
                         data-controller="formatter"
-                        data-formatter-currency-value="{{ accumulations[goal._id["$oid"]] }}"
-                        data-formatter-currency-precision-value="2">{{ accumulations[goal._id["$oid"]] }}</td>
+                        data-formatter-currency-value="{{ accumulations[goal.id] }}"
+                        data-formatter-currency-precision-value="2">{{ accumulations[goal.id] }}</td>
                 {% endif %}
                 {% if goal_header == "PerDay" %}
                     <td class="px-6 @sm:px-3 py-2"
                         data-controller="formatter"
-                        data-formatter-currency-value="{{ per_days[goal._id["$oid"]] }}"
-                        data-formatter-currency-precision-value="2">{{ per_days[goal._id["$oid"]] }}</td>
+                        data-formatter-currency-value="{{ per_days[goal.id] }}"
+                        data-formatter-currency-precision-value="2">{{ per_days[goal.id] }}</td>
                 {% endif %}
-                {% if goal_header == "DaysRemaining" %}
-                    <td class="px-6 @sm:px-3 py-2">{{ days_remainings[goal._id["$oid"]] }}</td>
-                {% endif %}
+                {% if goal_header == "DaysRemaining" %}<td class="px-6 @sm:px-3 py-2">{{ days_remainings[goal.id] }}</td>{% endif %}
                 <td class="px-6 @sm:px-3 py-2">
                     <div class="flex @lg:flex-row flex-col items-center gap-4">
-                        <a href="/goals/{{ goal | oid }}"
+                        <a href="/goals/{{ goal.id }}"
                            data-turbo-frame="_top"
                            class="font-medium text-blue-600 hover:underline">Edit</a>
                         <a data-turbo-frame="confirmation-modal"
-                           href="/goals/{{ goal | oid }}/delete">Delete</a>
+                           href="/goals/{{ goal.id }}/delete">Delete</a>
                     </div>
                 </td>
             </tr>

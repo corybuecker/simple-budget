@@ -68,74 +68,52 @@ pub async fn action(
     Ok(Redirect::to("/envelopes").into_response())
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use crate::{
-//        models::envelope::Envelope,
-//        test_utils::{state_for_tests, user_for_tests},
-//    };
-//    use axum::http::{Method, Request, StatusCode};
-//
-//    use mongodb::bson::doc;
-//    use tower::ServiceExt;
-//
-//    #[tokio::test]
-//    async fn test_update_envelope() {
-//        let shared_state = state_for_tests().await;
-//        // Set up the database connection
-//        let db = shared_state.mongo.default_database().unwrap();
-//        let envelopes_collection: mongodb::Collection<Envelope> = db.collection("envelopes");
-//
-//        // Create a test envelope
-//        let user_id = mongodb::bson::oid::ObjectId::new();
-//        let envelope_id = mongodb::bson::oid::ObjectId::new();
-//        let test_envelope = Envelope {
-//            _id: envelope_id.to_string(),
-//            user_id: user_id.to_string(),
-//            name: "Test Envelope".to_string(),
-//            amount: 100.0,
-//        };
-//        envelopes_collection
-//            .insert_one(test_envelope)
-//            .await
-//            .unwrap();
-//
-//        let request = Request::builder()
-//            .method(Method::POST)
-//            .uri(format!("/envelopes/{}", envelope_id.to_hex()))
-//            .header("content-type", "application/x-www-form-urlencoded")
-//            .body("name=Updated%20Envelope&amount=200.0".to_string())
-//            .unwrap();
-//
-//        // Create a test app and call the action
-//        let app = axum::Router::new()
-//            .route(
-//                "/envelopes/{id}",
-//                axum::routing::post(crate::authenticated::envelopes::update::action),
-//            )
-//            .with_state(shared_state)
-//            .layer(user_for_tests(&user_id.to_hex()));
-//
-//        let response = app.oneshot(request).await.unwrap();
-//
-//        // Assert the response
-//        assert_eq!(response.status(), StatusCode::SEE_OTHER);
-//        assert_eq!(response.headers().get("location").unwrap(), "/envelopes");
-//
-//        // Verify the envelope was updated in the database
-//        let updated_envelope = envelopes_collection
-//            .find_one(doc! {"_id": envelope_id})
-//            .await
-//            .unwrap()
-//            .unwrap();
-//
-//        assert_eq!(updated_envelope.name, "Updated Envelope");
-//        assert_eq!(updated_envelope.amount, 200.0);
-//
-//        // Clean up
-//        envelopes_collection
-//            .delete_one(doc! {"_id": envelope_id})
-//            .await
-//            .unwrap();
-//    }
-//}
+#[cfg(test)]
+mod tests {
+    use crate::{models::envelope::Envelope, test_utils::state_for_tests};
+    use axum::http::{Method, Request, StatusCode};
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn test_update_envelope() {
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let user_id = user_extension.0.id;
+        let mut envelope = Envelope {
+            id: None,
+            name: "envelope".to_string(),
+            user_id: Some(user_id),
+            amount: 1.0,
+        };
+
+        envelope.create(&shared_state.client).await.unwrap();
+
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri(format!("/envelopes/{}", envelope.id.unwrap()))
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body("name=Updated%20Envelope&amount=200.0".to_string())
+            .unwrap();
+
+        // Create a test app and call the action
+        let app = axum::Router::new()
+            .route(
+                "/envelopes/{id}",
+                axum::routing::post(crate::authenticated::envelopes::update::action),
+            )
+            .with_state(shared_state.clone())
+            .layer(user_extension);
+
+        let response = app.oneshot(request).await.unwrap();
+
+        // Assert the response
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers().get("location").unwrap(), "/envelopes");
+
+        let envelope = Envelope::get_one(&shared_state.client, envelope.id.unwrap(), user_id)
+            .await
+            .unwrap();
+
+        assert_eq!(envelope.name, "Updated Envelope");
+        assert_eq!(envelope.amount, 200.0);
+    }
+}

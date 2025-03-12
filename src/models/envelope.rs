@@ -63,13 +63,15 @@ impl Envelope {
         Ok(())
     }
 
-    pub async fn create(&self, client: &Client) -> Result<()> {
-        client
-            .query(
-                "INSERT INTO envelopes (user_id, name, amount) VALUES ($1, $2, $3)",
+    pub async fn create(&mut self, client: &Client) -> Result<()> {
+        let row = client
+            .query_one(
+                "INSERT INTO envelopes (user_id, name, amount) VALUES ($1, $2, $3) RETURNING id",
                 &[&self.user_id, &self.name, &self.amount],
             )
             .await?;
+
+        self.id = row.try_get("id")?;
         Ok(())
     }
 

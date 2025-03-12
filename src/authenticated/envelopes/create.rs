@@ -55,7 +55,7 @@ pub async fn page(
         }
     }
 
-    let envelope = Envelope {
+    let mut envelope = Envelope {
         id: None,
         name: form.name.to_owned(),
         amount: form.amount.to_owned(),
@@ -67,110 +67,106 @@ pub async fn page(
     Ok(Redirect::to("/envelopes").into_response())
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use super::*;
-//    use crate::test_utils::{state_for_tests, user_for_tests};
-//    use axum::Router;
-//    use axum::body::{Body, to_bytes};
-//    use axum::http::{Request, StatusCode};
-//    use axum::routing::post;
-//    use bson::doc;
-//    use mongodb::Collection;
-//
-//    use std::str::from_utf8;
-//    use tower::ServiceExt;
-//
-//    #[tokio::test]
-//    async fn test_create_envelope_success() {
-//        let shared_state = state_for_tests().await;
-//        let envelopes: Collection<Envelope> = shared_state
-//            .mongo
-//            .default_database()
-//            .unwrap()
-//            .collection("envelopes");
-//
-//        envelopes
-//            .delete_one(doc! {"name": "test_create_envelope_success"})
-//            .await
-//            .unwrap();
-//
-//        let app = Router::new()
-//            .route("/envelopes/create", post(page))
-//            .with_state(shared_state)
-//            .layer(user_for_tests(&ObjectId::new().to_hex()));
-//
-//        let form_data = "name=test_create_envelope_success&amount=300".to_string();
-//        let request = Request::builder()
-//            .method("POST")
-//            .uri("/envelopes/create")
-//            .header("content-type", "application/x-www-form-urlencoded")
-//            .body(Body::from(form_data))
-//            .unwrap();
-//
-//        let response = app.oneshot(request).await.unwrap();
-//
-//        assert_eq!(response.status(), StatusCode::SEE_OTHER);
-//        assert_eq!(response.headers().get("location").unwrap(), "/envelopes");
-//
-//        // Verify that the envelope was created in the database
-//        let envelope = envelopes
-//            .find_one(doc! {"name": "test_create_envelope_success"})
-//            .await
-//            .unwrap();
-//
-//        assert!(envelope.is_some())
-//    }
-//
-//    #[tokio::test]
-//    async fn test_create_envelope_validation_error() {
-//        let shared_state = state_for_tests().await;
-//        let app = Router::new()
-//            .route("/envelopes/create", post(page))
-//            .with_state(shared_state)
-//            .layer(user_for_tests(&ObjectId::new().to_hex()));
-//
-//        let form_data = "name=test&amount=300";
-//        let request = Request::builder()
-//            .method("POST")
-//            .uri("/envelopes/create")
-//            .header("content-type", "application/x-www-form-urlencoded")
-//            .body(Body::from(form_data))
-//            .unwrap();
-//
-//        let response = app.oneshot(request).await.unwrap();
-//
-//        let (parts, body) = response.into_parts();
-//        let bytes = to_bytes(body, usize::MAX).await.unwrap();
-//        let body_str = from_utf8(&bytes).unwrap().to_string();
-//
-//        assert_eq!(parts.status, StatusCode::BAD_REQUEST);
-//        assert!(body_str.contains("test"))
-//    }
-//
-//    #[tokio::test]
-//    async fn test_create_envelope_turbo_stream() {
-//        let shared_state = state_for_tests().await;
-//        let app = Router::new()
-//            .route("/envelopes/create", post(page))
-//            .layer(user_for_tests(&ObjectId::new().to_hex()))
-//            .with_state(shared_state);
-//
-//        let form_data = "name=test&amount=3400";
-//        let request = Request::builder()
-//            .method("POST")
-//            .uri("/envelopes/create")
-//            .header("content-type", "application/x-www-form-urlencoded")
-//            .header("Accept", "text/vnd.turbo-stream.html")
-//            .body(Body::from(form_data))
-//            .unwrap();
-//
-//        let response = app.oneshot(request).await.unwrap();
-//
-//        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
-//        assert_eq!(
-//            response.headers().get("content-type").unwrap(),
-//            "text/vnd.turbo-stream.html"
-//        );
-//    }
-//}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::state_for_tests;
+    use axum::Router;
+    use axum::body::{Body, to_bytes};
+    use axum::http::{Request, StatusCode};
+    use axum::routing::post;
+    use std::str::from_utf8;
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn test_create_envelope_success() {
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let client = shared_state.client.clone();
+        let user_id = user_extension.0.id;
+
+        let app = Router::new()
+            .route("/envelopes/create", post(page))
+            .with_state(shared_state.clone())
+            .layer(user_extension);
+
+        let form_data = "name=test_create_envelope_success&amount=300".to_string();
+        let request = Request::builder()
+            .method("POST")
+            .uri("/envelopes/create")
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(Body::from(form_data))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers().get("location").unwrap(), "/envelopes");
+
+        let envelope = client
+            .query_one(
+                "SELECT * FROM envelopes WHERE user_id = $1 LIMIT 1",
+                &[&user_id],
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(
+            envelope.get::<_, String>("name"),
+            "test_create_envelope_success"
+        )
+    }
+
+    #[tokio::test]
+    async fn test_create_envelope_validation_error() {
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+
+        let app = Router::new()
+            .route("/envelopes/create", post(page))
+            .with_state(shared_state)
+            .layer(user_extension);
+
+        let form_data = "name=test&amount=300";
+        let request = Request::builder()
+            .method("POST")
+            .uri("/envelopes/create")
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(Body::from(form_data))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        let (parts, body) = response.into_parts();
+        let bytes = to_bytes(body, usize::MAX).await.unwrap();
+        let body_str = from_utf8(&bytes).unwrap().to_string();
+
+        assert_eq!(parts.status, StatusCode::BAD_REQUEST);
+        assert!(body_str.contains("test"))
+    }
+
+    #[tokio::test]
+    async fn test_create_envelope_turbo_stream() {
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+
+        let app = Router::new()
+            .route("/envelopes/create", post(page))
+            .with_state(shared_state)
+            .layer(user_extension);
+
+        let form_data = "name=test&amount=3400";
+        let request = Request::builder()
+            .method("POST")
+            .uri("/envelopes/create")
+            .header("content-type", "application/x-www-form-urlencoded")
+            .header("Accept", "text/vnd.turbo-stream.html")
+            .body(Body::from(form_data))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/vnd.turbo-stream.html"
+        );
+    }
+}

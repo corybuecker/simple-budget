@@ -26,13 +26,15 @@ impl TryInto<Account> for tokio_postgres::Row {
     }
 }
 impl Account {
-    pub async fn create(&self, client: &Client) -> Result<()> {
-        client
-            .query(
-                "INSERT INTO accounts (user_id, name, amount, debt) VALUES ($1, $2, $3, $4)",
+    pub async fn create(&mut self, client: &Client) -> Result<()> {
+        let row = client
+            .query_one(
+                "INSERT INTO accounts (user_id, name, amount, debt) VALUES ($1, $2, $3, $4) RETURNING id",
                 &[&self.user_id, &self.name, &self.amount, &self.debt],
             )
             .await?;
+
+        self.id = Some(row.try_get("id")?);
         Ok(())
     }
 

@@ -57,8 +57,23 @@ impl TryInto<Goal> for tokio_postgres::Row {
 }
 
 impl Goal {
-    pub async fn create(&self, client: &Client) -> Result<()> {
-        client.query("INSERT INTO goals (user_id, name, recurrence, target_date, target) VALUES ($1, $2, $3, $4, $5)", &[&self.user_id, &self.name, &self.recurrence, &self.target_date, &self.target]).await?;
+    pub async fn create(&mut self, client: &Client) -> Result<()> {
+        let row = client
+            .query_one(
+                "INSERT INTO goals
+            (user_id, name, recurrence, target_date, target)
+            VALUES ($1, $2, $3, $4, $5) RETURNING id",
+                &[
+                    &self.user_id,
+                    &self.name,
+                    &self.recurrence,
+                    &self.target_date,
+                    &self.target,
+                ],
+            )
+            .await?;
+
+        self.id = Some(row.try_get("id")?);
         Ok(())
     }
 

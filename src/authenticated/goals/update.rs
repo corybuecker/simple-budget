@@ -64,16 +64,14 @@ pub async fn action(
         }
     }
 
-    let goal_record = Goal {
-        id: Some(id),
-        name: form.name.to_owned(),
-        target: form.target.to_owned(),
-        recurrence: Recurrence::from_str(&form.recurrence).unwrap(),
-        target_date: NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc(),
-        user_id: Some(user.id),
-    };
+    let mut goal = Goal::get_one(&shared_state.client, id, user.id).await?;
 
-    goal_record.update(&shared_state.client).await?;
+    goal.name = form.name.to_owned();
+    goal.target = form.target.to_owned();
+    goal.recurrence = Recurrence::from_str(&form.recurrence).unwrap();
+    goal.target_date = NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc();
+
+    goal.update(&shared_state.client).await?;
 
     Ok(Redirect::to("/goals").into_response())
 }

@@ -24,7 +24,7 @@ impl TryInto<Envelope> for tokio_postgres::Row {
 }
 
 impl Envelope {
-    pub async fn get_by_user_id(client: &Client, id: i32, user_id: i32) -> Result<Self> {
+    pub async fn get_one(client: &Client, id: i32, user_id: i32) -> Result<Self> {
         client
             .query_one(
                 "SELECT envelopes.* FROM envelopes

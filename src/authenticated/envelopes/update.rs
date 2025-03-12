@@ -59,13 +59,10 @@ pub async fn action(
         }
     }
 
-    let envelope = Envelope {
-        id: Some(id),
-        name: form.name.to_owned(),
-        amount: form.amount.to_owned(),
-        user_id: Some(user.id),
-    };
+    let mut envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
 
+    envelope.name = form.name.clone();
+    envelope.amount = form.amount;
     envelope.update(&shared_state.client).await?;
 
     Ok(Redirect::to("/envelopes").into_response())

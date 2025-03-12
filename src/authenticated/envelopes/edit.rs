@@ -15,7 +15,7 @@ pub async fn page(
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> Result<Response, FormError> {
-    let envelope = Envelope::get_by_user_id(&shared_state.client, id, user.id).await?;
+    let envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
 
     context.insert("id", &envelope.id);
     context.insert("name", &envelope.name);

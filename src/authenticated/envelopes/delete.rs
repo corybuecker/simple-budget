@@ -15,7 +15,7 @@ pub async fn modal(
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
 ) -> Result<Response, FormError> {
-    let envelope = Envelope::get_by_user_id(&shared_state.client, id, user.id).await?;
+    let envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
 
     let tera = shared_state.tera.clone();
     let mut context = Context::new();
@@ -30,7 +30,7 @@ pub async fn action(
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
 ) -> Result<Response, FormError> {
-    let envelope = Envelope::get_by_user_id(&shared_state.client, id, user.id).await?;
+    let envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
 
     envelope.delete(&shared_state.client).await?;
 

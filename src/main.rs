@@ -69,12 +69,13 @@ impl FromRef<SharedState> for Key {
 fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     spawn(async {
         let mut interval = interval(Duration::from_millis(60000));
+        let mut jobs_client = database_client(None).await.unwrap();
 
         loop {
             interval.tick().await;
 
             let (clear_sessions_result, convert_goals_result) =
-                tokio::join!(clear_sessions(), convert_goals());
+                tokio::join!(clear_sessions(), convert_goals(&mut jobs_client));
 
             debug!("🚧 {:#?}", convert_goals_result);
             debug!("🚧 {:#?}", clear_sessions_result);
@@ -168,7 +169,7 @@ async fn main() {
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
     let (sender, receiver) = mpsc::channel::<String>(100);
-    let client = database_client().await.unwrap();
+    let client = database_client(None).await.unwrap();
     let shared_state = SharedState {
         tera,
         client: client.into(),
@@ -216,9 +217,12 @@ async fn main() {
     }
 }
 
-pub async fn database_client() -> Result<Client> {
-    let (client, connection) =
-        tokio_postgres::connect(&env::var("DATABASE_URL").unwrap(), NoTls).await?;
+pub async fn database_client(database_url: Option<&str>) -> Result<Client> {
+    let database_url = match database_url {
+        Some(url) => url,
+        None => &env::var("DATABASE_URL")?,
+    };
+    let (client, connection) = tokio_postgres::connect(database_url, NoTls).await?;
 
     spawn(connection);
     Ok(client)
@@ -226,3 +230,20 @@ pub async fn database_client() -> Result<Client> {
 
 #[cfg(test)]
 mod test_utils;
+
+#[cfg(test)]
+mod tests {
+    use crate::database_client;
+
+    #[tokio::test]
+    async fn test_database_client() {
+        let client = database_client(Some(
+            "postgres://postgres@localhost:5432/simple_budget_test",
+        ))
+        .await;
+        assert!(client.is_ok());
+        let client = client.unwrap();
+        let row = client.execute("SELECT 1", &[]).await;
+        assert!(row.is_ok());
+    }
+}

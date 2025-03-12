@@ -1,16 +1,12 @@
+use crate::models::{envelope::Envelope, goal::Goal};
 use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
+use tokio_postgres::Client;
 use tracing::info;
 
-use crate::{
-    database_client,
-    models::{envelope::Envelope, goal::Goal},
-};
-
-pub async fn convert_goals() -> Result<f64> {
+pub async fn convert_goals(client: &mut Client) -> Result<f64> {
     info!("converting goals to envelopes at {}", Utc::now());
 
-    let mut client = database_client().await?;
     let transaction = client.transaction().await?;
 
     let goals = Goal::get_expired(transaction.client())
@@ -18,7 +14,7 @@ pub async fn convert_goals() -> Result<f64> {
         .context("convert goals")?;
 
     for goal in goals {
-        let envelope = Envelope {
+        let mut envelope = Envelope {
             id: None,
             name: goal.name.clone(),
             amount: goal.target,
@@ -29,80 +25,69 @@ pub async fn convert_goals() -> Result<f64> {
         };
 
         envelope.create(transaction.client()).await?;
-
         let new_goal = goal.increment();
-
         new_goal.update(transaction.client()).await?;
     }
+
+    transaction.commit().await?;
+
     Ok(1.0)
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use crate::{jobs::convert_goals::convert_goals, models::envelope::Envelope};
-//    use bson::{doc, oid::ObjectId};
-//    use chrono::{Duration, Utc};
-//    use std::ops::Sub;
-//
-//    use crate::{
-//        models::goal::{Goal, Recurrence},
-//        mongo_client,
-//    };
-//    #[tokio::test]
-//    async fn test_convert_goals() {
-//        let client = mongo_client().await.unwrap();
-//
-//        let goals = client
-//            .default_database()
-//            .unwrap()
-//            .collection::<Goal>("goals");
-//
-//        goals
-//            .delete_many(doc! {"name": "convert_goals"})
-//            .await
-//            .unwrap();
-//
-//        let envelopes = client
-//            .default_database()
-//            .unwrap()
-//            .collection::<Envelope>("envelopes");
-//
-//        envelopes
-//            .delete_many(doc! {"name": "convert_goals"})
-//            .await
-//            .unwrap();
-//
-//        let _ = goals
-//            .insert_one(Goal {
-//                name: "convert_goals".to_owned(),
-//                target_date: Utc::now().sub(Duration::seconds(100)),
-//                recurrence: Recurrence::Daily,
-//                user_id: ObjectId::new().to_hex(),
-//                _id: ObjectId::new().to_hex(),
-//                target: 100.0,
-//            })
-//            .await
-//            .unwrap();
-//
-//        match convert_goals().await {
-//            Ok(result) => println!("{}", result),
-//            Err(error) => println!("conversion error: {}", error),
-//        };
-//
-//        let envelope = envelopes
-//            .find_one(doc! {"name": "convert_goals"})
-//            .await
-//            .expect("error fetching envelope")
-//            .expect("could not find envelope");
-//
-//        assert_eq!(envelope.amount, 100.0);
-//
-//        let goal = goals
-//            .find_one(doc! {"name": "convert_goals"})
-//            .await
-//            .expect("error fetching goal")
-//            .expect("could not find goal");
-//        println!("{:#?}", goal);
-//        assert!(goal.target_date > Utc::now());
-//    }
-//}
+#[cfg(test)]
+mod tests {
+    use crate::database_client;
+    use crate::models::goal::{Goal, Recurrence};
+    use crate::test_utils::state_for_tests;
+    use crate::{jobs::convert_goals::convert_goals, models::envelope::Envelope};
+    use chrono::{Duration, Utc};
+    use std::ops::Sub;
+
+    #[tokio::test]
+    async fn test_convert_goals() {
+        let (_shared_state, user_extension) = state_for_tests().await.unwrap();
+        let user_id = user_extension.0.id;
+        let mut client = database_client(Some(
+            "postgres://postgres@localhost:5432/simple_budget_test",
+        ))
+        .await
+        .unwrap();
+
+        let mut goal = Goal {
+            id: None,
+            user_id: Some(user_id),
+            name: "convert_goals".to_owned(),
+            target_date: Utc::now().sub(Duration::days(2)),
+            target: 100.0,
+            recurrence: Recurrence::Weekly,
+        };
+
+        goal.create(&client).await.unwrap();
+
+        convert_goals(&mut client).await.unwrap();
+
+        let envelope = client
+            .query_one(
+                "SELECT * FROM envelopes WHERE user_id = $1 LIMIT 1",
+                &[&user_id],
+            )
+            .await
+            .unwrap();
+
+        let envelope: Envelope = envelope.try_into().unwrap();
+
+        assert_eq!(envelope.amount, 100.0);
+
+        let goal: Goal = client
+            .query_one(
+                "SELECT * FROM goals WHERE user_id = $1 LIMIT 1",
+                &[&user_id],
+            )
+            .await
+            .unwrap()
+            .try_into()
+            .unwrap();
+
+        assert!(goal.target_date > Utc::now());
+    }
+}

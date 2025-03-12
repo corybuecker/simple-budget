@@ -66,72 +66,55 @@ pub async fn action(
     Ok(Redirect::to("/accounts").into_response())
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use crate::{
-//        models::account::Account,
-//        test_utils::{state_for_tests, user_for_tests},
-//    };
-//    use axum::http::{Method, Request, StatusCode};
-//
-//    use mongodb::bson::doc;
-//    use tower::ServiceExt;
-//
-//    #[tokio::test]
-//    async fn test_update_account() {
-//        let shared_state = state_for_tests().await;
-//        let db = shared_state.mongo.default_database().unwrap();
-//        let accounts_collection: mongodb::Collection<Account> = db.collection("accounts");
-//
-//        // Create a test account
-//        let user_id = mongodb::bson::oid::ObjectId::new();
-//        let account_id = mongodb::bson::oid::ObjectId::new();
-//        let test_account = Account {
-//            _id: account_id.to_string(),
-//            user_id: user_id.to_string(),
-//            name: "Test Account".to_string(),
-//            amount: 100.0,
-//            debt: false,
-//        };
-//        accounts_collection.insert_one(test_account).await.unwrap();
-//
-//        let request = Request::builder()
-//            .method(Method::POST)
-//            .uri(format!("/accounts/{}", account_id.to_hex()))
-//            .header("content-type", "application/x-www-form-urlencoded")
-//            .body("name=Updated%20Account&debt=true&amount=200.0".to_string())
-//            .unwrap();
-//
-//        // Create a test app and call the action
-//        let app = axum::Router::new()
-//            .route(
-//                "/accounts/{id}",
-//                axum::routing::post(crate::authenticated::accounts::update::action),
-//            )
-//            .with_state(shared_state)
-//            .layer(user_for_tests(&user_id.to_hex()));
-//
-//        let response = app.oneshot(request).await.unwrap();
-//
-//        // Assert the response
-//        assert_eq!(response.status(), StatusCode::SEE_OTHER);
-//        assert_eq!(response.headers().get("location").unwrap(), "/accounts");
-//
-//        // Verify the account was updated in the database
-//        let updated_account = accounts_collection
-//            .find_one(doc! {"_id": account_id})
-//            .await
-//            .unwrap()
-//            .unwrap();
-//
-//        assert_eq!(updated_account.name, "Updated Account");
-//        assert_eq!(updated_account.amount, 200.0);
-//        assert!(updated_account.debt);
-//
-//        // Clean up
-//        accounts_collection
-//            .delete_one(doc! {"_id": account_id})
-//            .await
-//            .unwrap();
-//    }
-//}
+#[cfg(test)]
+mod tests {
+    use crate::{models::account::Account, test_utils::state_for_tests};
+    use axum::http::{Method, Request, StatusCode};
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn test_update_account() {
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let user_id = user_extension.0.id;
+
+        let mut account = Account {
+            id: None,
+            user_id: Some(user_id),
+            name: "Test Account".to_string(),
+            amount: 100.0,
+            debt: false,
+        };
+
+        account.create(&shared_state.client).await.unwrap();
+
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri(format!("/accounts/{}", account.id.unwrap()))
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body("name=Updated%20Account&debt=true&amount=200.0".to_string())
+            .unwrap();
+
+        // Create a test app and call the action
+        let app = axum::Router::new()
+            .route(
+                "/accounts/{id}",
+                axum::routing::post(crate::authenticated::accounts::update::action),
+            )
+            .with_state(shared_state.clone())
+            .layer(user_extension);
+
+        let response = app.oneshot(request).await.unwrap();
+
+        // Assert the response
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers().get("location").unwrap(), "/accounts");
+
+        let account = Account::get_one(&shared_state.client, account.id.unwrap(), user_id)
+            .await
+            .unwrap();
+
+        assert_eq!(account.name, "Updated Account");
+        assert_eq!(account.amount, 200.0);
+        assert!(account.debt);
+    }
+}

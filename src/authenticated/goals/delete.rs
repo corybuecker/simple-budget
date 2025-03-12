@@ -42,64 +42,48 @@ pub async fn action(
         .into_response())
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use crate::models::goal::Goal;
-//    use crate::test_utils::{state_for_tests, user_for_tests};
-//    use axum::Router;
-//    use axum::body::Body;
-//    use axum::http::{Request, StatusCode};
-//    use bson::doc;
-//    use bson::oid::ObjectId;
-//    use chrono::Duration;
-//    use std::ops::Add;
-//    use tower::ServiceExt;
-//
-//    #[tokio::test]
-//    async fn test_delete_action() {
-//        let shared_state = state_for_tests().await;
-//        let goals = shared_state
-//            .mongo
-//            .default_database()
-//            .unwrap()
-//            .collection::<Goal>("goals");
-//
-//        goals
-//            .delete_many(doc! {"name": "delete_goals"})
-//            .await
-//            .unwrap();
-//
-//        let user_id = ObjectId::new();
-//        let goal_id = ObjectId::new();
-//
-//        let goal = Goal {
-//            _id: goal_id.to_string(),
-//            user_id: user_id.to_string(),
-//            name: "delete_goal".to_string(),
-//            target: 100.0,
-//            recurrence: crate::models::goal::Recurrence::Weekly,
-//            target_date: chrono::Utc::now().add(Duration::seconds(60)),
-//        };
-//
-//        goals.insert_one(goal).await.unwrap();
-//
-//        // Create a router with the delete route
-//        let app = Router::new()
-//            .route("/goals/{id}", axum::routing::delete(super::action))
-//            .layer(user_for_tests(&user_id.to_hex()))
-//            .with_state(shared_state);
-//
-//        let request = Request::builder()
-//            .uri(format!("/goals/{}", goal_id))
-//            .method("DELETE")
-//            .body(Body::empty())
-//            .unwrap();
-//
-//        let response = app.oneshot(request).await.unwrap();
-//
-//        assert_eq!(response.status(), StatusCode::OK);
-//
-//        let deleted_goal = goals.find_one(doc! {"_id": goal_id}).await.unwrap();
-//        assert!(deleted_goal.is_none());
-//    }
-//}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::goal::{Goal, Recurrence};
+    use crate::test_utils::state_for_tests;
+    use axum::Router;
+    use axum::body::Body;
+    use axum::http::Request;
+    use chrono::Utc;
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn test_delete_action() {
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let user_id = user_extension.0.id;
+        let mut goal = Goal {
+            id: None,
+            user_id: Some(user_extension.0.id),
+            recurrence: Recurrence::Weekly,
+            name: "Test Goal".to_string(),
+            target: 1000.0,
+            target_date: Utc::now(),
+        };
+
+        goal.create(&shared_state.client).await.unwrap();
+
+        let app = Router::new()
+            .route("/goals/{id}", axum::routing::delete(action))
+            .layer(user_extension)
+            .with_state(shared_state.clone());
+
+        let request = Request::builder()
+            .uri(format!("/goals/{}", goal.id.unwrap()))
+            .method("DELETE")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let deleted_goal = Goal::get_one(&shared_state.client, goal.id.unwrap(), user_id).await;
+        assert!(deleted_goal.is_err());
+    }
+}

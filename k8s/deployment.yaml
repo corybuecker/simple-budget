@@ -14,7 +14,7 @@ spec:
     metadata:
       labels:
         app: simple-budget
-        version: "1741777562"
+        version: "1741823884"
     spec:
       containers:
       - name: simple-budget

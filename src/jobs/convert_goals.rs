@@ -48,7 +48,7 @@ mod tests {
         let (_shared_state, user_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
         let mut client = database_client(Some(
-            "postgres://postgres@localhost:5432/simple_budget_test",
+            "postgres://simple_budget@localhost:5432/simple_budget_test",
         ))
         .await
         .unwrap();

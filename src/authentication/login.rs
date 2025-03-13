@@ -1,4 +1,4 @@
-use crate::{SharedState, errors::FormError};
+use crate::{SharedState, errors::AppResponse};
 use axum::{
     extract::State,
     http::StatusCode,
@@ -16,7 +16,7 @@ use openidconnect::{
 use std::env;
 use tera::Context;
 
-pub async fn login(state: State<SharedState>) -> Result<Response, FormError> {
+pub async fn login(state: State<SharedState>) -> AppResponse {
     let tera = &state.tera;
     let content = tera.render("authentication/login.html", &Context::new())?;
 

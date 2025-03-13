@@ -1,10 +1,13 @@
 use crate::{
-    SharedState, authenticated::UserExtension, errors::FormError, models::account::Account,
+    SharedState,
+    authenticated::UserExtension,
+    errors::AppResponse,
+    models::account::Account,
 };
 use axum::{
     Extension,
     extract::State,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use tera::Context;
 
@@ -12,7 +15,7 @@ pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let accounts = Account::get_all(&shared_state.client, user.id).await?;
     context.insert("accounts", &accounts);
 

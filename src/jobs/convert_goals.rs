@@ -1,20 +1,21 @@
-use crate::models::{envelope::Envelope, goal::Goal};
-use anyhow::{Context, Result, anyhow};
+use crate::{
+    errors::AppError,
+    models::{envelope::Envelope, goal::Goal},
+};
+use anyhow::{Result, anyhow};
 use chrono::Utc;
 use tokio_postgres::Client;
 use tracing::info;
 
-pub async fn convert_goals(client: &mut Client) -> Result<f64> {
+pub async fn convert_goals(client: &mut Client) -> Result<f64, AppError> {
     info!("converting goals to envelopes at {}", Utc::now());
 
     let transaction = client.transaction().await?;
 
-    let goals = Goal::get_expired(transaction.client())
-        .await
-        .context("convert goals")?;
+    let goals = Goal::get_expired(transaction.client()).await?;
 
     for goal in goals {
-        let mut envelope = Envelope {
+        let envelope = Envelope {
             id: None,
             name: goal.name.clone(),
             amount: goal.target,

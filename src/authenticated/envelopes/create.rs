@@ -1,12 +1,12 @@
 use super::EnvelopeForm;
 use crate::{
-    SharedState, authenticated::UserExtension, errors::FormError, models::envelope::Envelope,
+    SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
 };
 use axum::{
     Extension, Form,
     extract::State,
     http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect},
 };
 use tera::Context;
 use validator::Validate;
@@ -16,7 +16,7 @@ pub async fn page(
     user: Extension<UserExtension>,
     headers: HeaderMap,
     form: Form<EnvelopeForm>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let mut context = Context::new();
 
     let mut turbo = false;
@@ -55,7 +55,7 @@ pub async fn page(
         }
     }
 
-    let mut envelope = Envelope {
+    let envelope = Envelope {
         id: None,
         name: form.name.to_owned(),
         amount: form.amount.to_owned(),

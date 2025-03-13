@@ -1,11 +1,11 @@
 use crate::{
-    SharedState, authenticated::UserExtension, errors::FormError, models::account::Account,
+    SharedState, authenticated::UserExtension, errors::AppResponse, models::account::Account,
 };
 use axum::{
     Extension,
     extract::{Path, State},
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use tera::Context;
 
@@ -13,7 +13,7 @@ pub async fn modal(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let account = Account::get_one(&shared_state.client, id, user.id).await?;
     let tera = shared_state.tera.clone();
     let mut context = Context::new();
@@ -27,7 +27,7 @@ pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let account = Account::get_one(&shared_state.client, id, user.id).await?;
     account.delete(&shared_state.client).await?;
 
@@ -58,15 +58,15 @@ mod tests {
     async fn test_delete_action() {
         let (shared_state, user_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let mut account = Account {
+        let account = Account {
             id: None,
-            user_id: Some(user_extension.0.id),
+            user_id: user_extension.0.id,
             name: "Test Account".to_string(),
             amount: 100.0,
             debt: false,
         };
 
-        account.create(&shared_state.client).await.unwrap();
+        let account = account.create(&shared_state.client).await.unwrap();
 
         let app = Router::new()
             .route("/accounts/{id}", axum::routing::delete(action))

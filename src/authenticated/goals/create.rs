@@ -2,14 +2,14 @@ use super::GoalForm;
 use crate::{
     SharedState,
     authenticated::UserExtension,
-    errors::FormError,
+    errors::AppResponse,
     models::goal::{Goal, Recurrence},
 };
 use axum::{
     Extension, Form,
     extract::State,
     http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect},
 };
 use chrono::{NaiveDateTime, NaiveTime};
 use std::str::FromStr;
@@ -21,7 +21,7 @@ pub async fn page(
     user: Extension<UserExtension>,
     headers: HeaderMap,
     form: Form<GoalForm>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let mut turbo = false;
     let accept = headers.get("Accept");
     if let Some(accept) = accept {

@@ -2,14 +2,14 @@ use super::GoalForm;
 use crate::{
     SharedState,
     authenticated::UserExtension,
-    errors::FormError,
+    errors::AppResponse,
     models::goal::{Goal, Recurrence},
 };
 use axum::{
     Extension, Form,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect},
 };
 use chrono::{NaiveDateTime, NaiveTime};
 use std::str::FromStr;
@@ -22,7 +22,7 @@ pub async fn action(
     Path(id): Path<i32>,
     headers: HeaderMap,
     form: Form<GoalForm>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let mut turbo = false;
     let accept = headers.get("Accept");
     if let Some(accept) = accept {
@@ -76,84 +76,62 @@ pub async fn action(
     Ok(Redirect::to("/goals").into_response())
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use crate::{
-//        models::goal::Goal,
-//        test_utils::{self, user_for_tests},
-//    };
-//    use axum::http::{Method, Request, StatusCode};
-//    use chrono::Duration;
-//    use mongodb::bson::doc;
-//    use std::ops::Add;
-//    use tower::ServiceExt;
-//
-//    #[tokio::test]
-//    async fn test_update_goal() {
-//        let shared_state = test_utils::state_for_tests().await;
-//        let db = shared_state.mongo.default_database().unwrap();
-//        let goals_collection: mongodb::Collection<Goal> = db.collection("goals");
-//
-//        // Create a test goal
-//        let user_id = mongodb::bson::oid::ObjectId::new();
-//        let goal_id = mongodb::bson::oid::ObjectId::new();
-//        let test_goal = Goal {
-//            _id: goal_id.to_string(),
-//            user_id: user_id.to_string(),
-//            name: "update goal".to_string(),
-//            recurrence: crate::models::goal::Recurrence::Monthly,
-//            target: 100.0,
-//            target_date: chrono::Utc::now().add(Duration::seconds(2000)),
-//        };
-//        goals_collection.insert_one(test_goal).await.unwrap();
-//
-//        let request = Request::builder()
-//            .method(Method::POST)
-//            .uri(format!("/goals/{}", goal_id.to_hex()))
-//            .header("content-type", "application/x-www-form-urlencoded")
-//            .body(
-//                "name=Updated%20Goal&target=2000.0&target_date=2024-12-31&recurrence=weekly"
-//                    .to_string(),
-//            )
-//            .unwrap();
-//
-//        // Create a test app and call the action
-//        let app = axum::Router::new()
-//            .route(
-//                "/goals/{id}",
-//                axum::routing::post(crate::authenticated::goals::update::action),
-//            )
-//            .with_state(shared_state)
-//            .layer(user_for_tests(&user_id.to_string()));
-//
-//        let response = app.oneshot(request).await.unwrap();
-//
-//        // Assert the response
-//        assert_eq!(response.status(), StatusCode::SEE_OTHER);
-//        assert_eq!(response.headers().get("location").unwrap(), "/goals");
-//
-//        // Verify the goal was updated in the database
-//        let updated_goal = goals_collection
-//            .find_one(doc! {"_id": goal_id})
-//            .await
-//            .unwrap()
-//            .unwrap();
-//
-//        assert_eq!(updated_goal.name, "Updated Goal");
-//        assert_eq!(updated_goal.target, 2000.0);
-//        assert_eq!(
-//            updated_goal.target_date,
-//            chrono::NaiveDate::from_ymd_opt(2024, 12, 31)
-//                .unwrap()
-//                .and_hms_opt(0, 0, 0)
-//                .unwrap()
-//                .and_utc()
-//        );
-//
-//        // Clean up
-//        goals_collection
-//            .delete_one(doc! {"_id": goal_id})
-//            .await
-//            .unwrap();
-//    }
-//}
+#[cfg(test)]
+mod tests {
+    use crate::{
+        models::goal::{Goal, Recurrence},
+        test_utils::state_for_tests,
+    };
+    use axum::http::{Method, Request, StatusCode};
+    use chrono::Utc;
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn test_update_goal() {
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let user_id = user_extension.0.id;
+
+        let mut goal = Goal {
+            id: None,
+            user_id: Some(user_id),
+            name: "Test Goal".to_string(),
+            target: 1000.0,
+            target_date: Utc::now(),
+            recurrence: Recurrence::Weekly,
+        };
+
+        goal.create(&shared_state.client).await.unwrap();
+
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri(format!("/goals/{}", goal.id.unwrap()))
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(
+                "name=Updated%20Goal&target=2000.0&target_date=2024-12-31&recurrence=weekly"
+                    .to_string(),
+            )
+            .unwrap();
+
+        // Create a test app and call the action
+        let app = axum::Router::new()
+            .route(
+                "/goals/{id}",
+                axum::routing::post(crate::authenticated::goals::update::action),
+            )
+            .with_state(shared_state.clone())
+            .layer(user_extension);
+
+        let response = app.oneshot(request).await.unwrap();
+
+        // Assert the response
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers().get("location").unwrap(), "/goals");
+
+        let goal = Goal::get_one(&shared_state.client, goal.id.unwrap(), user_id)
+            .await
+            .unwrap();
+
+        assert_eq!(goal.name, "Updated Goal");
+        assert_eq!(goal.target, 2000.0);
+    }
+}

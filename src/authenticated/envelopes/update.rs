@@ -1,13 +1,12 @@
 use super::EnvelopeForm;
 use crate::{
-    SharedState, authenticated::UserExtension, errors::FormError, models::envelope::Envelope,
+    SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
 };
-use anyhow::Result;
 use axum::{
     Extension, Form,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect},
 };
 use tera::Context;
 use validator::Validate;
@@ -18,7 +17,7 @@ pub async fn action(
     Path(id): Path<i32>,
     headers: HeaderMap,
     form: Form<EnvelopeForm>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let mut turbo = false;
     let accept = headers.get("Accept");
     if let Some(accept) = accept {
@@ -78,14 +77,14 @@ mod tests {
     async fn test_update_envelope() {
         let (shared_state, user_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let mut envelope = Envelope {
+        let envelope = Envelope {
             id: None,
             name: "envelope".to_string(),
             user_id: Some(user_id),
             amount: 1.0,
         };
 
-        envelope.create(&shared_state.client).await.unwrap();
+        let envelope = envelope.create(&shared_state.client).await.unwrap();
 
         let request = Request::builder()
             .method(Method::POST)

@@ -1,13 +1,13 @@
 use crate::{
     SharedState,
     authenticated::UserExtension,
-    errors::FormError,
+    errors::AppResponse,
     models::user::{Preferences, User},
 };
 use axum::{
     Extension,
     extract::State,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use postgres_types::Json;
 use tera::{Context, Tera};
@@ -17,14 +17,11 @@ pub async fn action(
     state: State<SharedState>,
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let client: &Client = &state.client;
 
     let user = User::get_by_id(client, user.id).await?;
-    let preferences = user
-        .preferences
-        .unwrap_or(Json(Preferences::default()))
-        .0;
+    let preferences = user.preferences.unwrap_or(Json(Preferences::default())).0;
 
     context.insert("timezone", &preferences.timezone);
 

@@ -8,6 +8,7 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect},
 };
+use rust_decimal::{Decimal, prelude::FromPrimitive};
 use tera::Context;
 use validator::Validate;
 
@@ -59,7 +60,7 @@ pub async fn action(
 
     let mut account = Account::get_one(&shared_state.client, id, user.id).await?;
     account.name = form.name.clone();
-    account.amount = form.amount;
+    account.amount = Decimal::from_f64(form.amount).expect("valid decimal");
     account.debt = form.debt.unwrap_or(false);
     account.update(&shared_state.client).await?;
 
@@ -70,6 +71,7 @@ pub async fn action(
 mod tests {
     use crate::{models::account::Account, test_utils::state_for_tests};
     use axum::http::{Method, Request, StatusCode};
+    use rust_decimal::Decimal;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -81,7 +83,7 @@ mod tests {
             id: None,
             user_id,
             name: "Test Account".to_string(),
-            amount: 100.0,
+            amount: Decimal::new(100, 0),
             debt: false,
         };
 
@@ -114,7 +116,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(account.name, "Updated Account");
-        assert_eq!(account.amount, 200.0);
+        assert_eq!(account.amount, Decimal::new(200, 0));
         assert!(account.debt);
     }
 }

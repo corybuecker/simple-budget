@@ -2,14 +2,14 @@
     <div class="flex flex-col items-center">
         <div class="text-2xl"
              data-controller="formatter"
-             data-formatter-currency-value="{{ remaining_total / remaining_days }}"
+             data-formatter-currency-value="{{ per_diem }}"
              data-formatter-currency-precision-value="3"></div>
         <div class="text-sm text-slate-600">Per day</div>
     </div>
     <div class="flex flex-col items-center">
         <div class="text-2xl"
              data-controller="formatter"
-             data-formatter-currency-value="{{ tomorrow_remaining_total / (remaining_days - forecast_offset) }}"
+             data-formatter-currency-value="{{ per_diem_forecast }}"
              data-formatter-currency-precision-value="3"></div>
         <div class="text-sm text-slate-600">
             <form method="PUT" action="/preferences">

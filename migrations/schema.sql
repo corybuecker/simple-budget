@@ -45,7 +45,7 @@ CREATE TABLE public.accounts (
     id integer NOT NULL,
     user_id integer NOT NULL,
     name text NOT NULL,
-    amount double precision NOT NULL,
+    amount numeric NOT NULL,
     debt boolean NOT NULL
 );
 
@@ -82,7 +82,7 @@ CREATE TABLE public.envelopes (
     id integer NOT NULL,
     user_id integer NOT NULL,
     name text NOT NULL,
-    amount double precision NOT NULL
+    amount numeric NOT NULL
 );
 
 
@@ -118,7 +118,7 @@ CREATE TABLE public.goals (
     id integer NOT NULL,
     user_id integer NOT NULL,
     name text NOT NULL,
-    target double precision NOT NULL,
+    target numeric NOT NULL,
     target_date timestamp with time zone NOT NULL,
     recurrence public."Recurrence" NOT NULL
 );

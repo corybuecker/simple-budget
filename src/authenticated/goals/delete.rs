@@ -51,6 +51,7 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use chrono::Utc;
+    use rust_decimal::Decimal;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -62,7 +63,7 @@ mod tests {
             user_id: Some(user_extension.0.id),
             recurrence: Recurrence::Weekly,
             name: "Test Goal".to_string(),
-            target: 1000.0,
+            target: Decimal::new(1000, 0),
             target_date: Utc::now(),
         };
 

@@ -8,6 +8,8 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect},
 };
+use rust_decimal::Decimal;
+use rust_decimal::prelude::FromPrimitive;
 use validator::Validate;
 
 pub async fn page(
@@ -61,7 +63,7 @@ pub async fn page(
     let account = Account {
         id: None,
         name: form.name.to_owned(),
-        amount: form.amount.to_owned(),
+        amount: Decimal::from_f64(form.amount.to_owned()).expect("valid decimal"),
         debt: form.debt.unwrap_or(false),
         user_id: user.id,
     };

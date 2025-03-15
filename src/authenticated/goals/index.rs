@@ -13,6 +13,7 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use chrono::Utc;
+use rust_decimal::Decimal;
 use std::collections::HashMap;
 use tera::Context;
 
@@ -21,9 +22,9 @@ pub async fn page(
     mut context: Extension<Context>,
     user: Extension<UserExtension>,
 ) -> AppResponse {
-    let mut accumulations: HashMap<i32, f64> = HashMap::new();
+    let mut accumulations: HashMap<i32, Decimal> = HashMap::new();
     let mut days_remainings: HashMap<i32, i16> = HashMap::new();
-    let mut per_days: HashMap<i32, f64> = HashMap::new();
+    let mut per_days: HashMap<i32, Decimal> = HashMap::new();
 
     let user = User::get_by_id(&shared_state.client, user.id)
         .await
@@ -42,8 +43,8 @@ pub async fn page(
     let goals = Goal::get_all(&shared_state.client, user.id).await.unwrap();
 
     for goal in &goals {
-        accumulations.insert(goal.id.unwrap(), goal.accumulated());
-        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day());
+        accumulations.insert(goal.id.unwrap(), goal.accumulated()?);
+        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day()?);
         days_remainings.insert(
             goal.id.unwrap(),
             (goal.target_date - Utc::now())

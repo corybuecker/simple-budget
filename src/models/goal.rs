@@ -1,7 +1,8 @@
 use crate::errors::AppError;
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use chrono::{DateTime, Datelike, Days, Local, Months, TimeDelta, Timelike, Utc};
 use postgres_types::{FromSql, ToSql};
+use rust_decimal::{Decimal, prelude::FromPrimitive};
 use serde::Serialize;
 use tokio_postgres::Client;
 
@@ -39,7 +40,7 @@ pub struct Goal {
     pub name: String,
     pub recurrence: Recurrence,
     pub target_date: DateTime<Utc>,
-    pub target: f64,
+    pub target: Decimal,
 }
 
 impl TryInto<Goal> for tokio_postgres::Row {
@@ -187,29 +188,37 @@ impl Goal {
         goal
     }
 
-    pub fn accumulated_per_day(&self) -> f64 {
+    pub fn accumulated_per_day(&self) -> Result<Decimal> {
         if self.start_at() > Local::now() {
-            return 0.0;
+            return Ok(Decimal::ZERO);
         }
 
         if Local::now() > self.target_date {
-            return 0.0;
+            return Ok(Decimal::ZERO);
         }
 
-        self.target / self.total_time().num_days() as f64
+        let total_time_in_days = Decimal::from_i64(self.total_time().num_days())
+            .ok_or(anyhow!("could not convert decimal"))?;
+
+        Ok(self.target / total_time_in_days)
     }
 
-    pub fn accumulated(&self) -> f64 {
+    pub fn accumulated(&self) -> Result<Decimal> {
         if self.start_at() > Local::now() {
-            return 0.0;
+            return Ok(Decimal::ZERO);
         }
 
         if Local::now() > self.target_date {
-            return self.target;
+            return Ok(self.target);
         }
 
-        self.target / self.total_time().num_seconds() as f64
-            * self.elapsed_time().num_seconds() as f64
+        let elapsed_time_in_seconds = Decimal::from_i64(self.elapsed_time().num_seconds())
+            .ok_or(anyhow!("could not convert decimal"))?;
+
+        let total_time_in_seconds = Decimal::from_i64(self.total_time().num_seconds())
+            .ok_or(anyhow!("could not convert decimal"))?;
+
+        Ok(self.target / total_time_in_seconds * elapsed_time_in_seconds)
     }
 
     fn total_time(&self) -> TimeDelta {

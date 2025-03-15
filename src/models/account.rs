@@ -1,5 +1,6 @@
 use crate::errors::AppError;
 use anyhow::Result;
+use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde::Serialize;
 use tokio_postgres::Client;
@@ -9,7 +10,7 @@ pub struct Account {
     pub id: Option<i32>,
     pub user_id: i32,
     pub name: String,
-    pub amount: f64,
+    pub amount: Decimal,
     pub debt: bool,
 }
 
@@ -98,21 +99,21 @@ impl Account {
         Ok(accounts)
     }
 
-    pub async fn accounts_total_for(user_id: i32, client: &Client) -> f64 {
+    pub async fn accounts_total_for(user_id: i32, client: &Client) -> Decimal {
         let accounts = Self::get_all(client, user_id).await.unwrap();
         let debt = accounts
             .iter()
             .filter(|a| a.debt)
             .map(|e| e.amount)
             .reduce(|memo, amount| memo + amount)
-            .unwrap_or(0.0);
+            .unwrap_or(Decimal::ZERO);
 
         let non_debt = accounts
             .iter()
             .filter(|a| !a.debt)
             .map(|e| e.amount)
             .reduce(|memo, amount| memo + amount)
-            .unwrap_or(0.0);
+            .unwrap_or(Decimal::ZERO);
 
         non_debt - debt
     }

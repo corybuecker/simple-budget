@@ -1,4 +1,4 @@
 {% extends "delete_confirmation.html" %}
 {% block prompt %}Are you sure you want to delete the "{{ goal.name }}" goal?{% endblock %}
 {% block entity %}goal{% endblock %}
-{% block action %}/goals/{{ goal | oid }}{% endblock %}
+{% block action %}/goals/{{ goal.id }}{% endblock %}

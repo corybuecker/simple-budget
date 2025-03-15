@@ -51,7 +51,7 @@ mod tests {
         let manager = shared_state.pool.get().await.unwrap();
         let client = manager.client();
 
-        let mut goal = Goal {
+        let goal = Goal {
             id: None,
             user_id,
             name: "convert_goals".to_owned(),

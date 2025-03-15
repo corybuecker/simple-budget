@@ -68,7 +68,7 @@ pub async fn page(
         }
     }
 
-    let mut goal = Goal {
+    let goal = Goal {
         id: None,
         name: form.name.to_owned(),
         target: Decimal::from_f64(form.target.to_owned()).expect("could not parse decimal"),

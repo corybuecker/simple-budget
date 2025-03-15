@@ -60,7 +60,7 @@ mod tests {
     async fn test_delete_action() {
         let (shared_state, user_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let mut goal = Goal {
+        let goal = Goal {
             id: None,
             user_id: user_extension.0.id,
             recurrence: Recurrence::Weekly,
@@ -69,7 +69,8 @@ mod tests {
             target_date: Utc::now(),
         };
 
-        goal.create(shared_state.pool.get().await.unwrap().client())
+        let goal = goal
+            .create(shared_state.pool.get().await.unwrap().client())
             .await
             .unwrap();
 

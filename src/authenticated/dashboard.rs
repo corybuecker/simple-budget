@@ -17,15 +17,16 @@ use chrono_tz::Tz;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
 use tera::Context;
-use tokio_postgres::Client;
+use tokio_postgres::{Client, GenericClient};
 
 pub async fn index(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
 ) -> AppResponse {
     let csrf = user.csrf.clone();
-    let user = User::get_by_id(&shared_state.client, user.id).await?;
-    let mut context = generate_dashboard_context_for(&user, &shared_state.client).await?;
+    let user = User::get_by_id(shared_state.pool.get().await?.client(), user.id).await?;
+    let mut context =
+        generate_dashboard_context_for(&user, shared_state.pool.get().await?.client()).await?;
     context.insert("csrf", &csrf);
     context.insert("section", &Section::Reports);
     let content = shared_state

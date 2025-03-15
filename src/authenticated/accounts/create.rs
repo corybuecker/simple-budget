@@ -10,6 +10,7 @@ use axum::{
 };
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
+use tokio_postgres::GenericClient;
 use validator::Validate;
 
 pub async fn page(
@@ -68,7 +69,9 @@ pub async fn page(
         user_id: user.id,
     };
 
-    account.create(&shared_state.client).await?;
+    account
+        .create(shared_state.pool.get().await?.client())
+        .await?;
 
     Ok(Redirect::to("/accounts").into_response())
 }
@@ -82,13 +85,15 @@ mod tests {
     use axum::http::{Request, StatusCode};
     use axum::routing::post;
     use std::str::from_utf8;
+    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_create_account_success() {
         let (shared_state, user_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let client = &shared_state.client.clone();
+        let client = &shared_state.pool.get().await.unwrap();
+        let client = client.client();
 
         let app = Router::new()
             .route("/accounts/create", post(page))

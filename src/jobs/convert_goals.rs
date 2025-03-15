@@ -4,15 +4,17 @@ use crate::{
 };
 use anyhow::{Result, anyhow};
 use chrono::Utc;
-use tokio_postgres::Client;
+use deadpool_postgres::Pool;
 use tracing::info;
 
-pub async fn convert_goals(client: &mut Client) -> Result<f64, AppError> {
+pub async fn convert_goals(pool: &Pool) -> Result<f64, AppError> {
     info!("converting goals to envelopes at {}", Utc::now());
 
-    let transaction = client.transaction().await?;
+    let mut manager = pool.get().await.unwrap();
+    let transaction = manager.transaction().await?;
+    let client = transaction.client();
 
-    let goals = Goal::get_expired(transaction.client()).await?;
+    let goals = Goal::get_expired(client).await?;
 
     for goal in goals {
         let envelope = Envelope {
@@ -37,23 +39,20 @@ pub async fn convert_goals(client: &mut Client) -> Result<f64, AppError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::database_client;
     use crate::models::goal::{Goal, Recurrence};
     use crate::test_utils::state_for_tests;
     use crate::{jobs::convert_goals::convert_goals, models::envelope::Envelope};
     use chrono::{Duration, Utc};
     use rust_decimal::Decimal;
     use std::ops::Sub;
+    use tokio_postgres::GenericClient;
 
     #[tokio::test]
     async fn test_convert_goals() {
-        let (_shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let mut client = database_client(Some(
-            "postgres://simple_budget@localhost:5432/simple_budget_test",
-        ))
-        .await
-        .unwrap();
+        let manager = shared_state.pool.get().await.unwrap();
+        let client = manager.client();
 
         let mut goal = Goal {
             id: None,
@@ -64,9 +63,9 @@ mod tests {
             recurrence: Recurrence::Weekly,
         };
 
-        goal.create(&client).await.unwrap();
+        goal.create(client).await.unwrap();
 
-        convert_goals(&mut client).await.unwrap();
+        convert_goals(&shared_state.pool).await.unwrap();
 
         let envelope = client
             .query_one(

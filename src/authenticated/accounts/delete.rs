@@ -8,13 +8,14 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use tera::Context;
+use tokio_postgres::GenericClient;
 
 pub async fn modal(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
 ) -> AppResponse {
-    let account = Account::get_one(&shared_state.client, id, user.id).await?;
+    let account = Account::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
     let tera = shared_state.tera.clone();
     let mut context = Context::new();
     context.insert("account", &account);
@@ -28,8 +29,10 @@ pub async fn action(
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
 ) -> AppResponse {
-    let account = Account::get_one(&shared_state.client, id, user.id).await?;
-    account.delete(&shared_state.client).await?;
+    let account = Account::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
+    account
+        .delete(shared_state.pool.get().await?.client())
+        .await?;
 
     let tera = shared_state.tera.clone();
     let mut context = Context::new();
@@ -53,6 +56,7 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use rust_decimal::Decimal;
+    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -66,7 +70,10 @@ mod tests {
             debt: false,
         };
 
-        let account = account.create(&shared_state.client).await.unwrap();
+        let account = account
+            .create(shared_state.pool.get().await.unwrap().client())
+            .await
+            .unwrap();
 
         let app = Router::new()
             .route("/accounts/{id}/delete", axum::routing::get(modal))
@@ -96,7 +103,10 @@ mod tests {
             debt: false,
         };
 
-        let account = account.create(&shared_state.client).await.unwrap();
+        let account = account
+            .create(shared_state.pool.get().await.unwrap().client())
+            .await
+            .unwrap();
 
         let app = Router::new()
             .route("/accounts/{id}", axum::routing::delete(action))
@@ -113,8 +123,12 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
 
-        let deleted_account =
-            Account::get_one(&shared_state.client, account.id.unwrap(), user_id).await;
+        let deleted_account = Account::get_one(
+            shared_state.pool.get().await.unwrap().client(),
+            account.id.unwrap(),
+            user_id,
+        )
+        .await;
         assert!(deleted_account.is_err());
     }
 }

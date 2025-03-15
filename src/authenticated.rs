@@ -14,6 +14,7 @@ use axum_extra::extract::{
 use futures_util::{SinkExt, stream::StreamExt};
 use std::env;
 use tokio::{spawn, sync::watch};
+use tokio_postgres::GenericClient;
 use tracing::debug;
 
 pub mod accounts;
@@ -67,7 +68,7 @@ async fn authenticated(
 
     let session_id = session_id.value();
 
-    let session = Session::get_by_id(&state.client, session_id).await;
+    let session = Session::get_by_id(state.pool.get().await.unwrap().client(), session_id).await;
 
     if let Ok(session) = session {
         let (tx, rx) = watch::channel(String::new());

@@ -15,6 +15,7 @@ use chrono::{NaiveDateTime, NaiveTime};
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::str::FromStr;
 use tera::Context;
+use tokio_postgres::GenericClient;
 use validator::Validate;
 
 pub async fn action(
@@ -65,14 +66,15 @@ pub async fn action(
         }
     }
 
-    let mut goal = Goal::get_one(&shared_state.client, id, user.id).await?;
+    let mut goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
 
     goal.name = form.name.to_owned();
     goal.target = Decimal::from_f64(form.target.to_owned()).expect("could not parse decimal");
     goal.recurrence = Recurrence::from_str(&form.recurrence).unwrap();
     goal.target_date = NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc();
 
-    goal.update(&shared_state.client).await?;
+    goal.update(shared_state.pool.get().await?.client())
+        .await?;
 
     Ok(Redirect::to("/goals").into_response())
 }
@@ -86,6 +88,7 @@ mod tests {
     use axum::http::{Method, Request, StatusCode};
     use chrono::Utc;
     use rust_decimal::Decimal;
+    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -102,7 +105,9 @@ mod tests {
             recurrence: Recurrence::Weekly,
         };
 
-        goal.create(&shared_state.client).await.unwrap();
+        goal.create(shared_state.pool.get().await.unwrap().client())
+            .await
+            .unwrap();
 
         let request = Request::builder()
             .method(Method::POST)
@@ -129,9 +134,13 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(response.headers().get("location").unwrap(), "/goals");
 
-        let goal = Goal::get_one(&shared_state.client, goal.id.unwrap(), user_id)
-            .await
-            .unwrap();
+        let goal = Goal::get_one(
+            shared_state.pool.get().await.unwrap().client(),
+            goal.id.unwrap(),
+            user_id,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(goal.name, "Updated Goal");
         assert_eq!(goal.target, Decimal::new(2000, 0));

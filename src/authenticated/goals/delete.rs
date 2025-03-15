@@ -6,13 +6,14 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use tera::Context;
+use tokio_postgres::GenericClient;
 
 pub async fn modal(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
 ) -> AppResponse {
-    let goal = Goal::get_one(&shared_state.client, id, user.id).await?;
+    let goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
     let tera = shared_state.tera.clone();
     let mut context = Context::new();
     context.insert("goal", &goal);
@@ -26,9 +27,10 @@ pub async fn action(
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
 ) -> AppResponse {
-    let goal = Goal::get_one(&shared_state.client, id, user.id).await?;
+    let goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
 
-    goal.delete(&shared_state.client).await?;
+    goal.delete(shared_state.pool.get().await?.client())
+        .await?;
     let tera = shared_state.tera.clone();
     let mut context = Context::new();
     context.insert("goal", &goal);
@@ -52,6 +54,7 @@ mod tests {
     use axum::http::Request;
     use chrono::Utc;
     use rust_decimal::Decimal;
+    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -67,7 +70,9 @@ mod tests {
             target_date: Utc::now(),
         };
 
-        goal.create(&shared_state.client).await.unwrap();
+        goal.create(shared_state.pool.get().await.unwrap().client())
+            .await
+            .unwrap();
 
         let app = Router::new()
             .route("/goals/{id}", axum::routing::delete(action))
@@ -84,7 +89,12 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
 
-        let deleted_goal = Goal::get_one(&shared_state.client, goal.id.unwrap(), user_id).await;
+        let deleted_goal = Goal::get_one(
+            shared_state.pool.get().await.unwrap().client(),
+            goal.id.unwrap(),
+            user_id,
+        )
+        .await;
         assert!(deleted_goal.is_err());
     }
 }

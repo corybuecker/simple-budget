@@ -9,10 +9,12 @@ use axum::{
     routing::get,
 };
 use axum_extra::extract::cookie::Key;
+use deadpool_postgres::{Config, Pool, RecyclingMethod, Runtime};
+use errors::AppResponse;
 use include_dir::{Dir, include_dir};
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
 use serde::Serialize;
-use std::{env, sync::Arc, time::Duration};
+use std::{env, time::Duration};
 use tera::{Context, Tera};
 use tokio::{
     select,
@@ -54,10 +56,10 @@ struct Broker {
 
 #[derive(Clone)]
 pub struct SharedState {
-    tera: Tera,
-    client: Arc<Client>,
-    key: Key,
     broker: Broker,
+    key: Key,
+    pool: Pool,
+    tera: Tera,
 }
 
 impl FromRef<SharedState> for Key {
@@ -69,13 +71,13 @@ impl FromRef<SharedState> for Key {
 fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     spawn(async {
         let mut interval = interval(Duration::from_millis(60000));
-        let mut jobs_client = database_client(None).await.unwrap();
+        let jobs_pool = database_pool(None).await.unwrap();
 
         loop {
             interval.tick().await;
 
             let (clear_sessions_result, convert_goals_result) =
-                tokio::join!(clear_sessions(), convert_goals(&mut jobs_client));
+                tokio::join!(clear_sessions(), convert_goals(&jobs_pool));
 
             debug!("🚧 {:#?}", convert_goals_result);
             debug!("🚧 {:#?}", clear_sessions_result);
@@ -140,6 +142,10 @@ async fn fetch_asset(Path(file): Path<String>) -> Response {
     }
 }
 
+async fn healthcheck() -> AppResponse {
+    Ok(StatusCode::OK.into_response())
+}
+
 static TEMPLATES: Dir = include_dir!("templates");
 static ASSETS: Dir = include_dir!("static");
 
@@ -169,11 +175,12 @@ async fn main() {
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
     let (sender, receiver) = mpsc::channel::<String>(100);
-    let client = database_client(None).await.unwrap();
+    let pool = database_pool(None).await.unwrap();
+
     let shared_state = SharedState {
         tera,
-        client: client.into(),
         key,
+        pool,
         broker: Broker { sender },
     };
 
@@ -185,6 +192,7 @@ async fn main() {
                 .route("/assets/{*file}", get(fetch_asset))
                 .layer(from_fn(cache_header)),
         )
+        .merge(Router::new().route("/healthcheck", get(healthcheck)))
         .with_state(shared_state)
         .layer(from_fn(inject_context))
         .layer(
@@ -215,6 +223,21 @@ async fn main() {
         _ = server_handle => {},
         _ = broker_handle => {},
     }
+}
+
+pub async fn database_pool(database_url: Option<&str>) -> Result<Pool> {
+    let database_url = match database_url {
+        Some(url) => url,
+        None => &env::var("DATABASE_URL")?,
+    };
+
+    let mut cfg = Config::new();
+    cfg.url = Some(database_url.to_string());
+    cfg.manager = Some(deadpool_postgres::ManagerConfig {
+        recycling_method: RecyclingMethod::Fast,
+    });
+
+    Ok(cfg.create_pool(Some(Runtime::Tokio1), NoTls)?)
 }
 
 pub async fn database_client(database_url: Option<&str>) -> Result<Client> {

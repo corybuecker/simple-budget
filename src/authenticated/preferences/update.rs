@@ -18,13 +18,14 @@ use postgres_types::Json;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 use tera::Context;
+use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     form: Form<PreferencesForm>,
 ) -> AppResponse {
-    let mut user = User::get_by_id(&shared_state.client, user.id)
+    let mut user = User::get_by_id(shared_state.pool.get().await?.client(), user.id)
         .await
         .unwrap();
 
@@ -62,7 +63,8 @@ pub async fn action(
     };
 
     user.preferences = Some(Json(preferences.clone()));
-    user.update(&shared_state.client).await?;
+    user.update(shared_state.pool.get().await?.client())
+        .await?;
 
     let tera = &shared_state.tera;
     let mut goals_context = Context::new();
@@ -70,7 +72,9 @@ pub async fn action(
     let mut accumulations: HashMap<i32, Decimal> = HashMap::new();
     let mut days_remainings: HashMap<i32, i64> = HashMap::new();
     let mut per_days: HashMap<i32, Decimal> = HashMap::new();
-    let goals = Goal::get_all(&shared_state.client, user.id).await.unwrap();
+    let goals = Goal::get_all(shared_state.pool.get().await?.client(), user.id)
+        .await
+        .unwrap();
 
     goals_context.insert("goal_header", &goal_header);
 
@@ -88,7 +92,8 @@ pub async fn action(
 
     let goals_html = tera.render("goals/_table.html", &goals_context)?;
 
-    let dashboard_context = generate_dashboard_context_for(&user, &shared_state.client).await?;
+    let dashboard_context =
+        generate_dashboard_context_for(&user, shared_state.pool.get().await?.client()).await?;
 
     let dashboard_content = shared_state
         .tera

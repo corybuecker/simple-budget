@@ -10,6 +10,7 @@ use axum::{
 };
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use tera::Context;
+use tokio_postgres::GenericClient;
 use validator::Validate;
 
 pub async fn page(
@@ -63,7 +64,9 @@ pub async fn page(
         user_id: Some(user.id),
     };
 
-    envelope.create(&shared_state.client).await?;
+    envelope
+        .create(shared_state.pool.get().await?.client())
+        .await?;
 
     Ok(Redirect::to("/envelopes").into_response())
 }
@@ -77,12 +80,14 @@ mod tests {
     use axum::http::{Request, StatusCode};
     use axum::routing::post;
     use std::str::from_utf8;
+    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_create_envelope_success() {
         let (shared_state, user_extension) = state_for_tests().await.unwrap();
-        let client = shared_state.client.clone();
+        let client = shared_state.pool.get().await.unwrap();
+        let client = client.client();
         let user_id = user_extension.0.id;
 
         let app = Router::new()

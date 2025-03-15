@@ -9,6 +9,7 @@ axum = { version = "0.8.1", features = ["ws", "macros"] }
 axum-extra = { version = "0.10.0", features = ["cookie-signed", "query"] }
 chrono = { version = "0.4.40" }
 chrono-tz = { version = "0.10.1" }
+deadpool-postgres = "0.14.1"
 futures-util = "0.3.31"
 include_dir = { version = "0.7.4", features = ["glob"] }
 jsonwebtoken = { version = "9.3.1" }

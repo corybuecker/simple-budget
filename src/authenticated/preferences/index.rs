@@ -11,16 +11,14 @@ use axum::{
 };
 use postgres_types::Json;
 use tera::{Context, Tera};
-use tokio_postgres::Client;
+use tokio_postgres::GenericClient;
 
 pub async fn action(
     state: State<SharedState>,
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> AppResponse {
-    let client: &Client = &state.client;
-
-    let user = User::get_by_id(client, user.id).await?;
+    let user = User::get_by_id(state.pool.get().await?.client(), user.id).await?;
     let preferences = user.preferences.unwrap_or(Json(Preferences::default())).0;
 
     context.insert("timezone", &preferences.timezone);

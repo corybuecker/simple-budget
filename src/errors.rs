@@ -29,6 +29,14 @@ impl IntoResponse for AppError {
                 error!("{}", err);
                 StatusCode::NOT_FOUND.into_response()
             }
+            AppError::Unknown(err) => {
+                error!("{}", err);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Sorry, something has gone wrong",
+                )
+                    .into_response()
+            }
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Sorry, something has gone wrong",

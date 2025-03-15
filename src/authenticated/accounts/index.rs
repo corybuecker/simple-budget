@@ -1,8 +1,5 @@
 use crate::{
-    SharedState,
-    authenticated::UserExtension,
-    errors::AppResponse,
-    models::account::Account,
+    SharedState, authenticated::UserExtension, errors::AppResponse, models::account::Account,
 };
 use axum::{
     Extension,

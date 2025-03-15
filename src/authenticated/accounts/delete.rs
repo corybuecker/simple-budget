@@ -56,6 +56,35 @@ mod tests {
     use tower::ServiceExt;
 
     #[tokio::test]
+    async fn test_delete_modal() {
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let account = Account {
+            id: None,
+            user_id: user_extension.0.id,
+            name: "Test Account".to_string(),
+            amount: Decimal::new(100, 0),
+            debt: false,
+        };
+
+        let account = account.create(&shared_state.client).await.unwrap();
+
+        let app = Router::new()
+            .route("/accounts/{id}/delete", axum::routing::get(modal))
+            .layer(user_extension)
+            .with_state(shared_state.clone());
+
+        let request = Request::builder()
+            .uri(format!("/accounts/{}/delete", account.id.unwrap()))
+            .method("GET")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
     async fn test_delete_action() {
         let (shared_state, user_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;

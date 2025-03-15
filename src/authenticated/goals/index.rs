@@ -1,7 +1,7 @@
 use crate::{
     SharedState,
     authenticated::UserExtension,
-    errors::FormError,
+    errors::AppResponse,
     models::{
         goal::Goal,
         user::{GoalHeader, User},
@@ -10,7 +10,7 @@ use crate::{
 use axum::{
     Extension,
     extract::State,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use chrono::Utc;
 use std::collections::HashMap;
@@ -20,7 +20,7 @@ pub async fn page(
     shared_state: State<SharedState>,
     mut context: Extension<Context>,
     user: Extension<UserExtension>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let mut accumulations: HashMap<i32, f64> = HashMap::new();
     let mut days_remainings: HashMap<i32, i16> = HashMap::new();
     let mut per_days: HashMap<i32, f64> = HashMap::new();

@@ -1,12 +1,12 @@
 use super::AccountForm;
 use crate::{
-    SharedState, authenticated::UserExtension, errors::FormError, models::account::Account,
+    SharedState, authenticated::UserExtension, errors::AppResponse, models::account::Account,
 };
 use axum::{
     Extension, Form,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect},
 };
 use tera::Context;
 use validator::Validate;
@@ -17,7 +17,7 @@ pub async fn action(
     Path(id): Path<i32>,
     headers: HeaderMap,
     form: Form<AccountForm>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let mut turbo = false;
     let accept = headers.get("Accept");
     if let Some(accept) = accept {
@@ -77,15 +77,15 @@ mod tests {
         let (shared_state, user_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
 
-        let mut account = Account {
+        let account = Account {
             id: None,
-            user_id: Some(user_id),
+            user_id,
             name: "Test Account".to_string(),
             amount: 100.0,
             debt: false,
         };
 
-        account.create(&shared_state.client).await.unwrap();
+        let account = account.create(&shared_state.client).await.unwrap();
 
         let request = Request::builder()
             .method(Method::POST)

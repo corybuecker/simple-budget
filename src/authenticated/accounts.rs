@@ -2,11 +2,11 @@ use crate::{Section, SharedState};
 mod create;
 use super::UserExtension;
 use axum::{
+    Extension, Router,
     extract::Request,
-    middleware::{from_fn, Next},
+    middleware::{Next, from_fn},
     response::Response,
     routing::get,
-    Extension, Router,
 };
 use serde::Deserialize;
 use tera::Context;

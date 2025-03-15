@@ -1,8 +1,8 @@
-use crate::{SharedState, authenticated::UserExtension, errors::FormError, models::goal::Goal};
+use crate::{SharedState, authenticated::UserExtension, errors::AppResponse, models::goal::Goal};
 use axum::{
     Extension,
     extract::{Path, State},
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use tera::Context;
 
@@ -11,7 +11,7 @@ pub async fn page(
     Path(id): Path<i32>,
     Extension(user): Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let goal = Goal::get_one(&shared_state.client, id, user.id).await?;
     context.insert("id", &goal.id);
     context.insert("name", &goal.name);

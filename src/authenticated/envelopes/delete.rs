@@ -1,12 +1,11 @@
 use crate::{
-    SharedState, authenticated::UserExtension, errors::FormError, models::envelope::Envelope,
+    SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
 };
-use anyhow::Result;
 use axum::{
     Extension,
     extract::{Path, State},
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use tera::Context;
 
@@ -14,7 +13,7 @@ pub async fn modal(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
 
     let tera = shared_state.tera.clone();
@@ -29,7 +28,7 @@ pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
 
     envelope.delete(&shared_state.client).await?;

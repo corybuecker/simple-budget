@@ -1,13 +1,13 @@
 use super::AccountForm;
-use crate::errors::FormError;
+use crate::errors::AppResponse;
 use crate::{SharedState, authenticated::UserExtension, models::account::Account};
+use anyhow::Context;
 use axum::{
     Extension, Form,
     extract::State,
     http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect},
 };
-use tera::Context;
 use validator::Validate;
 
 pub async fn page(
@@ -15,7 +15,7 @@ pub async fn page(
     user: Extension<UserExtension>,
     headers: HeaderMap,
     Form(form): Form<AccountForm>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let mut turbo = false;
     let accept = headers.get("Accept");
     if let Some(accept) = accept {
@@ -26,21 +26,24 @@ pub async fn page(
     match form.validate() {
         Ok(_) => {}
         Err(validation_errors) => {
-            let mut context = Context::new();
+            let mut context = tera::Context::new();
 
             context.insert("errors", &validation_errors.to_string());
             context.insert("name", &form.name);
             context.insert("amount", &form.amount);
             context.insert("debt", &form.debt);
 
-            let content = shared_state.tera.render(
-                if turbo {
-                    "accounts/form.turbo.html"
-                } else {
-                    "accounts/new.html"
-                },
-                &context,
-            )?;
+            let content = shared_state
+                .tera
+                .render(
+                    if turbo {
+                        "accounts/form.turbo.html"
+                    } else {
+                        "accounts/new.html"
+                    },
+                    &context,
+                )
+                .context("Tera")?;
 
             if turbo {
                 return Ok((
@@ -55,15 +58,15 @@ pub async fn page(
         }
     }
 
-    let mut account_record = Account {
+    let account = Account {
         id: None,
         name: form.name.to_owned(),
         amount: form.amount.to_owned(),
         debt: form.debt.unwrap_or(false),
-        user_id: Some(user.id),
+        user_id: user.id,
     };
 
-    account_record.create(&shared_state.client).await?;
+    account.create(&shared_state.client).await?;
 
     Ok(Redirect::to("/accounts").into_response())
 }

@@ -2,7 +2,7 @@ use super::PreferencesForm;
 use crate::{
     SharedState,
     authenticated::{UserExtension, dashboard::generate_dashboard_context_for},
-    errors::FormError,
+    errors::AppResponse,
     models::{
         goal::Goal,
         user::{Preferences, User},
@@ -11,7 +11,7 @@ use crate::{
 use axum::{
     Extension, Form,
     extract::State,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use chrono::Utc;
 use postgres_types::Json;
@@ -22,7 +22,7 @@ pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     form: Form<PreferencesForm>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let mut user = User::get_by_id(&shared_state.client, user.id)
         .await
         .unwrap();

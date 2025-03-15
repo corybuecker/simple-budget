@@ -1,11 +1,10 @@
 use crate::{
-    SharedState, authenticated::UserExtension, errors::FormError, models::envelope::Envelope,
+    SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
 };
-use anyhow::Result;
 use axum::{
     Extension,
     extract::{Path, State},
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use tera::Context;
 
@@ -14,7 +13,7 @@ pub async fn page(
     Path(id): Path<i32>,
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
 
     context.insert("id", &envelope.id);

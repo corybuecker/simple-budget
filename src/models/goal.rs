@@ -1,3 +1,4 @@
+use crate::errors::AppError;
 use anyhow::Result;
 use chrono::{DateTime, Datelike, Days, Local, Months, TimeDelta, Timelike, Utc};
 use postgres_types::{FromSql, ToSql};
@@ -42,22 +43,34 @@ pub struct Goal {
 }
 
 impl TryInto<Goal> for tokio_postgres::Row {
-    type Error = anyhow::Error;
+    type Error = AppError;
 
-    fn try_into(self: tokio_postgres::Row) -> Result<Goal> {
+    fn try_into(self: tokio_postgres::Row) -> Result<Goal, AppError> {
         Ok(Goal {
-            id: self.try_get("id")?,
-            user_id: self.try_get("user_id")?,
-            name: self.try_get("name")?,
-            recurrence: self.try_get("recurrence")?,
-            target_date: self.try_get("target_date")?,
-            target: self.try_get("target")?,
+            id: self
+                .try_get("id")
+                .map_err(AppError::RecordDeserializationError)?,
+            user_id: self
+                .try_get("user_id")
+                .map_err(AppError::RecordDeserializationError)?,
+            name: self
+                .try_get("name")
+                .map_err(AppError::RecordDeserializationError)?,
+            recurrence: self
+                .try_get("recurrence")
+                .map_err(AppError::RecordDeserializationError)?,
+            target_date: self
+                .try_get("target_date")
+                .map_err(AppError::RecordDeserializationError)?,
+            target: self
+                .try_get("target")
+                .map_err(AppError::RecordDeserializationError)?,
         })
     }
 }
 
 impl Goal {
-    pub async fn create(&mut self, client: &Client) -> Result<()> {
+    pub async fn create(&mut self, client: &Client) -> Result<(), AppError> {
         let row = client
             .query_one(
                 "INSERT INTO goals
@@ -77,12 +90,12 @@ impl Goal {
         Ok(())
     }
 
-    pub async fn update(&self, client: &Client) -> Result<()> {
+    pub async fn update(&self, client: &Client) -> Result<(), AppError> {
         client.query("UPDATE goals SET name = $1, recurrence = $2, target_date = $3, target = $4 WHERE id = $5 AND user_id = $6", &[&self.name, &self.recurrence, &self.target_date, &self.target, &self.id, &self.user_id]).await?;
         Ok(())
     }
 
-    pub async fn delete(&self, client: &Client) -> Result<()> {
+    pub async fn delete(&self, client: &Client) -> Result<(), AppError> {
         client
             .execute(
                 "DELETE FROM goals WHERE user_id = $1 and id = $2",
@@ -92,19 +105,21 @@ impl Goal {
         Ok(())
     }
 
-    pub async fn get_one(client: &Client, id: i32, user_id: i32) -> Result<Self> {
-        client
+    pub async fn get_one(client: &Client, id: i32, user_id: i32) -> Result<Self, AppError> {
+        let row = client
             .query_one(
                 "SELECT goals.* FROM goals
                 INNER JOIN users ON users.id = goals.user_id
                 WHERE users.id = $1 AND goals.id = $2",
                 &[&user_id, &id],
             )
-            .await?
-            .try_into()
+            .await
+            .map_err(AppError::RecordNotFound)?;
+
+        row.try_into()
     }
 
-    pub async fn get_all(client: &Client, user_id: i32) -> Result<Vec<Self>> {
+    pub async fn get_all(client: &Client, user_id: i32) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
                 "SELECT goals.* FROM goals INNER
@@ -121,7 +136,7 @@ impl Goal {
         Ok(goals)
     }
 
-    pub async fn get_expired(client: &Client) -> Result<Vec<Self>> {
+    pub async fn get_expired(client: &Client) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
                 "SELECT goals.* FROM goals WHERE recurrence <> 'Never' AND target_date < NOW()",

@@ -1,12 +1,11 @@
 use crate::{
     SharedState,
-    errors::FormError,
+    errors::AppError,
     models::user::{Session, User},
 };
 use anyhow::{Result, anyhow};
 use axum::{
     extract::State,
-    http::StatusCode,
     response::{IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
@@ -38,42 +37,23 @@ pub async fn callback(
     shared_state: State<SharedState>,
     query: Query<GoogleCallback>,
     jar: SignedCookieJar,
-) -> Result<(SignedCookieJar, Response), FormError> {
+) -> Result<(SignedCookieJar, Response), AppError> {
     let client_id = env::var("GOOGLE_CLIENT_ID").unwrap();
     let client_secret = env::var("GOOGLE_CLIENT_SECRET").unwrap();
     let callback_url = env::var("GOOGLE_CALLBACK_URL").unwrap();
 
-    let Ok(issuer_url) = IssuerUrl::new("https://accounts.google.com".to_string()) else {
-        return Err(FormError {
-            message: String::new(),
-            status_code: Some(StatusCode::SERVICE_UNAVAILABLE),
-        });
-    };
+    let issuer_url = IssuerUrl::new("https://accounts.google.com".to_string())?;
 
     let async_http_client = openidconnect::reqwest::Client::builder().build().unwrap();
 
-    let Ok(provider_metadata) =
-        CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await
-    else {
-        return Err(FormError {
-            message: String::new(),
-            status_code: Some(StatusCode::SERVICE_UNAVAILABLE),
-        });
-    };
+    let provider_metadata =
+        CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await?;
 
-    let Ok(redirect_uri) = RedirectUrl::new(callback_url) else {
-        return Err(FormError {
-            message: String::new(),
-            status_code: Some(StatusCode::SERVICE_UNAVAILABLE),
-        });
-    };
+    let redirect_uri = RedirectUrl::new(callback_url)?;
 
-    let Some(nonce_cookie) = jar.get("nonce") else {
-        return Err(FormError {
-            message: String::new(),
-            status_code: Some(StatusCode::FORBIDDEN),
-        });
-    };
+    let nonce_cookie = jar
+        .get("nonce")
+        .ok_or(anyhow!("could not get nonce from cookie"))?;
 
     let redirect_cookie = jar.get("redirect_to");
     let redirect = match &redirect_cookie {
@@ -92,54 +72,33 @@ pub async fn callback(
     let client = client.set_redirect_uri(redirect_uri);
     let nonce = Nonce::new(nonce_cookie.value().to_string());
 
-    let Ok(token_response) = client
+    let token_response = client
         .exchange_code(AuthorizationCode::new(query.code.to_string()))
         .unwrap()
         .request_async(&async_http_client)
-        .await
-    else {
-        return Err(FormError {
-            message: String::new(),
-            status_code: Some(StatusCode::SERVICE_UNAVAILABLE),
-        });
-    };
+        .await?;
 
-    let id_token = token_response.id_token().unwrap();
+    let id_token = token_response
+        .id_token()
+        .ok_or(anyhow!("could not get id token"))?;
 
-    let Ok(claims) = id_token.claims(&client.id_token_verifier(), &nonce) else {
-        return Err(FormError {
-            message: String::new(),
-            status_code: Some(StatusCode::FORBIDDEN),
-        });
-    };
+    let claims = id_token.claims(&client.id_token_verifier(), &nonce)?;
 
     let subject = claims.subject().to_string();
-    let Some(email) = claims.email() else {
-        return Err(FormError {
-            message: String::new(),
-            status_code: Some(StatusCode::FORBIDDEN),
-        });
-    };
+    let email = claims.email().ok_or(anyhow!("could not get email"))?;
     let email = email.to_string();
     let secure = env::var("SECURE").unwrap_or("false".to_string());
 
-    match create_session(&shared_state.client, &subject, &email).await {
-        Ok(id) => {
-            let cookie = Cookie::build(("session_id", id.to_string()))
-                .expires(None)
-                .http_only(true)
-                .path("/")
-                .same_site(SameSite::Lax)
-                .secure(secure == *"true")
-                .build();
+    let id = create_session(&shared_state.client, &subject, &email).await?;
+    let cookie = Cookie::build(("session_id", id.to_string()))
+        .expires(None)
+        .http_only(true)
+        .path("/")
+        .same_site(SameSite::Lax)
+        .secure(secure == *"true")
+        .build();
 
-            Ok((jar.add(cookie), Redirect::to(redirect).into_response()))
-        }
-        Err(_code) => Err(FormError {
-            message: String::new(),
-            status_code: Some(StatusCode::FORBIDDEN),
-        }),
-    }
+    Ok((jar.add(cookie), Redirect::to(redirect).into_response()))
 }
 
 async fn create_session(client: &Client, subject: &str, email: &str) -> Result<Uuid> {

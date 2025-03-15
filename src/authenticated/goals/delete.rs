@@ -1,9 +1,9 @@
-use crate::{SharedState, authenticated::UserExtension, errors::FormError, models::goal::Goal};
+use crate::{SharedState, authenticated::UserExtension, errors::AppResponse, models::goal::Goal};
 use axum::{
     Extension,
     extract::{Path, State},
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use tera::Context;
 
@@ -11,7 +11,7 @@ pub async fn modal(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let goal = Goal::get_one(&shared_state.client, id, user.id).await?;
     let tera = shared_state.tera.clone();
     let mut context = Context::new();
@@ -25,7 +25,7 @@ pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let goal = Goal::get_one(&shared_state.client, id, user.id).await?;
 
     goal.delete(&shared_state.client).await?;

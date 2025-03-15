@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use axum::{
     Json,
     extract::State,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use axum_extra::extract::{SignedCookieJar, cookie::Cookie};
 use chrono::{Days, Utc};
@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use crate::{
     SharedState,
-    errors::FormError,
+    errors::AppResponse,
     models::user::{Session, User},
 };
 
@@ -40,7 +40,7 @@ pub async fn token(
     shared_state: State<SharedState>,
     jar: SignedCookieJar,
     Json(token): Json<Payload>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     debug!("{:#?}", token);
 
     let issuer_url = IssuerUrl::new("https://accounts.google.com".to_string()).unwrap();

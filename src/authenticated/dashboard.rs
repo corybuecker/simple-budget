@@ -1,14 +1,15 @@
 use super::UserExtension;
+use crate::errors::AppResponse;
 use crate::models::account::Account;
 use crate::models::envelope::envelopes_total_for;
 use crate::models::goal::Goal;
 use crate::models::user::Preferences;
 use crate::utilities::dates::{TimeProvider, TimeUtilities};
-use crate::{Section, SharedState, errors::FormError, models::user::User};
+use crate::{Section, SharedState, models::user::User};
 use axum::{
     Extension,
     extract::State,
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse},
 };
 use chrono::{Duration, Local, NaiveTime};
 use chrono_tz::Tz;
@@ -18,7 +19,7 @@ use tokio_postgres::Client;
 pub async fn index(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
-) -> Result<Response, FormError> {
+) -> AppResponse {
     let csrf = user.csrf.clone();
     let user = User::get_by_id(&shared_state.client, user.id).await?;
     let mut context = generate_dashboard_context_for(&user, &shared_state.client).await;

@@ -15,7 +15,7 @@ use rand::{
 use serde::Deserialize;
 use serde_json::json;
 use std::env;
-use tokio_postgres::Client;
+use tokio_postgres::{Client, GenericClient};
 use tracing::debug;
 use uuid::Uuid;
 
@@ -69,7 +69,7 @@ pub async fn token(
     .unwrap();
 
     let id = create_session(
-        &shared_state.client,
+        shared_state.pool.get().await?.client(),
         &status.claims.sub,
         &status.claims.email,
     )

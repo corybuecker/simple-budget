@@ -24,7 +24,7 @@ use rand::{
 };
 use serde::Deserialize;
 use std::env;
-use tokio_postgres::Client;
+use tokio_postgres::{Client, GenericClient};
 use tracing::debug;
 use uuid::Uuid;
 
@@ -89,7 +89,7 @@ pub async fn callback(
     let email = email.to_string();
     let secure = env::var("SECURE").unwrap_or("false".to_string());
 
-    let id = create_session(&shared_state.client, &subject, &email).await?;
+    let id = create_session(shared_state.pool.get().await?.client(), &subject, &email).await?;
     let cookie = Cookie::build(("session_id", id.to_string()))
         .expires(None)
         .http_only(true)

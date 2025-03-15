@@ -5,6 +5,7 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use tera::Context;
+use tokio_postgres::GenericClient;
 
 pub async fn page(
     shared_state: State<SharedState>,
@@ -12,7 +13,7 @@ pub async fn page(
     Extension(user): Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> AppResponse {
-    let goal = Goal::get_one(&shared_state.client, id, user.id).await?;
+    let goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
     context.insert("id", &goal.id);
     context.insert("name", &goal.name);
     context.insert("target", &goal.target);

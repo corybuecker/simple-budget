@@ -10,6 +10,7 @@ use axum::{
 };
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use tera::Context;
+use tokio_postgres::GenericClient;
 use validator::Validate;
 
 pub async fn action(
@@ -59,11 +60,14 @@ pub async fn action(
         }
     }
 
-    let mut envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
+    let mut envelope =
+        Envelope::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
 
     envelope.name = form.name.clone();
     envelope.amount = Decimal::from_f64(form.amount).expect("could not parse decimal");
-    envelope.update(&shared_state.client).await?;
+    envelope
+        .update(shared_state.pool.get().await?.client())
+        .await?;
 
     Ok(Redirect::to("/envelopes").into_response())
 }
@@ -73,6 +77,7 @@ mod tests {
     use crate::{models::envelope::Envelope, test_utils::state_for_tests};
     use axum::http::{Method, Request, StatusCode};
     use rust_decimal::Decimal;
+    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -86,7 +91,10 @@ mod tests {
             amount: Decimal::new(1, 0),
         };
 
-        let envelope = envelope.create(&shared_state.client).await.unwrap();
+        let envelope = envelope
+            .create(shared_state.pool.get().await.unwrap().client())
+            .await
+            .unwrap();
 
         let request = Request::builder()
             .method(Method::POST)
@@ -110,9 +118,13 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(response.headers().get("location").unwrap(), "/envelopes");
 
-        let envelope = Envelope::get_one(&shared_state.client, envelope.id.unwrap(), user_id)
-            .await
-            .unwrap();
+        let envelope = Envelope::get_one(
+            shared_state.pool.get().await.unwrap().client(),
+            envelope.id.unwrap(),
+            user_id,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(envelope.name, "Updated Envelope");
         assert_eq!(envelope.amount, Decimal::new(200, 0));

@@ -14,7 +14,7 @@ spec:
     metadata:
       labels:
         app: simple-budget
-        version: "1742042471"
+        version: "1742043633"
     spec:
       containers:
       - name: simple-budget
@@ -38,3 +38,13 @@ spec:
           runAsNonRoot: true
           seccompProfile:
             type: RuntimeDefault
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8000
+          periodSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8000
+          periodSeconds: 5

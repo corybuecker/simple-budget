@@ -7,6 +7,7 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use tera::Context;
+use tokio_postgres::GenericClient;
 
 pub async fn page(
     shared_state: State<SharedState>,
@@ -14,7 +15,7 @@ pub async fn page(
     user: Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> AppResponse {
-    let envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
+    let envelope = Envelope::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
 
     context.insert("id", &envelope.id);
     context.insert("name", &envelope.name);

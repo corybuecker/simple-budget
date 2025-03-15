@@ -16,6 +16,7 @@ use chrono::Utc;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 use tera::Context;
+use tokio_postgres::GenericClient;
 
 pub async fn page(
     shared_state: State<SharedState>,
@@ -26,7 +27,7 @@ pub async fn page(
     let mut days_remainings: HashMap<i32, i16> = HashMap::new();
     let mut per_days: HashMap<i32, Decimal> = HashMap::new();
 
-    let user = User::get_by_id(&shared_state.client, user.id)
+    let user = User::get_by_id(shared_state.pool.get().await?.client(), user.id)
         .await
         .unwrap();
 
@@ -40,7 +41,9 @@ pub async fn page(
         &goal_header.or(Some(GoalHeader::Accumulated)),
     );
 
-    let goals = Goal::get_all(&shared_state.client, user.id).await.unwrap();
+    let goals = Goal::get_all(shared_state.pool.get().await?.client(), user.id)
+        .await
+        .unwrap();
 
     for goal in &goals {
         accumulations.insert(goal.id.unwrap(), goal.accumulated()?);

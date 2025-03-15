@@ -36,7 +36,7 @@ impl std::str::FromStr for Recurrence {
 #[derive(Serialize, Debug)]
 pub struct Goal {
     pub id: Option<i32>,
-    pub user_id: Option<i32>,
+    pub user_id: i32,
     pub name: String,
     pub recurrence: Recurrence,
     pub target_date: DateTime<Utc>,

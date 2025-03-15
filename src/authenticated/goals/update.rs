@@ -73,8 +73,7 @@ pub async fn action(
     goal.recurrence = Recurrence::from_str(&form.recurrence).unwrap();
     goal.target_date = NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc();
 
-    goal.update(shared_state.pool.get().await?.client())
-        .await?;
+    goal.update(shared_state.pool.get().await?.client()).await?;
 
     Ok(Redirect::to("/goals").into_response())
 }
@@ -98,7 +97,7 @@ mod tests {
 
         let mut goal = Goal {
             id: None,
-            user_id: Some(user_id),
+            user_id,
             name: "Test Goal".to_string(),
             target: Decimal::new(1000, 0),
             target_date: Utc::now(),

@@ -2,7 +2,7 @@ use crate::{
     errors::AppError,
     models::{envelope::Envelope, goal::Goal},
 };
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use chrono::Utc;
 use deadpool_postgres::Pool;
 use tracing::info;
@@ -21,10 +21,7 @@ pub async fn convert_goals(pool: &Pool) -> Result<f64, AppError> {
             id: None,
             name: goal.name.clone(),
             amount: goal.target,
-            user_id: Some(
-                goal.user_id
-                    .ok_or(anyhow!("envelope must have a user ID"))?,
-            ),
+            user_id: goal.user_id,
         };
 
         envelope.create(transaction.client()).await?;
@@ -56,7 +53,7 @@ mod tests {
 
         let mut goal = Goal {
             id: None,
-            user_id: Some(user_id),
+            user_id,
             name: "convert_goals".to_owned(),
             target_date: Utc::now().sub(Duration::days(2)),
             target: Decimal::new(100, 0),

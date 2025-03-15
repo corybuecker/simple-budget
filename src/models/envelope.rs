@@ -8,7 +8,7 @@ use crate::errors::AppError;
 #[derive(Serialize, Debug, Clone)]
 pub struct Envelope {
     pub id: Option<i32>,
-    pub user_id: Option<i32>,
+    pub user_id: i32,
     pub name: String,
     pub amount: Decimal,
 }

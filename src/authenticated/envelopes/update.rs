@@ -8,6 +8,7 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect},
 };
+use rust_decimal::{Decimal, prelude::FromPrimitive};
 use tera::Context;
 use validator::Validate;
 
@@ -61,7 +62,7 @@ pub async fn action(
     let mut envelope = Envelope::get_one(&shared_state.client, id, user.id).await?;
 
     envelope.name = form.name.clone();
-    envelope.amount = form.amount;
+    envelope.amount = Decimal::from_f64(form.amount).expect("could not parse decimal");
     envelope.update(&shared_state.client).await?;
 
     Ok(Redirect::to("/envelopes").into_response())
@@ -71,6 +72,7 @@ pub async fn action(
 mod tests {
     use crate::{models::envelope::Envelope, test_utils::state_for_tests};
     use axum::http::{Method, Request, StatusCode};
+    use rust_decimal::Decimal;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -81,7 +83,7 @@ mod tests {
             id: None,
             name: "envelope".to_string(),
             user_id: Some(user_id),
-            amount: 1.0,
+            amount: Decimal::new(1, 0),
         };
 
         let envelope = envelope.create(&shared_state.client).await.unwrap();
@@ -113,6 +115,6 @@ mod tests {
             .unwrap();
 
         assert_eq!(envelope.name, "Updated Envelope");
-        assert_eq!(envelope.amount, 200.0);
+        assert_eq!(envelope.amount, Decimal::new(200, 0));
     }
 }

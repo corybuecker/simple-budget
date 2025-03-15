@@ -12,6 +12,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect},
 };
 use chrono::{NaiveDateTime, NaiveTime};
+use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
@@ -67,7 +68,7 @@ pub async fn action(
     let mut goal = Goal::get_one(&shared_state.client, id, user.id).await?;
 
     goal.name = form.name.to_owned();
-    goal.target = form.target.to_owned();
+    goal.target = Decimal::from_f64(form.target.to_owned()).expect("could not parse decimal");
     goal.recurrence = Recurrence::from_str(&form.recurrence).unwrap();
     goal.target_date = NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc();
 
@@ -84,6 +85,7 @@ mod tests {
     };
     use axum::http::{Method, Request, StatusCode};
     use chrono::Utc;
+    use rust_decimal::Decimal;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -95,7 +97,7 @@ mod tests {
             id: None,
             user_id: Some(user_id),
             name: "Test Goal".to_string(),
-            target: 1000.0,
+            target: Decimal::new(1000, 0),
             target_date: Utc::now(),
             recurrence: Recurrence::Weekly,
         };
@@ -132,6 +134,6 @@ mod tests {
             .unwrap();
 
         assert_eq!(goal.name, "Updated Goal");
-        assert_eq!(goal.target, 2000.0);
+        assert_eq!(goal.target, Decimal::new(2000, 0));
     }
 }

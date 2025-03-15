@@ -15,6 +15,7 @@ use axum::{
 };
 use chrono::Utc;
 use postgres_types::Json;
+use rust_decimal::Decimal;
 use std::collections::HashMap;
 use tera::Context;
 
@@ -66,16 +67,16 @@ pub async fn action(
     let tera = &shared_state.tera;
     let mut goals_context = Context::new();
     let goal_header = preferences.goal_header.clone();
-    let mut accumulations: HashMap<i32, f64> = HashMap::new();
+    let mut accumulations: HashMap<i32, Decimal> = HashMap::new();
     let mut days_remainings: HashMap<i32, i64> = HashMap::new();
-    let mut per_days: HashMap<i32, f64> = HashMap::new();
+    let mut per_days: HashMap<i32, Decimal> = HashMap::new();
     let goals = Goal::get_all(&shared_state.client, user.id).await.unwrap();
 
     goals_context.insert("goal_header", &goal_header);
 
     for goal in &goals {
-        accumulations.insert(goal.id.unwrap(), goal.accumulated());
-        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day());
+        accumulations.insert(goal.id.unwrap(), goal.accumulated()?);
+        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day()?);
         days_remainings.insert(goal.id.unwrap(), (goal.target_date - Utc::now()).num_days());
     }
 
@@ -87,7 +88,7 @@ pub async fn action(
 
     let goals_html = tera.render("goals/_table.html", &goals_context)?;
 
-    let dashboard_context = generate_dashboard_context_for(&user, &shared_state.client).await;
+    let dashboard_context = generate_dashboard_context_for(&user, &shared_state.client).await?;
 
     let dashboard_content = shared_state
         .tera

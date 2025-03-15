@@ -42,6 +42,7 @@ mod tests {
     use crate::test_utils::state_for_tests;
     use crate::{jobs::convert_goals::convert_goals, models::envelope::Envelope};
     use chrono::{Duration, Utc};
+    use rust_decimal::Decimal;
     use std::ops::Sub;
 
     #[tokio::test]
@@ -59,7 +60,7 @@ mod tests {
             user_id: Some(user_id),
             name: "convert_goals".to_owned(),
             target_date: Utc::now().sub(Duration::days(2)),
-            target: 100.0,
+            target: Decimal::new(100, 0),
             recurrence: Recurrence::Weekly,
         };
 
@@ -77,7 +78,7 @@ mod tests {
 
         let envelope: Envelope = envelope.try_into().unwrap();
 
-        assert_eq!(envelope.amount, 100.0);
+        assert_eq!(envelope.amount, Decimal::new(100, 0));
 
         let goal: Goal = client
             .query_one(

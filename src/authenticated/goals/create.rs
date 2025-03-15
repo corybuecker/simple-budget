@@ -12,6 +12,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect},
 };
 use chrono::{NaiveDateTime, NaiveTime};
+use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::str::FromStr;
 use tera::Context;
 use validator::Validate;
@@ -69,7 +70,7 @@ pub async fn page(
     let mut goal = Goal {
         id: None,
         name: form.name.to_owned(),
-        target: form.target.to_owned(),
+        target: Decimal::from_f64(form.target.to_owned()).expect("could not parse decimal"),
         recurrence: Recurrence::from_str(&form.recurrence).unwrap(),
         target_date: NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc(),
         user_id: Some(user.id),

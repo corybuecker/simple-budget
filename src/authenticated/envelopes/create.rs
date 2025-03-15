@@ -8,6 +8,7 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect},
 };
+use rust_decimal::{Decimal, prelude::FromPrimitive};
 use tera::Context;
 use validator::Validate;
 
@@ -58,7 +59,7 @@ pub async fn page(
     let envelope = Envelope {
         id: None,
         name: form.name.to_owned(),
-        amount: form.amount.to_owned(),
+        amount: Decimal::from_f64(form.amount.to_owned()).expect("could not parse decimal"),
         user_id: Some(user.id),
     };
 

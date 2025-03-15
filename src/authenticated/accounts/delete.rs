@@ -52,6 +52,7 @@ mod tests {
     use axum::Router;
     use axum::body::Body;
     use axum::http::Request;
+    use rust_decimal::Decimal;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -62,7 +63,7 @@ mod tests {
             id: None,
             user_id: user_extension.0.id,
             name: "Test Account".to_string(),
-            amount: 100.0,
+            amount: Decimal::new(100, 0),
             debt: false,
         };
 

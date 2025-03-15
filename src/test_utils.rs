@@ -1,3 +1,4 @@
+use crate::errors::AppError;
 #[cfg(test)]
 use crate::{
     Broker, SharedState, authenticated::UserExtension, database_pool, digest_asset,
@@ -20,7 +21,7 @@ pub async fn state_for_tests() -> Result<(SharedState, Extension<UserExtension>)
 
     tera.register_function("digest_asset", digest_asset());
 
-    let user_extension = user_for_tests(pool.get().await?.client()).await?;
+    let user_extension = user_for_tests(pool.get().await?.client()).await.unwrap();
 
     let shared_state = SharedState {
         key: Key::generate(),
@@ -32,7 +33,7 @@ pub async fn state_for_tests() -> Result<(SharedState, Extension<UserExtension>)
     Ok((shared_state, user_extension))
 }
 
-async fn user_for_tests(client: &Client) -> Result<Extension<UserExtension>> {
+async fn user_for_tests(client: &Client) -> Result<Extension<UserExtension>, AppError> {
     let (tx, rx) = watch::channel("".to_owned());
 
     let user = User::create(

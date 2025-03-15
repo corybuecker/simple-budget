@@ -120,7 +120,8 @@ CREATE TABLE public.goals (
     name text NOT NULL,
     target numeric NOT NULL,
     target_date timestamp with time zone NOT NULL,
-    recurrence public."Recurrence" NOT NULL
+    recurrence public."Recurrence" NOT NULL,
+    accumulated_amount numeric NOT NULL
 );
 
 

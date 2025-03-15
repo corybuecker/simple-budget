@@ -22,6 +22,7 @@ pub async fn action(
     let preferences = user.preferences.unwrap_or(Json(Preferences::default())).0;
 
     context.insert("timezone", &preferences.timezone);
+    context.insert("monthly_income", &preferences.monthly_income);
 
     let tera: &Tera = &state.tera;
     let content = tera.render("preferences/index.html", &context)?;

@@ -67,6 +67,7 @@ mod tests {
             name: "Test Goal".to_string(),
             target: Decimal::new(1000, 0),
             target_date: Utc::now(),
+            accumulated_amount: Decimal::ZERO,
         };
 
         let goal = goal

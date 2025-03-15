@@ -97,6 +97,7 @@ mod tests {
 
         let goal = Goal {
             id: None,
+            accumulated_amount: Decimal::ZERO,
             user_id,
             name: "Test Goal".to_string(),
             target: Decimal::new(1000, 0),

@@ -1,10 +1,10 @@
-use crate::{models::user::GoalHeader, Section, SharedState};
+use crate::{Section, SharedState, models::user::GoalHeader};
 use axum::{
+    Extension, Router,
     extract::Request,
-    middleware::{from_fn, Next},
+    middleware::{Next, from_fn},
     response::Response,
     routing::get,
-    Extension, Router,
 };
 use serde::Deserialize;
 use tera::Context;
@@ -19,6 +19,8 @@ pub struct PreferencesForm {
     timezone: Option<String>,
     goal_header: Option<GoalHeader>,
     forecast_offset: Option<i64>,
+    #[validate(range(min = 0.0))]
+    monthly_income: Option<f64>,
 }
 
 async fn initialize_context(

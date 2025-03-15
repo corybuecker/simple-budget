@@ -1,6 +1,6 @@
-use crate::errors::AppError;
+use crate::{errors::AppError, utilities::dates::Times};
 use anyhow::{Result, anyhow};
-use chrono::{DateTime, Datelike, Days, Local, Months, TimeDelta, Timelike, Utc};
+use chrono::{DateTime, Datelike, Days, Months, TimeDelta, Timelike, Utc};
 use postgres_types::{FromSql, ToSql};
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use serde::Serialize;
@@ -41,6 +41,7 @@ pub struct Goal {
     pub recurrence: Recurrence,
     pub target_date: DateTime<Utc>,
     pub target: Decimal,
+    pub accumulated_amount: Decimal,
 }
 
 impl TryInto<Goal> for tokio_postgres::Row {
@@ -66,6 +67,9 @@ impl TryInto<Goal> for tokio_postgres::Row {
             target: self
                 .try_get("target")
                 .map_err(AppError::RecordDeserializationError)?,
+            accumulated_amount: self
+                .try_get("accumulated_amount")
+                .map_err(AppError::RecordDeserializationError)?,
         })
     }
 }
@@ -75,14 +79,15 @@ impl Goal {
         let row = client
             .query_one(
                 "INSERT INTO goals
-            (user_id, name, recurrence, target_date, target)
-            VALUES ($1, $2, $3, $4, $5) RETURNING id",
+            (user_id, name, recurrence, target_date, target, accumulated_amount)
+            VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
                 &[
                     &self.user_id,
                     &self.name,
                     &self.recurrence,
                     &self.target_date,
                     &self.target,
+                    &Decimal::ZERO,
                 ],
             )
             .await?;
@@ -93,9 +98,32 @@ impl Goal {
         Ok(new_account)
     }
 
-    pub async fn update(&self, client: &Client) -> Result<(), AppError> {
-        client.query("UPDATE goals SET name = $1, recurrence = $2, target_date = $3, target = $4 WHERE id = $5 AND user_id = $6", &[&self.name, &self.recurrence, &self.target_date, &self.target, &self.id, &self.user_id]).await?;
-        Ok(())
+    pub async fn update(&self, client: &Client) -> Result<Self, AppError> {
+        client
+            .execute(
+                "UPDATE goals
+            SET name = $1, recurrence = $2, target_date = $3, target = $4, accumulated_amount = $5
+            WHERE id = $6 AND user_id = $7 RETURNING id, user_id",
+                &[
+                    &self.name,
+                    &self.recurrence,
+                    &self.target_date,
+                    &self.target,
+                    &self.accumulated_amount,
+                    &self.id,
+                    &self.user_id,
+                ],
+            )
+            .await?;
+
+        let goal = Goal::get_one(
+            client,
+            self.id.ok_or(anyhow!("missing ID after update"))?,
+            self.user_id,
+        )
+        .await?;
+
+        Ok(goal)
     }
 
     pub async fn delete(&self, client: &Client) -> Result<(), AppError> {
@@ -139,6 +167,19 @@ impl Goal {
         Ok(goals)
     }
 
+    pub async fn get_all_unscoped(client: &Client) -> Result<Vec<Self>, AppError> {
+        let rows = client
+            .query("SELECT goals.* FROM goals ORDER BY target_date ASC", &[])
+            .await?;
+
+        let mut goals = Vec::with_capacity(rows.len());
+        for row in rows {
+            goals.push(row.try_into()?);
+        }
+
+        Ok(goals)
+    }
+
     pub async fn get_expired(client: &Client) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
@@ -156,14 +197,8 @@ impl Goal {
     }
 
     pub fn increment(&self) -> Self {
-        let mut goal = Goal {
-            id: self.id,
-            target: self.target,
-            user_id: self.user_id,
-            recurrence: self.recurrence.clone(),
-            name: self.name.clone(),
-            target_date: self.target_date,
-        };
+        let mut goal = self.clone();
+        goal.accumulated_amount = Decimal::ZERO;
 
         match self.recurrence {
             Recurrence::Never => goal.target_date = self.target_date,
@@ -190,66 +225,191 @@ impl Goal {
         goal
     }
 
-    pub fn accumulated_per_day(&self) -> Result<Decimal> {
-        if self.start_at() > Local::now() {
+    pub fn accumulated_per_day(&self, time_provider: &impl Times) -> Result<Decimal> {
+        if self.start_at(time_provider) > Utc::now() {
             return Ok(Decimal::ZERO);
         }
 
-        if Local::now() > self.target_date {
+        if self.accumulated_amount >= self.target {
             return Ok(Decimal::ZERO);
         }
 
-        let total_time_in_days = Decimal::from_i64(self.total_time().num_days())
+        let total_time_in_days = Decimal::from_i64(self.total_time(time_provider).num_days())
             .ok_or(anyhow!("could not convert decimal"))?;
 
         Ok(self.target / total_time_in_days)
     }
 
-    pub fn accumulated(&self) -> Result<Decimal> {
-        if self.start_at() > Local::now() {
+    pub fn accelerate(&self, amount: Decimal) -> Result<Self, AppError> {
+        let mut goal = self.clone();
+        goal.accumulated_amount += amount;
+        Ok(goal)
+    }
+
+    pub async fn accumulate(
+        &self,
+        client: &Client,
+        time_provider: &impl Times,
+    ) -> Result<Self, AppError> {
+        let accumulated_now = self.accumulated_now(time_provider)?;
+        let accumulated_amount = Decimal::min(
+            self.target,
+            Decimal::max(accumulated_now, self.accumulated_amount),
+        );
+
+        let goal = Goal {
+            id: self.id,
+            target: self.target,
+            target_date: self.target_date,
+            recurrence: self.recurrence.clone(),
+            name: self.name.clone(),
+            user_id: self.user_id,
+            accumulated_amount,
+        };
+
+        goal.update(client).await
+    }
+
+    fn accumulated_now(&self, time_provider: &impl Times) -> Result<Decimal> {
+        if self.start_at(time_provider) > time_provider.now() {
             return Ok(Decimal::ZERO);
         }
 
-        if Local::now() > self.target_date {
+        if time_provider.now() > self.target_date {
             return Ok(self.target);
         }
 
-        let elapsed_time_in_seconds = Decimal::from_i64(self.elapsed_time().num_seconds())
-            .ok_or(anyhow!("could not convert decimal"))?;
+        let elapsed_time_in_seconds =
+            Decimal::from_i64(self.elapsed_time(time_provider).num_seconds())
+                .ok_or(anyhow!("could not convert decimal"))?;
 
-        let total_time_in_seconds = Decimal::from_i64(self.total_time().num_seconds())
+        let total_time_in_seconds = Decimal::from_i64(self.total_time(time_provider).num_seconds())
             .ok_or(anyhow!("could not convert decimal"))?;
 
         Ok(self.target / total_time_in_seconds * elapsed_time_in_seconds)
     }
 
-    fn total_time(&self) -> TimeDelta {
-        DateTime::from(self.target_date) - self.start_at()
+    fn total_time(&self, time_provider: &impl Times) -> TimeDelta {
+        self.target_date - self.start_at(time_provider)
     }
 
-    fn elapsed_time(&self) -> TimeDelta {
-        let start_at = self.start_at();
+    fn elapsed_time(&self, time_provider: &impl Times) -> TimeDelta {
+        let start_at = self.start_at(time_provider);
 
-        Local::now() - start_at
+        time_provider.now() - start_at
     }
 
-    fn start_at(&self) -> DateTime<Local> {
+    fn start_at(&self, time_provider: &impl Times) -> DateTime<Utc> {
         match self.recurrence {
-            Recurrence::Never => Self::start_of_month().unwrap(),
-            Recurrence::Daily => DateTime::from(self.target_date) - Days::new(1),
-            Recurrence::Weekly => DateTime::from(self.target_date) - Days::new(7),
-            Recurrence::Yearly => DateTime::from(self.target_date) - Months::new(12),
-            Recurrence::Monthly => DateTime::from(self.target_date) - Months::new(1),
-            Recurrence::Quarterly => DateTime::from(self.target_date) - Months::new(3),
+            Recurrence::Never => Self::start_of_month(time_provider).unwrap(),
+            Recurrence::Daily => self.target_date - Days::new(1),
+            Recurrence::Weekly => self.target_date - Days::new(7),
+            Recurrence::Yearly => self.target_date - Months::new(12),
+            Recurrence::Monthly => self.target_date - Months::new(1),
+            Recurrence::Quarterly => self.target_date - Months::new(3),
         }
     }
 
-    fn start_of_month() -> Result<DateTime<Local>, String> {
-        let now = Local::now();
+    fn start_of_month(time_provider: &impl Times) -> Result<DateTime<Utc>, String> {
+        let now = time_provider.now();
         let now = now.with_hour(0).ok_or("could not set time");
         let now = now?.with_minute(0).ok_or("could not set time");
         let now = now?.with_second(0).ok_or("could not set time");
         let now = now?.with_day0(0).ok_or("could not set time");
         Ok(now?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use super::{Goal, Recurrence};
+    use crate::{test_utils::state_for_tests, utilities::dates::Times};
+    use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike, Utc};
+    use rust_decimal::Decimal;
+    use tokio_postgres::GenericClient;
+
+    struct MockTimeProvider;
+    impl Times for MockTimeProvider {
+        fn now(&self) -> chrono::DateTime<chrono::Utc> {
+            Utc.with_ymd_and_hms(2024, 1, 30, 0, 0, 0)
+                .unwrap()
+                .with_nanosecond(0)
+                .unwrap()
+        }
+    }
+
+    #[tokio::test]
+    async fn test_accumulate_from_over_accumulated() {
+        let (shared_state, _) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get().await.unwrap();
+        let client = client.client();
+        let time_provider = &MockTimeProvider {};
+        let goal = Goal {
+            id: None,
+            accumulated_amount: Decimal::new(90, 0),
+            name: "test".to_string(),
+            recurrence: Recurrence::Monthly,
+            target: Decimal::new(100, 0),
+            user_id: 1,
+            target_date: NaiveDateTime::new(
+                NaiveDate::from_str("2024-02-15").unwrap(),
+                NaiveTime::MIN,
+            )
+            .and_utc(),
+        };
+        let goal = goal.create(client).await.unwrap();
+        let goal = goal.accumulate(client, time_provider).await.unwrap();
+
+        assert_eq!(goal.accumulated_amount, Decimal::new(90, 0))
+    }
+    #[tokio::test]
+    async fn test_accumulate_from_over_target() {
+        let (shared_state, _) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get().await.unwrap();
+        let client = client.client();
+        let time_provider = &MockTimeProvider {};
+        let goal = Goal {
+            id: None,
+            accumulated_amount: Decimal::new(101, 0),
+            name: "test".to_string(),
+            recurrence: Recurrence::Monthly,
+            target: Decimal::new(100, 0),
+            user_id: 1,
+            target_date: NaiveDateTime::new(
+                NaiveDate::from_str("2024-01-29").unwrap(),
+                NaiveTime::MIN,
+            )
+            .and_utc(),
+        };
+        let goal = goal.create(client).await.unwrap();
+        let goal = goal.accumulate(client, time_provider).await.unwrap();
+
+        assert_eq!(goal.accumulated_amount, Decimal::new(100, 0))
+    }
+    #[tokio::test]
+    async fn test_accumulate_from_zero() {
+        let (shared_state, _) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get().await.unwrap();
+        let client = client.client();
+        let time_provider = &MockTimeProvider {};
+        let goal = Goal {
+            id: None,
+            accumulated_amount: Decimal::ZERO,
+            name: "test".to_string(),
+            recurrence: Recurrence::Monthly,
+            target: Decimal::new(100, 0),
+            user_id: 1,
+            target_date: NaiveDateTime::new(
+                NaiveDate::from_str("2024-01-31").unwrap(),
+                NaiveTime::MIN,
+            )
+            .and_utc(),
+        };
+        let goal = goal.create(client).await.unwrap();
+
+        let goal = goal.accumulate(client, time_provider).await.unwrap();
+        assert!(goal.accumulated_amount - Decimal::new(9766, 2) < Decimal::new(3, 1))
     }
 }

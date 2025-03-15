@@ -6,6 +6,7 @@ use crate::{
         goal::Goal,
         user::{GoalHeader, User},
     },
+    utilities::dates::TimeProvider,
 };
 use axum::{
     Extension,
@@ -23,6 +24,7 @@ pub async fn page(
     mut context: Extension<Context>,
     user: Extension<UserExtension>,
 ) -> AppResponse {
+    let time_provider = TimeProvider {};
     let mut accumulations: HashMap<i32, Decimal> = HashMap::new();
     let mut days_remainings: HashMap<i32, i16> = HashMap::new();
     let mut per_days: HashMap<i32, Decimal> = HashMap::new();
@@ -46,8 +48,8 @@ pub async fn page(
         .unwrap();
 
     for goal in &goals {
-        accumulations.insert(goal.id.unwrap(), goal.accumulated()?);
-        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day()?);
+        accumulations.insert(goal.id.unwrap(), goal.accumulated_amount);
+        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day(&time_provider)?);
         days_remainings.insert(
             goal.id.unwrap(),
             (goal.target_date - Utc::now())

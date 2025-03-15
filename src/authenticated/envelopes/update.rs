@@ -87,7 +87,7 @@ mod tests {
         let envelope = Envelope {
             id: None,
             name: "envelope".to_string(),
-            user_id: Some(user_id),
+            user_id,
             amount: Decimal::new(1, 0),
         };
 

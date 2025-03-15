@@ -68,17 +68,16 @@ pub async fn page(
         }
     }
 
-    let mut goal = Goal {
+    let goal = Goal {
         id: None,
         name: form.name.to_owned(),
         target: Decimal::from_f64(form.target.to_owned()).expect("could not parse decimal"),
         recurrence: Recurrence::from_str(&form.recurrence).unwrap(),
         target_date: NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc(),
-        user_id: Some(user.id),
+        user_id: user.id,
     };
 
-    goal.create(shared_state.pool.get().await?.client())
-        .await?;
+    goal.create(shared_state.pool.get().await?.client()).await?;
 
     Ok(Redirect::to("/goals").into_response())
 }

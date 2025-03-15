@@ -61,7 +61,7 @@ pub async fn page(
         id: None,
         name: form.name.to_owned(),
         amount: Decimal::from_f64(form.amount.to_owned()).expect("could not parse decimal"),
-        user_id: Some(user.id),
+        user_id: user.id,
     };
 
     envelope

@@ -33,10 +33,10 @@ impl std::str::FromStr for Recurrence {
 
     type Err = RecurrenceError;
 }
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Goal {
     pub id: Option<i32>,
-    pub user_id: Option<i32>,
+    pub user_id: i32,
     pub name: String,
     pub recurrence: Recurrence,
     pub target_date: DateTime<Utc>,
@@ -71,7 +71,7 @@ impl TryInto<Goal> for tokio_postgres::Row {
 }
 
 impl Goal {
-    pub async fn create(&mut self, client: &Client) -> Result<(), AppError> {
+    pub async fn create(&self, client: &Client) -> Result<Self, AppError> {
         let row = client
             .query_one(
                 "INSERT INTO goals
@@ -87,8 +87,10 @@ impl Goal {
             )
             .await?;
 
-        self.id = Some(row.try_get("id")?);
-        Ok(())
+        let mut new_account = self.clone();
+        new_account.id = Some(row.try_get("id")?);
+
+        Ok(new_account)
     }
 
     pub async fn update(&self, client: &Client) -> Result<(), AppError> {

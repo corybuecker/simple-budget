@@ -29,8 +29,7 @@ pub async fn action(
 ) -> AppResponse {
     let goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
 
-    goal.delete(shared_state.pool.get().await?.client())
-        .await?;
+    goal.delete(shared_state.pool.get().await?.client()).await?;
     let tera = shared_state.tera.clone();
     let mut context = Context::new();
     context.insert("goal", &goal);
@@ -61,16 +60,17 @@ mod tests {
     async fn test_delete_action() {
         let (shared_state, user_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let mut goal = Goal {
+        let goal = Goal {
             id: None,
-            user_id: Some(user_extension.0.id),
+            user_id: user_extension.0.id,
             recurrence: Recurrence::Weekly,
             name: "Test Goal".to_string(),
             target: Decimal::new(1000, 0),
             target_date: Utc::now(),
         };
 
-        goal.create(shared_state.pool.get().await.unwrap().client())
+        let goal = goal
+            .create(shared_state.pool.get().await.unwrap().client())
             .await
             .unwrap();
 

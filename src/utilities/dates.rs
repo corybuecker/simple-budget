@@ -1,5 +1,5 @@
 use anyhow::{Result, anyhow};
-use chrono::{DateTime, Datelike, Duration, Months, TimeDelta, TimeZone, Utc};
+use chrono::{DateTime, Datelike, Days, Duration, Months, NaiveTime, TimeDelta, TimeZone, Utc};
 use chrono_tz::Tz;
 
 pub trait Times {
@@ -18,6 +18,22 @@ impl TimeUtilities {
         let start_of_month = self.start_of_month(time_provider)?;
         let end_of_month = self.end_of_month(time_provider)?;
         Ok(end_of_month - start_of_month)
+    }
+
+    pub fn remaining_length_of_day(self, time_provider: &impl Times) -> Result<TimeDelta> {
+        let now = time_provider.now().with_timezone(&self.timezone);
+        let tomorrow = now
+            .checked_add_days(Days::new(1))
+            .ok_or(anyhow!("could not parse date"))?;
+        let tomorrow_midnight = tomorrow
+            .with_time(NaiveTime::from_hms_opt(0, 0, 0).ok_or(anyhow!("could not parse date"))?)
+            .single()
+            .ok_or(anyhow!("could not parse date"))?;
+        let end_of_day = tomorrow_midnight
+            .checked_sub_signed(Duration::seconds(1))
+            .ok_or(anyhow!("could not parse date"))?;
+
+        Ok(end_of_day - now)
     }
 
     pub fn remaining_length_of_month(self, time_provider: &impl Times) -> Result<TimeDelta> {

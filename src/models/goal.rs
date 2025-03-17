@@ -240,10 +240,11 @@ impl Goal {
         Ok(self.target / total_time_in_days)
     }
 
-    pub fn accelerate(&self, amount: Decimal) -> Result<Self, AppError> {
+    pub async fn accelerate(&self, client: &Client, amount: Decimal) -> Result<Self, AppError> {
         let mut goal = self.clone();
         goal.accumulated_amount += amount;
-        Ok(goal)
+
+        goal.update(client).await
     }
 
     pub async fn accumulate(

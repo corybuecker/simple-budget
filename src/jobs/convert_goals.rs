@@ -20,6 +20,25 @@ pub async fn convert_goals(pool: &Pool) -> Result<f64, AppError> {
     let client = transaction.client();
     let time_provider = &TimeProvider {};
 
+    let goals = Goal::get_expired(client).await?;
+    for goal in goals {
+        let envelope = Envelope {
+            id: None,
+            name: goal.name.clone(),
+            amount: goal.target,
+            user_id: goal.user_id,
+        };
+
+        envelope.create(client).await?;
+        let new_goal = goal.increment();
+        let _new_goal = new_goal.update(client).await?;
+    }
+
+    let goals = Goal::get_all_unscoped(client).await?;
+    for goal in goals {
+        goal.accumulate(client, time_provider).await?;
+    }
+
     let goals = Goal::get_all_unscoped(client).await?;
     for goal in goals {
         let user = User::get_by_id(client, goal.user_id).await?;
@@ -41,27 +60,15 @@ pub async fn convert_goals(pool: &Pool) -> Result<f64, AppError> {
         let remaining_today = time_utilities.remaining_length_of_day(time_provider)?;
         let remaining_today_seconds = Decimal::from_i64(remaining_today.num_seconds())
             .ok_or(anyhow!("could not convert remaining seconds to decimal"))?;
-        let acceleration_amount = Decimal::max(
-            Decimal::ZERO,
-            remaining_spendable_per_second - spendable_per_second,
-        ) * remaining_today_seconds;
+        let acceleration_amount = Decimal::min(
+            goal.accumulated_amount - goal.target,
+            Decimal::max(
+                Decimal::ZERO,
+                remaining_spendable_per_second - spendable_per_second,
+            ) * remaining_today_seconds,
+        );
 
-        let goal = goal.accelerate(acceleration_amount)?;
-        goal.accumulate(client, time_provider).await?;
-    }
-
-    let goals = Goal::get_expired(client).await?;
-    for goal in goals {
-        let envelope = Envelope {
-            id: None,
-            name: goal.name.clone(),
-            amount: goal.target,
-            user_id: goal.user_id,
-        };
-
-        envelope.create(client).await?;
-        let new_goal = goal.increment();
-        let _new_goal = new_goal.update(client).await?;
+        goal.accelerate(client, acceleration_amount).await?;
     }
 
     transaction.commit().await?;

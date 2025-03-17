@@ -112,6 +112,7 @@ impl Session {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct User {
     pub id: i32,
     pub email: String,
@@ -142,62 +143,52 @@ impl TryInto<User> for tokio_postgres::Row {
 
 impl User {
     pub async fn total_balance(&self, client: &Client) -> Result<Decimal> {
-        let query = r#"
-            WITH "user" AS (
-                SELECT
-                    id
-                FROM
-                    users
-                WHERE
-                    id = $1
-                LIMIT
-                    1
-            ),
+        let query = r#"WITH
             debt AS (
                 SELECT
                     coalesce(sum(amount), 0) AS total
             FROM
                 accounts
-                INNER JOIN "user" ON "user".id = accounts.user_id
                 WHERE
-                    debt = TRUE
+                    debt = TRUE AND user_id = $1
             ),
             balance AS (
                 SELECT
                     coalesce(sum(amount), 0) AS total
             FROM
                 accounts
-                INNER JOIN "user" ON "user".id = accounts.user_id
                 WHERE
-                    debt = FALSE
+                    debt = FALSE AND user_id = $1
             ),
-            envelopes AS (
+            envelopes_total AS (
                 SELECT
                     coalesce(sum(amount), 0) AS total
             FROM
                 envelopes
-                INNER JOIN "user" ON "user".id = envelopes.user_id
+                WHERE
+                    user_id = $1
             ),
             accumulated_goals AS (
                 SELECT
                     coalesce(sum(accumulated_amount), 0) AS total
             FROM
                 goals
-                INNER JOIN "user" ON "user".id = goals.user_id
+                WHERE
+                    user_id = $1
             )
             SELECT
-                (balance.total - debt.total - accumulated_goals.total - envelopes.total) AS total
+                (balance.total - debt.total - accumulated_goals.total - envelopes_total.total) AS total
             FROM
                 balance,
                 debt,
                 accumulated_goals,
-                envelopes;
+                envelopes_total;
         "#;
 
         let total_balance = client.query_one(query, &[&self.id]).await?;
         let total_balance: Decimal = total_balance.try_get("total")?;
 
-        Ok(total_balance)
+        Ok(Decimal::max(Decimal::ZERO, total_balance))
     }
 
     pub async fn create(client: &Client, email: String, subject: String) -> Result<Self, AppError> {

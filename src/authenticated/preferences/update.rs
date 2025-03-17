@@ -64,12 +64,14 @@ pub async fn action(
         }
     };
 
-    if let Some(monthly_income) = &form.monthly_income {
-        preferences.monthly_income =
-            Some(Decimal::from_f64(*monthly_income).expect("cannot parse Decimal"));
-    } else {
-        preferences.monthly_income = Some(Decimal::ZERO);
+    match &form.monthly_income {
+        None => {}
+        Some(monthly_income) => {
+            preferences.monthly_income =
+                Some(Decimal::from_f64(*monthly_income).expect("cannot parse Decimal"))
+        }
     };
+
     user.preferences = Some(Json(preferences.clone()));
     user.update(shared_state.pool.get().await?.client()).await?;
 

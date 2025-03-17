@@ -34,14 +34,17 @@ pub async fn convert_goals(pool: &Pool) -> Result<f64, AppError> {
         let remaining_seconds = Decimal::from_i64(remaining_seconds.num_seconds())
             .ok_or(anyhow!("could not convert remaining seconds to decimal"))?;
         let length_of_month = time_utilities.length_of_month(time_provider)?;
-        let length_of_month = Decimal::from_i64(length_of_month.num_seconds())
+        let length_of_month_in_seconds = Decimal::from_i64(length_of_month.num_seconds())
             .ok_or(anyhow!("could not convert remaining seconds to decimal"))?;
-        let spendable_per_second = monthly_income / length_of_month;
+        let spendable_per_second = monthly_income / length_of_month_in_seconds;
         let remaining_spendable_per_second = remaining_spendable / remaining_seconds;
+        let remaining_today = time_utilities.remaining_length_of_day(time_provider)?;
+        let remaining_today_seconds = Decimal::from_i64(remaining_today.num_seconds())
+            .ok_or(anyhow!("could not convert remaining seconds to decimal"))?;
         let acceleration_amount = Decimal::max(
             Decimal::ZERO,
             remaining_spendable_per_second - spendable_per_second,
-        ) * remaining_seconds;
+        ) * remaining_today_seconds;
 
         let goal = goal.accelerate(acceleration_amount)?;
         goal.accumulate(client, time_provider).await?;

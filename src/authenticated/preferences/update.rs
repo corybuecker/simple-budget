@@ -7,6 +7,7 @@ use crate::{
         goal::Goal,
         user::{Preferences, User},
     },
+    utilities::dates::TimeProvider,
 };
 use axum::{
     Extension, Form,
@@ -15,7 +16,7 @@ use axum::{
 };
 use chrono::Utc;
 use postgres_types::Json;
-use rust_decimal::Decimal;
+use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::collections::HashMap;
 use tera::Context;
 use tokio_postgres::GenericClient;
@@ -35,6 +36,7 @@ pub async fn action(
             goal_header: None,
             timezone: None,
             forecast_offset: None,
+            monthly_income: Some(Decimal::ZERO),
         },
     };
 
@@ -62,9 +64,14 @@ pub async fn action(
         }
     };
 
+    if let Some(monthly_income) = &form.monthly_income {
+        preferences.monthly_income =
+            Some(Decimal::from_f64(*monthly_income).expect("cannot parse Decimal"));
+    } else {
+        preferences.monthly_income = Some(Decimal::ZERO);
+    };
     user.preferences = Some(Json(preferences.clone()));
-    user.update(shared_state.pool.get().await?.client())
-        .await?;
+    user.update(shared_state.pool.get().await?.client()).await?;
 
     let tera = &shared_state.tera;
     let mut goals_context = Context::new();
@@ -78,9 +85,11 @@ pub async fn action(
 
     goals_context.insert("goal_header", &goal_header);
 
+    let time_provider = TimeProvider {};
+
     for goal in &goals {
-        accumulations.insert(goal.id.unwrap(), goal.accumulated()?);
-        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day()?);
+        accumulations.insert(goal.id.unwrap(), goal.accumulated_amount);
+        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day(&time_provider)?);
         days_remainings.insert(goal.id.unwrap(), (goal.target_date - Utc::now()).num_days());
     }
 

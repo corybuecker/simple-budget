@@ -101,7 +101,7 @@ pub async fn callback(
     Ok((jar.add(cookie), Redirect::to(redirect).into_response()))
 }
 
-async fn create_session(client: &Client, subject: &str, email: &str) -> Result<Uuid> {
+async fn create_session(client: &Client, subject: &str, email: &str) -> Result<Uuid, AppError> {
     let csrf = Alphanumeric.sample_string(&mut rng(), 32);
 
     let user = upsert_subject(client, subject.to_owned(), email.to_owned()).await?;
@@ -117,10 +117,10 @@ async fn create_session(client: &Client, subject: &str, email: &str) -> Result<U
     session.create(client).await?;
     let id = session.id.to_owned();
 
-    id.ok_or(anyhow!("could not create a session"))
+    id.ok_or(anyhow!("could not create a session").into())
 }
 
-async fn upsert_subject(client: &Client, subject: String, email: String) -> Result<User> {
+async fn upsert_subject(client: &Client, subject: String, email: String) -> Result<User, AppError> {
     match User::get_by_subject(client, subject.clone()).await {
         Ok(user) => Ok(user),
         Err(e) => {

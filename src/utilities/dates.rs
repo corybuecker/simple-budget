@@ -1,6 +1,6 @@
-use chrono::{DateTime, Datelike, Months, TimeDelta, Timelike, Utc};
+use anyhow::{Result, anyhow};
+use chrono::{DateTime, Datelike, Duration, Months, TimeDelta, TimeZone, Utc};
 use chrono_tz::Tz;
-use std::ops::Sub;
 
 pub trait Times {
     fn now(&self) -> DateTime<Utc>;
@@ -14,49 +14,41 @@ pub struct TimeUtilities {
 }
 
 impl TimeUtilities {
-    pub fn remaining_seconds(self, time_provider: &impl Times) -> TimeDelta {
+    pub fn length_of_month(self, time_provider: &impl Times) -> Result<TimeDelta> {
+        let start_of_month = self.start_of_month(time_provider)?;
+        let end_of_month = self.end_of_month(time_provider)?;
+        Ok(end_of_month - start_of_month)
+    }
+
+    pub fn remaining_length_of_month(self, time_provider: &impl Times) -> Result<TimeDelta> {
         let now = time_provider.now().with_timezone(&self.timezone);
-        let end_of_month = self
-            .end_of_month(time_provider)
-            .expect("could not determine end of month");
-        let end_of_next_month = self
-            .end_of_next_month(time_provider)
-            .expect("could not determine end of next month");
-        let days = end_of_month - now;
-
-        if days.num_days() == 0 {
-            end_of_next_month - now
-        } else {
-            end_of_month - now
-        }
+        let end_of_month = self.end_of_month(time_provider)?;
+        Ok(end_of_month - now)
     }
 
-    pub fn end_of_next_month(self, time_provider: &impl Times) -> Result<DateTime<Tz>, String> {
-        let now = time_provider
-            .now()
-            .with_timezone(&self.timezone)
-            .checked_add_months(Months::new(2))
-            .expect("failed to build datetime");
-        let now = now.with_hour(0).ok_or("could not set time");
-        let now = now?.with_minute(0).ok_or("could not set time");
-        let now = now?.with_second(0).ok_or("could not set time");
-        let now = now?.with_day0(0).ok_or("could not set day to zero");
-        let now = now?.sub(TimeDelta::new(1, 0).unwrap());
-        Ok(now)
+    fn start_of_month(&self, time: &impl Times) -> Result<DateTime<Tz>> {
+        let now = time.now().with_timezone(&self.timezone);
+
+        let start_of_month = self
+            .timezone
+            .with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0);
+
+        start_of_month
+            .single()
+            .ok_or(anyhow!("error parsing datetime"))
     }
 
-    pub fn end_of_month(self, time_provider: &impl Times) -> Result<DateTime<Tz>, String> {
-        let now = time_provider
-            .now()
-            .with_timezone(&self.timezone)
+    fn end_of_month(&self, time: &impl Times) -> Result<DateTime<Tz>> {
+        let start_of_month = self.start_of_month(time)?;
+        let next_month = start_of_month
             .checked_add_months(Months::new(1))
-            .expect("failed to build datetime");
-        let now = now.with_hour(0).ok_or("could not set time");
-        let now = now?.with_minute(0).ok_or("could not set time");
-        let now = now?.with_second(0).ok_or("could not set time");
-        let now = now?.with_day0(0).ok_or("could not set day to zero");
-        let now = now?.sub(TimeDelta::new(1, 0).unwrap());
-        Ok(now)
+            .ok_or(anyhow!("could not parse date"))?;
+
+        let end_of_month = next_month
+            .checked_sub_signed(Duration::seconds(1))
+            .ok_or(anyhow!("could not parse date"))?;
+
+        Ok(end_of_month)
     }
 }
 
@@ -68,25 +60,50 @@ impl Times for TimeProvider {
 
 #[cfg(test)]
 mod test {
-    use super::{TimeUtilities, Times};
+    use super::*;
     use chrono::{TimeDelta, TimeZone, Timelike, Utc};
-    struct MockTimeProvider;
-    impl Times for MockTimeProvider {
-        fn now(&self) -> chrono::DateTime<chrono::Utc> {
-            Utc.with_ymd_and_hms(2024, 1, 30, 0, 0, 0)
-                .unwrap()
-                .with_nanosecond(0)
-                .unwrap()
-        }
-    }
 
     #[test]
-    fn test_remaining_seconds() {
+    fn test_remaining_seconds_on_second_to_last_day() {
+        struct MockTimeProvider;
+        impl Times for MockTimeProvider {
+            fn now(&self) -> chrono::DateTime<chrono::Utc> {
+                Utc.with_ymd_and_hms(2024, 1, 30, 0, 0, 0)
+                    .unwrap()
+                    .with_nanosecond(0)
+                    .unwrap()
+            }
+        }
+
         let time_utilities = TimeUtilities {
             timezone: chrono_tz::Tz::UTC,
         };
-        let sec = time_utilities.remaining_seconds(&MockTimeProvider {});
+        let sec = time_utilities
+            .remaining_length_of_month(&MockTimeProvider {})
+            .unwrap();
 
         assert_eq!(sec, TimeDelta::seconds(172799))
+    }
+
+    #[test]
+    fn test_remaining_seconds_on_last_day() {
+        struct MockTimeProvider;
+        impl Times for MockTimeProvider {
+            fn now(&self) -> chrono::DateTime<chrono::Utc> {
+                Utc.with_ymd_and_hms(2024, 1, 31, 0, 0, 0)
+                    .unwrap()
+                    .with_nanosecond(0)
+                    .unwrap()
+            }
+        }
+
+        let time_utilities = TimeUtilities {
+            timezone: chrono_tz::Tz::UTC,
+        };
+        let sec = time_utilities
+            .remaining_length_of_month(&MockTimeProvider {})
+            .unwrap();
+
+        assert_eq!(sec, TimeDelta::seconds(86399))
     }
 }

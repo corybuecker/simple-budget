@@ -75,6 +75,7 @@ pub async fn page(
         recurrence: Recurrence::from_str(&form.recurrence).unwrap(),
         target_date: NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc(),
         user_id: user.id,
+        accumulated_amount: Decimal::ZERO,
     };
 
     goal.create(shared_state.pool.get().await?.client()).await?;

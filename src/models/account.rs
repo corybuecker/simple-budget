@@ -98,23 +98,4 @@ impl Account {
 
         Ok(accounts)
     }
-
-    pub async fn accounts_total_for(user_id: i32, client: &Client) -> Decimal {
-        let accounts = Self::get_all(client, user_id).await.unwrap();
-        let debt = accounts
-            .iter()
-            .filter(|a| a.debt)
-            .map(|e| e.amount)
-            .reduce(|memo, amount| memo + amount)
-            .unwrap_or(Decimal::ZERO);
-
-        let non_debt = accounts
-            .iter()
-            .filter(|a| !a.debt)
-            .map(|e| e.amount)
-            .reduce(|memo, amount| memo + amount)
-            .unwrap_or(Decimal::ZERO);
-
-        non_debt - debt
-    }
 }

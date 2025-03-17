@@ -98,13 +98,3 @@ impl Envelope {
         Ok(())
     }
 }
-
-pub async fn envelopes_total_for(user_id: i32, client: &Client) -> Result<Decimal> {
-    Ok(client
-        .query_one(
-            "SELECT SUM(amount) AS sum FROM envelopes WHERE user_id = $1",
-            &[&user_id],
-        )
-        .await?
-        .try_get("sum")?)
-}

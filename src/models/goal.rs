@@ -154,7 +154,8 @@ impl Goal {
         let rows = client
             .query(
                 "SELECT goals.* FROM goals INNER
-            JOIN users ON users.id = goals.user_id WHERE users.id = $1",
+            JOIN users ON users.id = goals.user_id WHERE users.id = $1
+            ORDER BY target_date ASC",
                 &[&user_id],
             )
             .await?;

@@ -26,7 +26,7 @@ use tokio::{
 use tokio_postgres::{Client, NoTls};
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::{Level, debug};
-use utilities::tera::digest_asset;
+use utilities::{dates::TimeProvider, tera::digest_asset};
 
 mod authenticated;
 mod authentication;
@@ -72,12 +72,13 @@ fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     spawn(async {
         let mut interval = interval(Duration::from_millis(60000));
         let jobs_pool = database_pool(None).await.unwrap();
+        let time = TimeProvider {};
 
         loop {
             interval.tick().await;
 
             let (clear_sessions_result, convert_goals_result) =
-                tokio::join!(clear_sessions(), convert_goals(&jobs_pool));
+                tokio::join!(clear_sessions(), convert_goals(&jobs_pool, &time));
 
             debug!("🚧 {:#?}", convert_goals_result);
             debug!("🚧 {:#?}", clear_sessions_result);

@@ -42,18 +42,24 @@
                 <div class="flex flex-col">
                     <label for="recurrence">Recurrence</label>
                     <select id="recurrence" name="recurrence" required>
-                        <option value="never" {% if recurrence and recurrence=="never" %}{{ "selected" }}{% endif %}>Never
+                        <option value="never"
+                                {% if recurrence and recurrence=="Never" %}{{ "selected" }}{% endif %}>Never
                         </option>
-                        <option value="daily" {% if recurrence and recurrence=="daily" %}{{ "selected" }}{% endif %}>Daily
+                        <option value="daily"
+                                {% if recurrence and recurrence=="Daily" %}{{ "selected" }}{% endif %}>Daily
                         </option>
-                        <option value="weekly" {% if recurrence and recurrence=="weekly" %}{{ "selected" }}{% endif %}>Weekly
+                        <option value="weekly"
+                                {% if recurrence and recurrence=="Weekly" %}{{ "selected" }}{% endif %}>Weekly
                         </option>
-                        <option value="monthly" {% if recurrence and recurrence=="monthly" %}{{ "selected" }}{% endif %}>Monthly
+                        <option value="monthly"
+                                {% if recurrence and recurrence=="Monthly" %}{{ "selected" }}{% endif %}>Monthly
                         </option>
-                        <option value="quarterly" {% if recurrence and recurrence=="quarterly" %}{{ "selected" }}{% endif %}>
+                        <option value="quarterly"
+                                {% if recurrence and recurrence=="Quarterly" %}{{ "selected" }}{% endif %}>
                             Quarterly
                         </option>
-                        <option value="yearly" {% if recurrence and recurrence=="yearly" %}{{ "selected" }}{% endif %}>Yearly
+                        <option value="yearly"
+                                {% if recurrence and recurrence=="Yearly" %}{{ "selected" }}{% endif %}>Yearly
                         </option>
                     </select>
                 </div>

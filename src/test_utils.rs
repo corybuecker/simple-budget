@@ -1,12 +1,13 @@
-use crate::errors::AppError;
 #[cfg(test)]
 use crate::{
     Broker, SharedState, authenticated::UserExtension, database_pool, digest_asset,
     models::user::User,
 };
-use anyhow::Result;
+use crate::{errors::AppError, models::user::Preferences};
+use anyhow::{Result, anyhow};
 use axum::Extension;
 use axum_extra::extract::cookie::Key;
+use postgres_types::Json;
 use tokio::sync::{mpsc, watch};
 use tokio_postgres::{Client, GenericClient};
 
@@ -21,7 +22,9 @@ pub async fn state_for_tests() -> Result<(SharedState, Extension<UserExtension>)
 
     tera.register_function("digest_asset", digest_asset());
 
-    let user_extension = user_for_tests(pool.get().await?.client()).await.unwrap();
+    let user_extension = user_extension_for_tests(pool.get().await?.client())
+        .await
+        .unwrap();
 
     let shared_state = SharedState {
         key: Key::generate(),
@@ -33,15 +36,33 @@ pub async fn state_for_tests() -> Result<(SharedState, Extension<UserExtension>)
     Ok((shared_state, user_extension))
 }
 
-async fn user_for_tests(client: &Client) -> Result<Extension<UserExtension>, AppError> {
-    let (tx, rx) = watch::channel("".to_owned());
-
+pub async fn user_for_tests(
+    client: &Client,
+    preferences: Option<Preferences>,
+) -> Result<User, AppError> {
     let user = User::create(
         client,
         uuid::Uuid::new_v4().to_string(),
         uuid::Uuid::new_v4().to_string(),
     )
     .await?;
+
+    let preferences = preferences
+        .or(Some(Preferences::default()))
+        .ok_or(anyhow!("could not create preferences"))?;
+
+    let mut user = user.clone();
+
+    user.preferences = Some(Json(preferences));
+
+    let user = user.update(client).await?;
+    Ok(user)
+}
+
+async fn user_extension_for_tests(client: &Client) -> Result<Extension<UserExtension>, AppError> {
+    let (tx, rx) = watch::channel("".to_owned());
+
+    let user = user_for_tests(client, None).await?;
 
     Ok(Extension(UserExtension {
         id: user.id,

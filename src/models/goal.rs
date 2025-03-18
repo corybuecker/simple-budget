@@ -180,11 +180,14 @@ impl Goal {
         Ok(goals)
     }
 
-    pub async fn get_expired(client: &Client) -> Result<Vec<Self>, AppError> {
+    pub async fn get_expired(
+        client: &Client,
+        cutoff: DateTime<Utc>,
+    ) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
-                "SELECT goals.* FROM goals WHERE recurrence <> 'Never' AND target_date < NOW()",
-                &[],
+                "SELECT goals.* FROM goals WHERE recurrence <> 'Never' AND target_date < $1",
+                &[&cutoff],
             )
             .await?;
 
@@ -244,6 +247,10 @@ impl Goal {
         let mut goal = self.clone();
         goal.accumulated_amount += amount;
 
+        if goal.accumulated_amount >= goal.target {
+            goal.accumulated_amount = goal.target;
+        }
+
         goal.update(client).await
     }
 
@@ -277,6 +284,10 @@ impl Goal {
         }
 
         if time_provider.now() > self.target_date {
+            return Ok(self.target);
+        }
+
+        if self.accumulated_amount >= self.target {
             return Ok(self.target);
         }
 
@@ -343,7 +354,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_accumulate_from_over_accumulated() {
-        let (shared_state, _) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let user_id = user_extension.0.id;
         let client = shared_state.pool.get().await.unwrap();
         let client = client.client();
         let time_provider = &MockTimeProvider {};
@@ -353,7 +365,7 @@ mod tests {
             name: "test".to_string(),
             recurrence: Recurrence::Monthly,
             target: Decimal::new(100, 0),
-            user_id: 1,
+            user_id,
             target_date: NaiveDateTime::new(
                 NaiveDate::from_str("2024-02-15").unwrap(),
                 NaiveTime::MIN,
@@ -365,9 +377,11 @@ mod tests {
 
         assert_eq!(goal.accumulated_amount, Decimal::new(90, 0))
     }
+
     #[tokio::test]
     async fn test_accumulate_from_over_target() {
-        let (shared_state, _) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let user_id = user_extension.0.id;
         let client = shared_state.pool.get().await.unwrap();
         let client = client.client();
         let time_provider = &MockTimeProvider {};
@@ -377,7 +391,7 @@ mod tests {
             name: "test".to_string(),
             recurrence: Recurrence::Monthly,
             target: Decimal::new(100, 0),
-            user_id: 1,
+            user_id,
             target_date: NaiveDateTime::new(
                 NaiveDate::from_str("2024-01-29").unwrap(),
                 NaiveTime::MIN,
@@ -389,9 +403,11 @@ mod tests {
 
         assert_eq!(goal.accumulated_amount, Decimal::new(100, 0))
     }
+
     #[tokio::test]
     async fn test_accumulate_from_zero() {
-        let (shared_state, _) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let user_id = user_extension.0.id;
         let client = shared_state.pool.get().await.unwrap();
         let client = client.client();
         let time_provider = &MockTimeProvider {};
@@ -401,7 +417,7 @@ mod tests {
             name: "test".to_string(),
             recurrence: Recurrence::Monthly,
             target: Decimal::new(100, 0),
-            user_id: 1,
+            user_id,
             target_date: NaiveDateTime::new(
                 NaiveDate::from_str("2024-01-31").unwrap(),
                 NaiveTime::MIN,

@@ -72,6 +72,7 @@ pub async fn action(
     goal.target = Decimal::from_f64(form.target.to_owned()).expect("could not parse decimal");
     goal.recurrence = Recurrence::from_str(&form.recurrence).unwrap();
     goal.target_date = NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc();
+    goal.accumulated_amount = Decimal::ZERO;
 
     goal.update(shared_state.pool.get().await?.client()).await?;
 
@@ -97,7 +98,7 @@ mod tests {
 
         let goal = Goal {
             id: None,
-            accumulated_amount: Decimal::ZERO,
+            accumulated_amount: Decimal::new(100, 0),
             user_id,
             name: "Test Goal".to_string(),
             target: Decimal::new(1000, 0),
@@ -105,8 +106,14 @@ mod tests {
             recurrence: Recurrence::Weekly,
         };
 
-        let goal = goal
+        let mut goal = goal
             .create(shared_state.pool.get().await.unwrap().client())
+            .await
+            .unwrap();
+
+        goal.accumulated_amount = Decimal::new(100, 0);
+        let goal = goal
+            .update(shared_state.pool.get().await.unwrap().client())
             .await
             .unwrap();
 
@@ -145,5 +152,6 @@ mod tests {
 
         assert_eq!(goal.name, "Updated Goal");
         assert_eq!(goal.target, Decimal::new(2000, 0));
+        assert_eq!(goal.accumulated_amount, Decimal::ZERO);
     }
 }

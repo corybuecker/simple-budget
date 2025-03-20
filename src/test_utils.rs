@@ -7,6 +7,7 @@ use crate::{errors::AppError, models::user::Preferences};
 use anyhow::{Result, anyhow};
 use axum::Extension;
 use axum_extra::extract::cookie::Key;
+use deadpool_postgres::Object;
 use postgres_types::Json;
 use tokio::sync::{mpsc, watch};
 use tokio_postgres::{Client, GenericClient};
@@ -34,6 +35,16 @@ pub async fn state_for_tests() -> Result<(SharedState, Extension<UserExtension>)
     };
 
     Ok((shared_state, user_extension))
+}
+
+pub async fn client_for_tests() -> Result<Object> {
+    let pool = database_pool(Some(
+        "postgres://simple_budget@localhost:5432/simple_budget_test",
+    ))
+    .await?;
+    let manager = pool.get().await?;
+
+    Ok(manager)
 }
 
 pub async fn user_for_tests(

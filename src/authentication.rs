@@ -4,6 +4,7 @@ use axum::{
     routing::{get, post},
 };
 mod callback;
+mod client;
 mod login;
 mod token;
 

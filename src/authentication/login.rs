@@ -1,18 +1,17 @@
-use crate::{SharedState, errors::AppResponse};
+use super::client::clients_from_metadata;
+use crate::{
+    SharedState,
+    errors::{AppError, AppResponse},
+};
 use axum::{
     extract::State,
-    http::StatusCode,
     response::{Html, IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
     SignedCookieJar,
     cookie::{Cookie, SameSite},
 };
-use openidconnect::RedirectUrl;
-use openidconnect::{
-    ClientId, ClientSecret, CsrfToken, IssuerUrl, Nonce, Scope,
-    core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata},
-};
+use openidconnect::{CsrfToken, Nonce, Scope, core::CoreAuthenticationFlow};
 use std::env;
 use tera::Context;
 
@@ -23,36 +22,10 @@ pub async fn login(state: State<SharedState>) -> AppResponse {
     Ok(Html::from(content).into_response())
 }
 
-pub async fn redirect(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response), StatusCode> {
-    let client_id = env::var("GOOGLE_CLIENT_ID").unwrap();
-    let client_secret = env::var("GOOGLE_CLIENT_SECRET").unwrap();
-    let callback_url = env::var("GOOGLE_CALLBACK_URL").unwrap();
+pub async fn redirect(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response), AppError> {
+    let (oidc_client, _http_client) = clients_from_metadata().await?;
 
-    let Ok(issuer_url) = IssuerUrl::new("https://accounts.google.com".to_string()) else {
-        return Err(StatusCode::SERVICE_UNAVAILABLE);
-    };
-
-    let async_http_client = openidconnect::reqwest::Client::builder().build().unwrap();
-
-    let Ok(provider_metadata) =
-        CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await
-    else {
-        return Err(StatusCode::SERVICE_UNAVAILABLE);
-    };
-
-    let Ok(redirect_uri) = RedirectUrl::new(callback_url) else {
-        return Err(StatusCode::SERVICE_UNAVAILABLE);
-    };
-
-    let client = CoreClient::from_provider_metadata(
-        provider_metadata,
-        ClientId::new(client_id),
-        Some(ClientSecret::new(client_secret)),
-    );
-
-    let client = client.set_redirect_uri(redirect_uri);
-
-    let (auth_url, _, nonce) = client
+    let (auth_url, _, nonce) = oidc_client
         .authorize_url(
             CoreAuthenticationFlow::AuthorizationCode,
             CsrfToken::new_random,
@@ -62,13 +35,13 @@ pub async fn redirect(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response
         .add_scope(Scope::new("openid".to_string()))
         .url();
 
-    let secure = env::var("SECURE").unwrap_or("false".to_string());
+    let secure = env::var("SECURE").unwrap_or("false".to_string()) == "true";
     let cookie = Cookie::build(("nonce", nonce.secret().clone()))
         .expires(None)
         .http_only(true)
         .path("/authentication")
         .same_site(SameSite::Lax)
-        .secure(secure == *"true")
+        .secure(secure)
         .build();
 
     Ok((

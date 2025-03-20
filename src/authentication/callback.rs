@@ -1,3 +1,4 @@
+use super::client::get_claims_from_authorization_code;
 use crate::{
     SharedState,
     errors::AppError,
@@ -13,11 +14,6 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
 };
 use chrono::{Days, Utc};
-use openidconnect::RedirectUrl;
-use openidconnect::{
-    AuthorizationCode, ClientId, ClientSecret, IssuerUrl, Nonce, TokenResponse,
-    core::{CoreClient, CoreProviderMetadata},
-};
 use rand::{
     distr::{Alphanumeric, SampleString},
     rng,
@@ -25,7 +21,7 @@ use rand::{
 use serde::Deserialize;
 use std::env;
 use tokio_postgres::{Client, GenericClient};
-use tracing::debug;
+use tracing::error;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -38,56 +34,22 @@ pub async fn callback(
     query: Query<GoogleCallback>,
     jar: SignedCookieJar,
 ) -> Result<(SignedCookieJar, Response), AppError> {
-    let client_id = env::var("GOOGLE_CLIENT_ID").unwrap();
-    let client_secret = env::var("GOOGLE_CLIENT_SECRET").unwrap();
-    let callback_url = env::var("GOOGLE_CALLBACK_URL").unwrap();
-
-    let issuer_url = IssuerUrl::new("https://accounts.google.com".to_string())?;
-
-    let async_http_client = openidconnect::reqwest::Client::builder().build().unwrap();
-
-    let provider_metadata =
-        CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await?;
-
-    let redirect_uri = RedirectUrl::new(callback_url)?;
-
     let nonce_cookie = jar
         .get("nonce")
         .ok_or(anyhow!("could not get nonce from cookie"))?;
-
     let redirect_cookie = jar.get("redirect_to");
     let redirect = match &redirect_cookie {
         Some(cookie) => cookie.value(),
         None => "/",
     };
-
     let jar = jar.remove(Cookie::from("redirect_to"));
+    let nonce = nonce_cookie.value().to_string();
 
-    let client = CoreClient::from_provider_metadata(
-        provider_metadata,
-        ClientId::new(client_id),
-        Some(ClientSecret::new(client_secret)),
-    );
-
-    let client = client.set_redirect_uri(redirect_uri);
-    let nonce = Nonce::new(nonce_cookie.value().to_string());
-
-    let token_response = client
-        .exchange_code(AuthorizationCode::new(query.code.to_string()))
-        .unwrap()
-        .request_async(&async_http_client)
-        .await?;
-
-    let id_token = token_response
-        .id_token()
-        .ok_or(anyhow!("could not get id token"))?;
-
-    let claims = id_token.claims(&client.id_token_verifier(), &nonce)?;
-
+    let claims = get_claims_from_authorization_code(query.code.clone(), nonce).await?;
     let subject = claims.subject().to_string();
     let email = claims.email().ok_or(anyhow!("could not get email"))?;
     let email = email.to_string();
-    let secure = env::var("SECURE").unwrap_or("false".to_string());
+    let secure = env::var("SECURE").unwrap_or("false".to_string()) == "true";
 
     let id = create_session(shared_state.pool.get().await?.client(), &subject, &email).await?;
     let cookie = Cookie::build(("session_id", id.to_string()))
@@ -95,7 +57,7 @@ pub async fn callback(
         .http_only(true)
         .path("/")
         .same_site(SameSite::Lax)
-        .secure(secure == *"true")
+        .secure(secure)
         .build();
 
     Ok((jar.add(cookie), Redirect::to(redirect).into_response()))
@@ -103,9 +65,7 @@ pub async fn callback(
 
 async fn create_session(client: &Client, subject: &str, email: &str) -> Result<Uuid, AppError> {
     let csrf = Alphanumeric.sample_string(&mut rng(), 32);
-
     let user = upsert_subject(client, subject.to_owned(), email.to_owned()).await?;
-
     let expiration = Utc::now().checked_add_days(Days::new(1)).expect("msg");
     let mut session = Session {
         id: None,
@@ -124,8 +84,41 @@ async fn upsert_subject(client: &Client, subject: String, email: String) -> Resu
     match User::get_by_subject(client, subject.clone()).await {
         Ok(user) => Ok(user),
         Err(e) => {
-            debug!("🚧 {:#?}", e);
+            error!("🚧 {:#?}", e);
+
             Ok(User::create(client, email, subject).await?)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::create_session;
+    use crate::{models::user::User, test_utils::client_for_tests};
+    use tokio_postgres::GenericClient;
+    use uuid::Uuid;
+
+    #[tokio::test]
+    async fn test_create_session_for_new_user() {
+        let uuid = Uuid::new_v4().to_string();
+        let client = client_for_tests().await.unwrap();
+        let client = client.client();
+        let session = create_session(client, &uuid, &uuid).await;
+        assert!(session.is_ok());
+        let user = User::get_by_subject(client, uuid.clone()).await;
+        assert!(user.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_create_session_for_existing_user() {
+        let uuid = &Uuid::new_v4().to_string();
+        let client = client_for_tests().await.unwrap();
+        let client = client.client();
+        let user = User::create(client, uuid.clone(), uuid.clone()).await;
+        assert!(user.is_ok());
+        let session = create_session(client, &uuid, &uuid).await;
+        assert!(session.is_ok());
+        let user = User::get_by_subject(client, uuid.to_string()).await;
+        assert!(user.is_ok());
     }
 }

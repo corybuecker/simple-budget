@@ -1,3 +1,4 @@
+use super::UserExtension;
 use crate::{Section, SharedState, models::user::GoalHeader};
 use axum::{
     Extension, Router,
@@ -8,18 +9,15 @@ use axum::{
 };
 use serde::Deserialize;
 use tera::Context;
-use validator::Validate;
 
-use super::UserExtension;
 mod index;
 mod update;
 
-#[derive(Debug, Validate, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct PreferencesForm {
     timezone: Option<String>,
     goal_header: Option<GoalHeader>,
     forecast_offset: Option<i64>,
-    #[validate(range(min = 0.0))]
     monthly_income: Option<f64>,
 }
 

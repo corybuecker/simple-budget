@@ -1,15 +1,16 @@
 use super::UserExtension;
 use crate::{Section, SharedState};
 use axum::{
+    Extension, Router,
     extract::Request,
-    middleware::{from_fn, Next},
+    middleware::{Next, from_fn},
     response::Response,
     routing::get,
-    Extension, Router,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tera::Context;
-use validator::Validate;
+
 mod create;
 mod delete;
 mod edit;
@@ -17,11 +18,21 @@ mod index;
 mod new;
 mod update;
 
-#[derive(Debug, Validate, Deserialize)]
+fn schema() -> serde_json::Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "name": { "type": "string", "minLength": 2 },
+            "amount": { "type": "number", "minimum": 0 },
+        },
+        "required": [ "name", "amount" ],
+        "additionalProperties": false
+    })
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct EnvelopeForm {
-    #[validate(length(min = 5))]
     pub name: String,
-    #[validate(range(min = 0.0))]
     pub amount: f64,
 }
 
@@ -38,6 +49,7 @@ async fn initialize_context(
 
     next.run(request).await
 }
+
 pub fn envelopes_router() -> Router<SharedState> {
     Router::new()
         .route("/", get(index::page).post(create::page))

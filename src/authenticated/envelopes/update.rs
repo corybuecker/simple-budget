@@ -1,7 +1,8 @@
-use super::EnvelopeForm;
+use super::{EnvelopeForm, schema};
 use crate::{
     SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
 };
+use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::{Path, State},
@@ -11,15 +12,16 @@ use axum::{
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use tera::Context;
 use tokio_postgres::GenericClient;
-use validator::Validate;
 
 pub async fn action(
     shared_state: State<SharedState>,
     Extension(user): Extension<UserExtension>,
     Path(id): Path<i32>,
     headers: HeaderMap,
-    form: Form<EnvelopeForm>,
+    Form(form): Form<EnvelopeForm>,
 ) -> AppResponse {
+    let json = serde_json::to_value(&form)?;
+    let valid = jsonschema::validate(&schema(), &json);
     let mut turbo = false;
     let accept = headers.get("Accept");
     if let Some(accept) = accept {
@@ -28,7 +30,7 @@ pub async fn action(
         }
     }
 
-    match form.validate() {
+    match valid {
         Ok(_) => {}
         Err(validation_errors) => {
             let mut context = Context::new();
@@ -64,7 +66,8 @@ pub async fn action(
         Envelope::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
 
     envelope.name = form.name.clone();
-    envelope.amount = Decimal::from_f64(form.amount).expect("could not parse decimal");
+    envelope.amount = Decimal::from_f64(form.amount)
+        .ok_or(anyhow!("could not parse decimal").context("envelopes:update"))?;
     envelope
         .update(shared_state.pool.get().await?.client())
         .await?;

@@ -103,7 +103,7 @@ impl Goal {
             .execute(
                 "UPDATE goals
             SET name = $1, recurrence = $2, target_date = $3, target = $4, accumulated_amount = $5
-            WHERE id = $6 AND user_id = $7 RETURNING id, user_id",
+            WHERE id = $6 AND user_id = $7",
                 &[
                     &self.name,
                     &self.recurrence,
@@ -170,7 +170,10 @@ impl Goal {
 
     pub async fn get_all_unscoped(client: &Client) -> Result<Vec<Self>, AppError> {
         let rows = client
-            .query("SELECT goals.* FROM goals ORDER BY target_date ASC", &[])
+            .query(
+                "SELECT goals.* FROM goals ORDER BY target_date ASC FOR UPDATE",
+                &[],
+            )
             .await?;
 
         let mut goals = Vec::with_capacity(rows.len());

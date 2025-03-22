@@ -1,4 +1,5 @@
 use super::AccountForm;
+use crate::authenticated::accounts::schema;
 use crate::errors::AppResponse;
 use crate::{SharedState, authenticated::UserExtension, models::account::Account};
 use anyhow::Context;
@@ -11,7 +12,6 @@ use axum::{
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
 use tokio_postgres::GenericClient;
-use validator::Validate;
 
 pub async fn page(
     shared_state: State<SharedState>,
@@ -19,6 +19,9 @@ pub async fn page(
     headers: HeaderMap,
     Form(form): Form<AccountForm>,
 ) -> AppResponse {
+    let json = serde_json::to_value(&form)?;
+    let valid = jsonschema::validate(&schema(), &json);
+
     let mut turbo = false;
     let accept = headers.get("Accept");
     if let Some(accept) = accept {
@@ -26,7 +29,7 @@ pub async fn page(
             turbo = true;
         }
     }
-    match form.validate() {
+    match valid {
         Ok(_) => {}
         Err(validation_errors) => {
             let mut context = tera::Context::new();
@@ -100,7 +103,7 @@ mod tests {
             .with_state(shared_state)
             .layer(user_extension);
 
-        let form_data = "name=test_create_account_success&amount=100.00&debt=false";
+        let form_data = "name=test_create_account_success&amount=100.00&debt=true";
         let request = Request::builder()
             .method("POST")
             .uri("/accounts/create")

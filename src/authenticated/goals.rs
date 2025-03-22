@@ -1,3 +1,4 @@
+use super::UserExtension;
 use crate::{Section, SharedState};
 use axum::{
     Extension, Router,
@@ -6,22 +7,34 @@ use axum::{
     response::Response,
     routing::get,
 };
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use tera::Context;
+
 mod create;
 mod delete;
 mod edit;
 mod index;
 mod new;
 mod update;
-use super::UserExtension;
-use serde::Deserialize;
-use tera::Context;
-use validator::Validate;
 
-#[derive(Debug, Validate, Deserialize)]
+fn schema() -> serde_json::Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "name": { "type": "string", "minLength": 2 },
+            "target": { "type": "number", "minimum": 0 },
+            "recurrence": { "enum": ["never", "daily", "weekly", "monthly", "quarterly", "yearly"] },
+            "target_date": { "type": "string", "format": "date" }
+        },
+        "required": [ "name", "target", "recurrence", "target_date" ],
+        "additionalProperties": false
+    })
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct GoalForm {
-    #[validate(length(min = 5))]
     name: String,
-    #[validate(range(min = 0.0))]
     target: f64,
     target_date: chrono::NaiveDate,
     recurrence: String,

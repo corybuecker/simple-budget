@@ -1,4 +1,4 @@
-use super::AccountForm;
+use super::{AccountForm, schema};
 use crate::{
     SharedState, authenticated::UserExtension, errors::AppResponse, models::account::Account,
 };
@@ -11,15 +11,16 @@ use axum::{
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use tera::Context;
 use tokio_postgres::GenericClient;
-use validator::Validate;
 
 pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<i32>,
     headers: HeaderMap,
-    form: Form<AccountForm>,
+    Form(form): Form<AccountForm>,
 ) -> AppResponse {
+    let json = serde_json::to_value(&form)?;
+    let valid = jsonschema::validate(&schema(), &json);
     let mut turbo = false;
     let accept = headers.get("Accept");
     if let Some(accept) = accept {
@@ -27,7 +28,7 @@ pub async fn action(
             turbo = true;
         }
     }
-    match form.validate() {
+    match valid {
         Ok(_) => {}
         Err(validation_errors) => {
             let mut context = Context::new();

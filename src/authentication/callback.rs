@@ -66,7 +66,9 @@ pub async fn callback(
 async fn create_session(client: &Client, subject: &str, email: &str) -> Result<Uuid, AppError> {
     let csrf = Alphanumeric.sample_string(&mut rng(), 32);
     let user = upsert_subject(client, subject.to_owned(), email.to_owned()).await?;
-    let expiration = Utc::now().checked_add_days(Days::new(1)).expect("msg");
+    let expiration = Utc::now()
+        .checked_add_days(Days::new(1))
+        .ok_or(anyhow!("could not add dates").context("create_session"))?;
     let mut session = Session {
         id: None,
         user_id: user.id,

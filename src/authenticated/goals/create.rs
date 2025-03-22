@@ -1,4 +1,4 @@
-use super::GoalForm;
+use super::{GoalForm, schema};
 use crate::{
     SharedState,
     authenticated::UserExtension,
@@ -16,14 +16,16 @@ use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::str::FromStr;
 use tera::Context;
 use tokio_postgres::GenericClient;
-use validator::Validate;
 
 pub async fn page(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
-    form: Form<GoalForm>,
+    Form(form): Form<GoalForm>,
 ) -> AppResponse {
+    let json = serde_json::to_value(&form)?;
+    let valid = jsonschema::validate(&schema(), &json);
+
     let mut turbo = false;
     let accept = headers.get("Accept");
     if let Some(accept) = accept {
@@ -32,7 +34,7 @@ pub async fn page(
         }
     }
 
-    match form.validate() {
+    match valid {
         Ok(_) => {}
         Err(validation_errors) => {
             let mut context = Context::new();
@@ -147,7 +149,7 @@ mod tests {
             .with_state(shared_state)
             .layer(user_extension);
 
-        let form_data = "name=test&target=124&target_date=2024-09-13&recurrence=monthly";
+        let form_data = "name=t&target=124&target_date=2024-09-13&recurrence=monthly";
         let request = Request::builder()
             .method("POST")
             .uri("/goals/create")
@@ -173,7 +175,7 @@ mod tests {
             .with_state(shared_state.clone())
             .layer(user_extension);
 
-        let form_data = "name=test&target=124&target_date=2024-09-13&recurrence=monthly";
+        let form_data = "name=t&target=124&target_date=2024-09-13&recurrence=monthly";
         let request = Request::builder()
             .method("POST")
             .uri("/goals/create")

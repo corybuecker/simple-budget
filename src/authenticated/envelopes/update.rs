@@ -2,6 +2,7 @@ use super::EnvelopeForm;
 use crate::{
     SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
 };
+use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::{Path, State},
@@ -64,7 +65,8 @@ pub async fn action(
         Envelope::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
 
     envelope.name = form.name.clone();
-    envelope.amount = Decimal::from_f64(form.amount).expect("could not parse decimal");
+    envelope.amount = Decimal::from_f64(form.amount)
+        .ok_or(anyhow!("could not parse decimal").context("envelopes:update"))?;
     envelope
         .update(shared_state.pool.get().await?.client())
         .await?;

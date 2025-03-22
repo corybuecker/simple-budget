@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::{
     errors::AppError,
     models::{envelope::Envelope, goal::Goal, user::User},
@@ -10,6 +8,7 @@ use chrono::Utc;
 use chrono_tz::Tz;
 use deadpool_postgres::Pool;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
+use std::str::FromStr;
 use tracing::info;
 
 pub async fn convert_goals(pool: &Pool, time: &impl Times) -> Result<f64, AppError> {
@@ -57,6 +56,7 @@ pub async fn convert_goals(pool: &Pool, time: &impl Times) -> Result<f64, AppErr
 
         let monthly_income = user.monthly_income()?;
         let spendable_per_second = monthly_income / length_of_month_in_seconds;
+        info!("🚧 spendable_per_second -> {:#?}", spendable_per_second);
 
         let remaining_length_of_month = time_utilities.remaining_length_of_month(time)?;
         let remaining_length_of_month_in_seconds =
@@ -68,16 +68,23 @@ pub async fn convert_goals(pool: &Pool, time: &impl Times) -> Result<f64, AppErr
             remaining_length_of_month_in_seconds
         );
         let remaining_spendable = user.total_balance(client).await?;
+        info!("🚧 remaining_spendable -> {:#?}", remaining_spendable);
+
         let remaining_spendable_per_second =
             remaining_spendable / remaining_length_of_month_in_seconds;
 
-        info!("🚧 remaining_spendable -> {:#?}", remaining_spendable);
+        info!(
+            "🚧 remaining_spendable_per_second -> {:#?}",
+            remaining_spendable_per_second
+        );
         let acceleration_amount_per_second = Decimal::max(
             Decimal::ZERO,
             remaining_spendable_per_second - spendable_per_second,
         );
         let acceleration_amount =
             acceleration_amount_per_second * remaining_length_of_month_in_seconds;
+
+        info!("🚧 acceleration_amount -> {:#?}", acceleration_amount);
         goal.accelerate(client, acceleration_amount).await?;
     }
 

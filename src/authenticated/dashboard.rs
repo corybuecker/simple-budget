@@ -1,10 +1,10 @@
 use super::UserExtension;
-use crate::errors::AppResponse;
+use crate::errors::{AppError, AppResponse};
 use crate::models::goal::Goal;
 use crate::models::user::Preferences;
 use crate::utilities::dates::{TimeProvider, TimeUtilities};
 use crate::{Section, SharedState, models::user::User};
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use axum::{
     Extension,
     extract::State,
@@ -66,16 +66,17 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Res
         .unwrap();
     let duration_until_tomorrow = tomorrow - now;
     let seconds_until_tomorrow = duration_until_tomorrow.num_seconds() as f64;
-    let seconds_until_tomorrow =
-        Decimal::from_f64(seconds_until_tomorrow / 86400.0).expect("could not parse decimal");
+    let seconds_until_tomorrow = Decimal::from_f64(seconds_until_tomorrow / 86400.0)
+        .ok_or(anyhow!("could not parse decimal"))?;
     let tomorrow_remaining_total = remaining_total - goals_accumulated * seconds_until_tomorrow;
     let remaining_days = time_utilities
         .remaining_length_of_month(&time_provider)?
         .num_days();
-    let remaining_days = Decimal::from_i64(remaining_days).expect("unable to parse decimal");
+    let remaining_days =
+        Decimal::from_i64(remaining_days).ok_or(anyhow!("could not parse decimal"))?;
     let per_diem = remaining_total / remaining_days;
     let forecast_offset = Decimal::from_i64(preferences.forecast_offset.unwrap_or(1))
-        .expect("could not parse decimal");
+        .ok_or(anyhow!("could not parse decimal"))?;
     let per_diem_forecast = tomorrow_remaining_total / (remaining_days - forecast_offset);
 
     context.insert("tomorrow_remaining_total", &tomorrow_remaining_total);

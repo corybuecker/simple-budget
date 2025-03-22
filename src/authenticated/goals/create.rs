@@ -5,6 +5,7 @@ use crate::{
     errors::AppResponse,
     models::goal::{Goal, Recurrence},
 };
+use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::State,
@@ -73,7 +74,8 @@ pub async fn page(
     let goal = Goal {
         id: None,
         name: form.name.to_owned(),
-        target: Decimal::from_f64(form.target.to_owned()).expect("could not parse decimal"),
+        target: Decimal::from_f64(form.target.to_owned())
+            .ok_or_else(|| anyhow!("could not parse decimal"))?,
         recurrence: Recurrence::from_str(&form.recurrence).unwrap(),
         target_date: NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc(),
         user_id: user.id,

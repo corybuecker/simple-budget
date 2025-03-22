@@ -2,7 +2,7 @@ use super::AccountForm;
 use crate::authenticated::accounts::schema;
 use crate::errors::AppResponse;
 use crate::{SharedState, authenticated::UserExtension, models::account::Account};
-use anyhow::Context;
+use anyhow::{Context, anyhow};
 use axum::{
     Extension, Form,
     extract::State,
@@ -67,7 +67,8 @@ pub async fn page(
     let account = Account {
         id: None,
         name: form.name.to_owned(),
-        amount: Decimal::from_f64(form.amount.to_owned()).expect("valid decimal"),
+        amount: Decimal::from_f64(form.amount.to_owned())
+            .ok_or_else(|| anyhow!("could not parse decimal"))?,
         debt: form.debt.unwrap_or(false),
         user_id: user.id,
     };

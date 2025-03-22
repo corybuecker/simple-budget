@@ -94,7 +94,9 @@ async fn create_session(client: &Client, subject: &str, email: &str) -> Result<U
 
     let user = upsert_subject(client, subject.to_owned(), email.to_owned()).await?;
 
-    let expiration = Utc::now().checked_add_days(Days::new(1)).expect("msg");
+    let expiration = Utc::now()
+        .checked_add_days(Days::new(1))
+        .ok_or_else(|| anyhow!("could not add days to date").context("create_session"))?;
     let mut session = Session {
         id: None,
         user_id: user.id,

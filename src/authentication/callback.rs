@@ -118,7 +118,7 @@ mod tests {
         let client = client.client();
         let user = User::create(client, uuid.clone(), uuid.clone()).await;
         assert!(user.is_ok());
-        let session = create_session(client, &uuid, &uuid).await;
+        let session = create_session(client, uuid, uuid).await;
         assert!(session.is_ok());
         let user = User::get_by_subject(client, uuid.to_string()).await;
         assert!(user.is_ok());

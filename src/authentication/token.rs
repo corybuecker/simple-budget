@@ -16,7 +16,6 @@ use serde::Deserialize;
 use serde_json::json;
 use std::env;
 use tokio_postgres::{Client, GenericClient};
-use tracing::debug;
 use uuid::Uuid;
 
 use crate::{
@@ -41,40 +40,29 @@ pub async fn token(
     jar: SignedCookieJar,
     Json(token): Json<Payload>,
 ) -> AppResponse {
-    debug!("{:#?}", token);
-
-    let issuer_url = IssuerUrl::new("https://accounts.google.com".to_string()).unwrap();
-
-    let async_http_client = openidconnect::reqwest::Client::builder().build().unwrap();
-
-    let provider_metadata = CoreProviderMetadata::discover_async(issuer_url, &async_http_client)
-        .await
-        .unwrap();
+    let issuer_url = IssuerUrl::new("https://accounts.google.com".to_string())?;
+    let async_http_client = openidconnect::reqwest::Client::builder().build()?;
+    let provider_metadata =
+        CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await?;
 
     let keys = provider_metadata.jwks().keys();
     let key = json!(keys[0].clone());
-    let jwk: Jwk = serde_json::from_value(key).unwrap();
+    let jwk: Jwk = serde_json::from_value(key)?;
 
     let mut validation = Validation::new(Algorithm::RS256);
-    let aud = env::var("IOS_CLIENT_ID").unwrap();
+    let aud = env::var("IOS_CLIENT_ID")?;
 
     validation.set_audience(&[&aud]);
     validation.set_issuer(&["accounts.google.com", "https://accounts.google.com"]);
 
-    let status = decode::<Claims>(
-        &token.id_token,
-        &DecodingKey::from_jwk(&jwk).unwrap(),
-        &validation,
-    )
-    .unwrap();
+    let status = decode::<Claims>(&token.id_token, &DecodingKey::from_jwk(&jwk)?, &validation)?;
 
     let id = create_session(
         shared_state.pool.get().await?.client(),
         &status.claims.sub,
         &status.claims.email,
     )
-    .await
-    .unwrap();
+    .await?;
 
     let secure = env::var("SECURE").unwrap_or("false".to_string());
 

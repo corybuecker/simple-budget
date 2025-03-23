@@ -14,7 +14,7 @@ use tracing::info;
 pub async fn convert_goals(pool: &Pool, time: &impl Times) -> Result<f64, AppError> {
     info!("converting goals to envelopes at {}", Utc::now());
 
-    let mut manager = pool.get().await.unwrap();
+    let mut manager = pool.get().await?;
     let transaction = manager.transaction().await?;
     let client = transaction.client();
 

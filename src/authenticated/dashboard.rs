@@ -1,5 +1,5 @@
 use super::UserExtension;
-use crate::errors::{AppError, AppResponse};
+use crate::errors::AppResponse;
 use crate::models::goal::Goal;
 use crate::models::user::Preferences;
 use crate::utilities::dates::{TimeProvider, TimeUtilities};
@@ -27,10 +27,7 @@ pub async fn index(
         generate_dashboard_context_for(&user, shared_state.pool.get().await?.client()).await?;
     context.insert("csrf", &csrf);
     context.insert("section", &Section::Reports);
-    let content = shared_state
-        .tera
-        .render("dashboard.html", &context)
-        .unwrap();
+    let content = shared_state.tera.render("dashboard.html", &context)?;
 
     Ok(Html::from(content).into_response())
 }
@@ -47,7 +44,7 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Res
         },
     };
     let timezone = preferences.timezone.clone().unwrap_or(String::from("UTC"));
-    let timezone: Tz = timezone.parse().unwrap();
+    let timezone: Tz = timezone.parse()?;
     let time_provider = TimeProvider {};
     let time_utilities = &TimeUtilities { timezone };
     let goals = Goal::get_all(client, user.id).await.unwrap_or(vec![]);
@@ -62,8 +59,12 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Res
     let forecast_offset = preferences.forecast_offset.unwrap_or(1);
     let now = Local::now().with_timezone(&timezone);
     let tomorrow = (now + Duration::days(forecast_offset))
-        .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
-        .unwrap();
+        .with_time(
+            NaiveTime::from_hms_opt(0, 0, 0)
+                .ok_or_else(|| anyhow!("could not construct datetime"))?,
+        )
+        .single()
+        .ok_or_else(|| anyhow!("more than one possible time"))?;
     let duration_until_tomorrow = tomorrow - now;
     let seconds_until_tomorrow = duration_until_tomorrow.num_seconds() as f64;
     let seconds_until_tomorrow = Decimal::from_f64(seconds_until_tomorrow / 86400.0)

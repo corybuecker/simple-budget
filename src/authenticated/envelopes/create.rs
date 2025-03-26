@@ -2,6 +2,7 @@ use super::{EnvelopeForm, schema};
 use crate::{
     SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
 };
+use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::State,
@@ -62,7 +63,8 @@ pub async fn page(
     let envelope = Envelope {
         id: None,
         name: form.name.to_owned(),
-        amount: Decimal::from_f64(form.amount.to_owned()).expect("could not parse decimal"),
+        amount: Decimal::from_f64(form.amount.to_owned())
+            .ok_or(anyhow!("could not parse decimal"))?,
         user_id: user.id,
     };
 

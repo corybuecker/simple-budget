@@ -9,6 +9,7 @@ use crate::{
     },
     utilities::dates::TimeProvider,
 };
+use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::State,
@@ -67,8 +68,10 @@ pub async fn action(
     match &form.monthly_income {
         None => {}
         Some(monthly_income) => {
-            preferences.monthly_income =
-                Some(Decimal::from_f64(*monthly_income).expect("cannot parse Decimal"))
+            preferences.monthly_income = Some(
+                Decimal::from_f64(*monthly_income)
+                    .ok_or_else(|| anyhow!("could not parse decimal"))?,
+            )
         }
     };
 

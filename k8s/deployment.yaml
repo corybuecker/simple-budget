@@ -14,7 +14,7 @@ spec:
     metadata:
       labels:
         app: simple-budget
-        version: "1742639320"
+        version: "1742726435"
     spec:
       containers:
       - name: simple-budget
@@ -29,7 +29,7 @@ spec:
         resources:
           limits:
             memory: 512M
-            cpu: 200m
+            cpu: 150m
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -42,9 +42,9 @@ spec:
           httpGet:
             path: /healthcheck
             port: 8000
-          periodSeconds: 2
+          periodSeconds: 5
         livenessProbe:
           httpGet:
             path: /healthcheck
             port: 8000
-          periodSeconds: 5
+          periodSeconds: 10

@@ -2,6 +2,7 @@ use super::{AccountForm, schema};
 use crate::{
     SharedState, authenticated::UserExtension, errors::AppResponse, models::account::Account,
 };
+use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::{Path, State},
@@ -63,7 +64,8 @@ pub async fn action(
     let mut account =
         Account::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
     account.name = form.name.clone();
-    account.amount = Decimal::from_f64(form.amount).expect("valid decimal");
+    account.amount =
+        Decimal::from_f64(form.amount).ok_or_else(|| anyhow!("could not parse decimal"))?;
     account.debt = form.debt.unwrap_or(false);
     account
         .update(shared_state.pool.get().await?.client())

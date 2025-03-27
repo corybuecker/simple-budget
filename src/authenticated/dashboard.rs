@@ -70,24 +70,25 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Res
     let seconds_until_tomorrow = Decimal::from_f64(seconds_until_tomorrow / 86400.0)
         .ok_or(anyhow!("could not parse decimal"))?;
     let tomorrow_remaining_total = remaining_total - goals_accumulated * seconds_until_tomorrow;
-    let remaining_days = time_utilities
+    let remaining_days_in_seconds = time_utilities
         .remaining_length_of_month(&time_provider)?
-        .num_days();
-    let remaining_days =
-        Decimal::from_i64(remaining_days).ok_or(anyhow!("could not parse decimal"))?;
-    let per_diem = remaining_total / remaining_days;
+        .num_seconds();
+    let remaining_days_in_seconds =
+        Decimal::from_i64(remaining_days_in_seconds).ok_or(anyhow!("could not parse decimal"))?;
+    let per_diem = remaining_total / remaining_days_in_seconds * Decimal::new(86400, 0);
     let forecast_offset = Decimal::from_i64(preferences.forecast_offset.unwrap_or(1))
         .ok_or(anyhow!("could not parse decimal"))?;
-    let per_diem_forecast = tomorrow_remaining_total / (remaining_days - forecast_offset);
 
     context.insert("tomorrow_remaining_total", &tomorrow_remaining_total);
     context.insert("goals_accumulated_per_day", &goals_accumulated);
-    context.insert("remaining_days", &remaining_days);
+    context.insert(
+        "remaining_days",
+        &(remaining_days_in_seconds * Decimal::new(86400, 0)),
+    );
     context.insert("remaining_minutes", &duration_until_tomorrow.num_minutes());
     context.insert("remaining_total", &remaining_total);
     context.insert("forecast_offset", &forecast_offset);
     context.insert("per_diem", &per_diem);
-    context.insert("per_diem_forecast", &per_diem_forecast);
 
     Ok(context)
 }

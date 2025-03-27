@@ -21,16 +21,18 @@
                            required
                            value="{% if name %}{{ name }}{% endif %}" />
                 </div>
-                <div class="flex flex-col">
+                <div data-controller="currency-input"
+                     class="flex flex-col"
+                     data-currency-input-precision-value="2">
                     <label for="target">Target</label>
-                    <input id="target"
+                    <input data-currency-input-target="input"
                            name="target"
+                           pattern="\d*"
                            required
                            type="number"
-                           min="1"
-                           step="0.01"
+                           data-action="currency-input#change"
                            value="{% if target %}{{ target }}{% endif %}" />
-                </div>
+                    <div data-currency-input-target="output" /></div>
                 <div class="flex flex-col">
                     <label for="target_date">Target date</label>
                     <input id="target_date"

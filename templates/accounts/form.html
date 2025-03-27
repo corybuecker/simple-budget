@@ -21,16 +21,24 @@
                            type="text"
                            value="{% if name %}{{ name }}{% endif %}" />
                 </div>
-                <div class="flex flex-col">
+                <div data-controller="currency-input"
+                     class="flex flex-col"
+                     data-currency-input-precision-value="2">
                     <label for="amount">Amount</label>
-                    <input name="amount"
+                    <input data-currency-input-target="input"
+                           name="amount"
                            pattern="\d*"
                            required
                            type="number"
+                           data-action="currency-input#change"
                            value="{% if amount %}{{ amount }}{% endif %}" />
-                </div>
+                    <div data-currency-input-target="output" /></div>
                 <div class="flex flex-row gap-2 items-center">
-                    <input id="debt" name="debt" type="checkbox" {% if debt %}{{ "checked" }}{% endif %} value="true" />
+                    <input id="debt"
+                           name="debt"
+                           type="checkbox"
+                           {% if debt %}{{ "checked" }}{% endif %}
+                           value="true" />
                     <label for="debt">Debt</label>
                 </div>
                 <div class="flex justify-end items-center gap-4">

@@ -9,29 +9,31 @@
               content="width=device-width,minimum-scale=1,initial-scale=1" />
         {% if csrf %}<meta name="csrf-token" content="{{ csrf }}" />{% endif %}
         <!--
-  JSPM Generator Import Map
-  Edit URL: https://generator.jspm.io/#Y2NlYGBiTs4vqkwqTU3OTi1icMjILynPLEpN0S8uycwtzSktdjDWM9IzQpIoKS1Kynew0DPQMzQAAAY739xBAA
--->
+        Import map generated with JSPM Generator
+        Edit here: https://generator.jspm.io/#Y2NlYGBiTs4vqkwqTU3OTi1icMjILynPLEpN0S8uycwtzSktdjDWM9IzQpIoKS1Kynew0DPQMzQGALxq1kVBAA
+        -->
         <script type="importmap">
-{
-  "imports": {
-    "@hotwired/stimulus": "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js",
-    "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.10/dist/turbo.es2017-esm.js"
-  },
-  "integrity": {
-    "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js": "sha384-NStGXzUH4pFNGrLRkzXYz7zzDn8S6MvFPwfKSuYf6TlX25BrNVP4oCN2S04XUuOI",
-    "https://ga.jspm.io/npm:@hotwired/turbo@8.0.10/dist/turbo.es2017-esm.js": "sha384-0LLlYqg+/w0wyCVRH16/KfeaBg5h3BvCn9tWurseyuiV8+08ZZcVALRIG8Ug2mOa"
-  }
-}
+            {
+            "imports": {
+                "@hotwired/stimulus": "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js",
+                "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.13/dist/turbo.es2017-esm.js"
+            },
+            "integrity": {
+                "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js": "sha384-NStGXzUH4pFNGrLRkzXYz7zzDn8S6MvFPwfKSuYf6TlX25BrNVP4oCN2S04XUuOI",
+                "https://ga.jspm.io/npm:@hotwired/turbo@8.0.13/dist/turbo.es2017-esm.js": "sha384-Ar5BI7e7pT8hROa/8lS1X1ANGto4Pa7UJb06l16NbEqGKD/CCab3ZTrtWi18TVam"
+            }
+            }
         </script>
         <!-- ES Module Shims import maps polyfills -->
         <script async
-                src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"
-                integrity="sha384-ie1x72Xck445i0j4SlNJ5W5iGeL3Dpa0zD48MZopgWsjNB/lt60SuG1iduZGNnJn"
+                src="https://ga.jspm.io/npm:es-module-shims@2.0.10/dist/es-module-shims.js"
+                integrity="sha384-0n8zZ8Ab2hw10HvDlkJRq46/hZNkdL3GFLkwqU52b/j1T77ZAQJo1rDmxzFgV+uj"
                 crossorigin="anonymous"></script>
         <link rel="stylesheet" href={{ digest_asset(file="app.css") }}>
         <link rel="icon" href={{ digest_asset(file="favicon.png") }}>
-        <link rel="mask-icon" href={{ digest_asset(file="favicon.png") }} color="#000000">
+        <link rel="mask-icon"
+              href="{{ digest_asset(file="favicon.png") }}"
+              color="#000000">
         <link rel="apple-touch-icon" href={{ digest_asset(file="favicon.png") }}>
     </head>
     <body class="@container">
@@ -107,10 +109,12 @@
           import { Application, Controller } from "@hotwired/stimulus"
           import FormatterController from "{{ digest_asset(file="controllers/formatter_controller.js") | safe }}"
           import ModalController from "{{ digest_asset(file="controllers/modal_controller.js") | safe }}"
+          import CurrencyInputController from "{{ digest_asset(file="controllers/currency_input_controller.js") | safe }}"
           
           window.Stimulus = Application.start()
           Stimulus.register("modal", ModalController)
           Stimulus.register("formatter", FormatterController)
+          Stimulus.register("currency-input", CurrencyInputController)
         </script>
         <!-- <turbo-stream-source src="ws://localhost:8000/ws" signed-stream-name="test" /> -->
         <turbo-frame data-controller="modal" class="absolute w-full top-0" id="confirmation-modal"></turbo-frame>

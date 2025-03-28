@@ -56,8 +56,7 @@ pub async fn get_claims_from_authorization_code(
 ) -> Result<IdTokenClaims<EmptyAdditionalClaims, CoreGenderClaim>> {
     let (oidc_client, http_client) = clients_from_metadata().await?;
     let token_response = oidc_client
-        .exchange_code(AuthorizationCode::new(code))
-        .unwrap()
+        .exchange_code(AuthorizationCode::new(code))?
         .request_async(&http_client)
         .await?;
     let id_token = token_response

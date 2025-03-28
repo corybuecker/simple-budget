@@ -203,37 +203,49 @@ impl Goal {
         Ok(goals)
     }
 
-    pub fn increment(&self) -> Self {
+    pub fn increment(&self) -> Result<Self> {
         let mut goal = self.clone();
         goal.accumulated_amount = Decimal::ZERO;
 
         match self.recurrence {
             Recurrence::Never => goal.target_date = self.target_date,
             Recurrence::Daily => {
-                goal.target_date = self.target_date.checked_add_days(Days::new(1)).unwrap()
+                goal.target_date = self
+                    .target_date
+                    .checked_add_days(Days::new(1))
+                    .ok_or_else(|| anyhow!("could not add dates"))?
             }
             Recurrence::Weekly => {
-                goal.target_date = self.target_date.checked_add_days(Days::new(7)).unwrap()
+                goal.target_date = self
+                    .target_date
+                    .checked_add_days(Days::new(7))
+                    .ok_or_else(|| anyhow!("could not add dates"))?
             }
             Recurrence::Yearly => {
                 goal.target_date = self
                     .target_date
                     .checked_add_months(Months::new(12))
-                    .unwrap()
+                    .ok_or_else(|| anyhow!("could not add dates"))?
             }
             Recurrence::Monthly => {
-                goal.target_date = self.target_date.checked_add_months(Months::new(1)).unwrap()
+                goal.target_date = self
+                    .target_date
+                    .checked_add_months(Months::new(1))
+                    .ok_or_else(|| anyhow!("could not add dates"))?
             }
             Recurrence::Quarterly => {
-                goal.target_date = self.target_date.checked_add_months(Months::new(3)).unwrap()
+                goal.target_date = self
+                    .target_date
+                    .checked_add_months(Months::new(3))
+                    .ok_or_else(|| anyhow!("could not add dates"))?
             }
         }
 
-        goal
+        Ok(goal)
     }
 
     pub fn accumulated_per_day(&self, time_provider: &impl Times) -> Result<Decimal> {
-        if self.start_at(time_provider) > Utc::now() {
+        if self.start_at(time_provider)? > Utc::now() {
             return Ok(Decimal::ZERO);
         }
 
@@ -241,7 +253,7 @@ impl Goal {
             return Ok(Decimal::ZERO);
         }
 
-        let total_time_in_days = Decimal::from_i64(self.total_time(time_provider).num_days())
+        let total_time_in_days = Decimal::from_i64(self.total_time(time_provider)?.num_days())
             .ok_or(anyhow!("could not convert decimal"))?;
 
         Ok(self.target / total_time_in_days)
@@ -283,7 +295,7 @@ impl Goal {
     }
 
     fn accumulated_now(&self, time_provider: &impl Times) -> Result<Decimal> {
-        if self.start_at(time_provider) > time_provider.now() {
+        if self.start_at(time_provider)? > time_provider.now() {
             return Ok(Decimal::ZERO);
         }
 
@@ -296,43 +308,52 @@ impl Goal {
         }
 
         let elapsed_time_in_seconds =
-            Decimal::from_i64(self.elapsed_time(time_provider).num_seconds())
+            Decimal::from_i64(self.elapsed_time(time_provider)?.num_seconds())
                 .ok_or(anyhow!("could not convert decimal"))?;
 
-        let total_time_in_seconds = Decimal::from_i64(self.total_time(time_provider).num_seconds())
-            .ok_or(anyhow!("could not convert decimal"))?;
+        let total_time_in_seconds =
+            Decimal::from_i64(self.total_time(time_provider)?.num_seconds())
+                .ok_or(anyhow!("could not convert decimal"))?;
 
         Ok(self.target / total_time_in_seconds * elapsed_time_in_seconds)
     }
 
-    fn total_time(&self, time_provider: &impl Times) -> TimeDelta {
-        self.target_date - self.start_at(time_provider)
+    fn total_time(&self, time_provider: &impl Times) -> Result<TimeDelta> {
+        Ok(self.target_date - self.start_at(time_provider)?)
     }
 
-    fn elapsed_time(&self, time_provider: &impl Times) -> TimeDelta {
-        let start_at = self.start_at(time_provider);
+    fn elapsed_time(&self, time_provider: &impl Times) -> Result<TimeDelta> {
+        let start_at = self.start_at(time_provider)?;
 
-        time_provider.now() - start_at
+        Ok(time_provider.now() - start_at)
     }
 
-    fn start_at(&self, time_provider: &impl Times) -> DateTime<Utc> {
+    fn start_at(&self, time_provider: &impl Times) -> Result<DateTime<Utc>> {
         match self.recurrence {
-            Recurrence::Never => Self::start_of_month(time_provider).unwrap(),
-            Recurrence::Daily => self.target_date - Days::new(1),
-            Recurrence::Weekly => self.target_date - Days::new(7),
-            Recurrence::Yearly => self.target_date - Months::new(12),
-            Recurrence::Monthly => self.target_date - Months::new(1),
-            Recurrence::Quarterly => self.target_date - Months::new(3),
+            Recurrence::Never => Self::start_of_month(time_provider),
+            Recurrence::Daily => Ok(self.target_date - Days::new(1)),
+            Recurrence::Weekly => Ok(self.target_date - Days::new(7)),
+            Recurrence::Yearly => Ok(self.target_date - Months::new(12)),
+            Recurrence::Monthly => Ok(self.target_date - Months::new(1)),
+            Recurrence::Quarterly => Ok(self.target_date - Months::new(3)),
         }
     }
 
-    fn start_of_month(time_provider: &impl Times) -> Result<DateTime<Utc>, String> {
+    fn start_of_month(time_provider: &impl Times) -> Result<DateTime<Utc>> {
         let now = time_provider.now();
-        let now = now.with_hour(0).ok_or("could not set time");
-        let now = now?.with_minute(0).ok_or("could not set time");
-        let now = now?.with_second(0).ok_or("could not set time");
-        let now = now?.with_day0(0).ok_or("could not set time");
-        Ok(now?)
+        let now = now
+            .with_hour(0)
+            .ok_or_else(|| anyhow!("could not set time"))?;
+        let now = now
+            .with_minute(0)
+            .ok_or_else(|| anyhow!("could not set time"))?;
+        let now = now
+            .with_second(0)
+            .ok_or_else(|| anyhow!("could not set time"))?;
+        let now = now
+            .with_day0(0)
+            .ok_or_else(|| anyhow!("could not set time"))?;
+        Ok(now)
     }
 }
 

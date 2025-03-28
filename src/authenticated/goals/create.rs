@@ -4,13 +4,14 @@ use crate::{
     authenticated::UserExtension,
     errors::AppResponse,
     models::goal::{Goal, Recurrence},
+    utilities::turbo,
 };
 use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::State,
     http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect},
+    response::{IntoResponse, Redirect},
 };
 use chrono::{NaiveDateTime, NaiveTime};
 use rust_decimal::{Decimal, prelude::FromPrimitive};
@@ -26,49 +27,26 @@ pub async fn page(
 ) -> AppResponse {
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
+    let is_turbo = turbo::is_turbo_request(&headers)?;
 
-    let mut turbo = false;
-    let accept = headers.get("Accept");
-    if let Some(accept) = accept {
-        if accept.to_str().unwrap().contains("turbo") {
-            turbo = true;
-        }
-    }
+    if valid.is_err() {
+        let validation_errors = valid.unwrap_err();
+        let mut context = Context::new();
 
-    match valid {
-        Ok(_) => {}
-        Err(validation_errors) => {
-            let mut context = Context::new();
+        context.insert("errors", &validation_errors.to_string());
+        context.insert("name", &form.name);
+        context.insert("target", &form.target);
+        context.insert("target_date", &form.target_date);
+        context.insert("recurrence", &form.recurrence);
 
-            context.insert("errors", &validation_errors.to_string());
-            context.insert("name", &form.name);
-            context.insert("target", &form.target);
-            context.insert("target_date", &form.target_date);
-            context.insert("recurrence", &form.recurrence);
+        let template_name = turbo::get_template_name(is_turbo, "goals", "form");
+        let content = shared_state.tera.render(&template_name, &context)?;
 
-            let content = shared_state
-                .tera
-                .render(
-                    if turbo {
-                        "goals/form.turbo.html"
-                    } else {
-                        "goals/form.html"
-                    },
-                    &context,
-                )
-                .unwrap();
-
-            if turbo {
-                return Ok((
-                    StatusCode::BAD_REQUEST,
-                    [("content-type", "text/vnd.turbo-stream.html")],
-                    Html::from(content),
-                )
-                    .into_response());
-            } else {
-                return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
-            }
-        }
+        return Ok(turbo::form_error_response(
+            is_turbo,
+            content,
+            StatusCode::BAD_REQUEST,
+        ));
     }
 
     let goal = Goal {
@@ -76,7 +54,7 @@ pub async fn page(
         name: form.name.to_owned(),
         target: Decimal::from_f64(form.target.to_owned())
             .ok_or_else(|| anyhow!("could not parse decimal"))?,
-        recurrence: Recurrence::from_str(&form.recurrence).unwrap(),
+        recurrence: Recurrence::from_str(&form.recurrence).map_err(|e| anyhow!("{:#?}", e))?,
         target_date: NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc(),
         user_id: user.id,
         accumulated_amount: Decimal::ZERO,

@@ -79,12 +79,11 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Res
     let forecast_offset = Decimal::from_i64(preferences.forecast_offset.unwrap_or(1))
         .ok_or(anyhow!("could not parse decimal"))?;
 
+    let remaining_days = remaining_days_in_seconds / Decimal::new(86400, 0);
+    let remaining_days = remaining_days.round_dp(1).to_string();
     context.insert("tomorrow_remaining_total", &tomorrow_remaining_total);
     context.insert("goals_accumulated_per_day", &goals_accumulated);
-    context.insert(
-        "remaining_days",
-        &(remaining_days_in_seconds * Decimal::new(86400, 0)),
-    );
+    context.insert("remaining_days", &remaining_days);
     context.insert("remaining_minutes", &duration_until_tomorrow.num_minutes());
     context.insert("remaining_total", &remaining_total);
     context.insert("forecast_offset", &forecast_offset);

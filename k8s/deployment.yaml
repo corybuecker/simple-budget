@@ -14,11 +14,10 @@ spec:
     metadata:
       labels:
         app: simple-budget
-        version: "1742726435"
     spec:
       containers:
       - name: simple-budget
-        image: ghcr.io/corybuecker/simple-budget:latest
+        image: ghcr.io/corybuecker/simple-budget@sha256:192ec0971401de507704955905f5d00cb204b3ef36b1bc8029903a729164740a
         imagePullPolicy: Always
         ports:
         - name: http

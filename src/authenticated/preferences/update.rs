@@ -27,9 +27,7 @@ pub async fn action(
     user: Extension<UserExtension>,
     form: Form<PreferencesForm>,
 ) -> AppResponse {
-    let mut user = User::get_by_id(shared_state.pool.get().await?.client(), user.id)
-        .await
-        .unwrap();
+    let mut user = User::get_by_id(shared_state.pool.get().await?.client(), user.id).await?;
 
     let mut preferences = match user.preferences {
         Some(preferences) => preferences.0.clone(),
@@ -84,18 +82,19 @@ pub async fn action(
     let mut accumulations: HashMap<i32, Decimal> = HashMap::new();
     let mut days_remainings: HashMap<i32, i64> = HashMap::new();
     let mut per_days: HashMap<i32, Decimal> = HashMap::new();
-    let goals = Goal::get_all(shared_state.pool.get().await?.client(), user.id)
-        .await
-        .unwrap();
+    let goals = Goal::get_all(shared_state.pool.get().await?.client(), user.id).await?;
 
     goals_context.insert("goal_header", &goal_header);
 
     let time_provider = TimeProvider {};
-
     for goal in &goals {
-        accumulations.insert(goal.id.unwrap(), goal.accumulated_amount);
-        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day(&time_provider)?);
-        days_remainings.insert(goal.id.unwrap(), (goal.target_date - Utc::now()).num_days());
+        let goal_id = goal
+            .id
+            .ok_or_else(|| anyhow!("could not find id for goal"))?;
+
+        accumulations.insert(goal_id, goal.accumulated_amount);
+        per_days.insert(goal_id, goal.accumulated_per_day(&time_provider)?);
+        days_remainings.insert(goal_id, (goal.target_date - Utc::now()).num_days());
     }
 
     goals_context.insert("goals", &goals);
@@ -111,8 +110,7 @@ pub async fn action(
 
     let dashboard_content = shared_state
         .tera
-        .render("_dashboard.html", &dashboard_context)
-        .unwrap();
+        .render("_dashboard.html", &dashboard_context)?;
 
     let mut context = Context::new();
     context.insert("goals_update", &goals_html);

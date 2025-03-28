@@ -1,13 +1,14 @@
 use super::{EnvelopeForm, schema};
 use crate::{
     SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
+    utilities::turbo,
 };
 use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::State,
     http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect},
+    response::{IntoResponse, Redirect},
 };
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use tera::Context;
@@ -23,14 +24,8 @@ pub async fn page(
     let valid = jsonschema::validate(&schema(), &json);
 
     let mut context = Context::new();
+    let is_turbo = turbo::is_turbo_request(&headers)?;
 
-    let mut turbo = false;
-    let accept = headers.get("Accept");
-    if let Some(accept) = accept {
-        if accept.to_str().unwrap().contains("turbo") {
-            turbo = true;
-        }
-    }
     match valid {
         Ok(_) => {}
         Err(validation_errors) => {
@@ -38,25 +33,14 @@ pub async fn page(
             context.insert("name", &form.name);
             context.insert("amount", &form.amount);
 
-            let content = shared_state.tera.render(
-                if turbo {
-                    "envelopes/form.turbo.html"
-                } else {
-                    "envelopes/new.html"
-                },
-                &context,
-            )?;
+            let template_name = turbo::get_template_name(is_turbo, "envelopes", "form");
+            let content = shared_state.tera.render(&template_name, &context)?;
 
-            if turbo {
-                return Ok((
-                    StatusCode::BAD_REQUEST,
-                    [("content-type", "text/vnd.turbo-stream.html")],
-                    Html::from(content),
-                )
-                    .into_response());
-            } else {
-                return Ok((StatusCode::BAD_REQUEST, Html::from(content)).into_response());
-            }
+            return Ok(turbo::form_error_response(
+                is_turbo,
+                content,
+                StatusCode::BAD_REQUEST,
+            ));
         }
     }
 

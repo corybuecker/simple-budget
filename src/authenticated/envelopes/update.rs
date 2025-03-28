@@ -1,13 +1,14 @@
 use super::{EnvelopeForm, schema};
 use crate::{
     SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
+    utilities::turbo,
 };
 use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect},
+    response::{IntoResponse, Redirect},
 };
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use tera::Context;
@@ -22,13 +23,7 @@ pub async fn action(
 ) -> AppResponse {
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
-    let mut turbo = false;
-    let accept = headers.get("Accept");
-    if let Some(accept) = accept {
-        if accept.to_str().unwrap().contains("turbo") {
-            turbo = true;
-        }
-    }
+    let is_turbo = turbo::is_turbo_request(&headers)?;
 
     match valid {
         Ok(_) => {}
@@ -40,25 +35,14 @@ pub async fn action(
             context.insert("name", &form.name);
             context.insert("amount", &form.amount);
 
-            let content = shared_state.tera.render(
-                if turbo {
-                    "envelopes/form.turbo.html"
-                } else {
-                    "envelopes/edit.html"
-                },
-                &context,
-            )?;
+            let template_name = turbo::get_template_name(is_turbo, "envelopes", "form");
+            let content = shared_state.tera.render(&template_name, &context)?;
 
-            if turbo {
-                return Ok((
-                    StatusCode::UNPROCESSABLE_ENTITY,
-                    [("content-type", "text/vnd.turbo-stream.html")],
-                    Html::from(content),
-                )
-                    .into_response());
-            } else {
-                return Ok((StatusCode::UNPROCESSABLE_ENTITY, Html::from(content)).into_response());
-            }
+            return Ok(turbo::form_error_response(
+                is_turbo,
+                content,
+                StatusCode::UNPROCESSABLE_ENTITY,
+            ));
         }
     }
 

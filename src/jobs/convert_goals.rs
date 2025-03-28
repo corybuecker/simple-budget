@@ -28,7 +28,7 @@ pub async fn convert_goals(pool: &Pool, time: &impl Times) -> Result<f64, AppErr
         };
 
         envelope.create(client).await?;
-        let new_goal = goal.increment();
+        let new_goal = goal.increment()?;
         new_goal.update(client).await?;
     }
 

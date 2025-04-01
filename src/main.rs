@@ -13,6 +13,7 @@ use deadpool_postgres::{Config, Pool, RecyclingMethod, Runtime};
 use errors::AppResponse;
 use include_dir::{Dir, include_dir};
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
+use opentelemetry::{KeyValue, global};
 use serde::Serialize;
 use std::{env, time::Duration};
 use tera::{Context, Tera};
@@ -21,12 +22,12 @@ use tokio::{
     signal::unix::{SignalKind, signal},
     spawn,
     sync::mpsc,
-    time::interval,
+    time::{Instant, interval},
 };
 use tokio_postgres::{Client, NoTls};
-use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
-use tracing::{Level, debug};
-use utilities::{dates::TimeProvider, tera::digest_asset};
+use tower_http::trace::TraceLayer;
+use tracing::debug;
+use utilities::{dates::TimeProvider, initialize_logging, tera::digest_asset};
 
 mod authenticated;
 mod authentication;
@@ -35,7 +36,7 @@ mod jobs;
 mod models;
 mod utilities;
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Clone)]
 pub enum Section {
     Reports,
     Accounts,
@@ -44,7 +45,7 @@ pub enum Section {
     Preferences,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ContextExtension {
     pub context: Context,
 }
@@ -147,16 +148,40 @@ async fn healthcheck() -> AppResponse {
     Ok(StatusCode::OK.into_response())
 }
 
+async fn capture_metrics(request: Request, next: Next) -> Response {
+    let path = (&request.uri().path()).to_string();
+    let method = request.method().as_str().to_string();
+    let meter = global::meter("simple_budget");
+    let counter = meter.u64_counter("requests").build();
+    let latency = meter.f64_gauge("latency").build();
+    counter.add(
+        1,
+        &[
+            KeyValue::new("method", method.clone()),
+            KeyValue::new("path", path.clone()),
+            KeyValue::new("app", "simple-budget"),
+        ],
+    );
+
+    let start = Instant::now();
+    let response = next.run(request).await;
+    latency.record(
+        start.elapsed().as_secs_f64(),
+        &[
+            KeyValue::new("method", method.clone()),
+            KeyValue::new("path", path.clone()),
+            KeyValue::new("app", "simple-budget"),
+        ],
+    );
+    response
+}
+
 static TEMPLATES: Dir = include_dir!("templates");
 static ASSETS: Dir = include_dir!("static");
 
 #[tokio::main]
 async fn main() {
-    let tracing_fmt = tracing_subscriber::fmt::format().pretty();
-    tracing_subscriber::fmt()
-        .with_max_level(Level::DEBUG)
-        .event_format(tracing_fmt)
-        .init();
+    initialize_logging();
 
     let mut tera = Tera::default();
     tera.register_function("digest_asset", digest_asset());
@@ -196,11 +221,8 @@ async fn main() {
         .merge(Router::new().route("/healthcheck", get(healthcheck)))
         .with_state(shared_state)
         .layer(from_fn(inject_context))
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::new().level(tracing::Level::INFO))
-                .on_response(DefaultOnResponse::new().level(tracing::Level::INFO)),
-        );
+        .layer(TraceLayer::new_for_http())
+        .layer(from_fn(capture_metrics));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
 

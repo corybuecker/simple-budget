@@ -50,12 +50,12 @@ pub struct ContextExtension {
     pub context: Context,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct Broker {
     sender: mpsc::Sender<String>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SharedState {
     broker: Broker,
     key: Key,
@@ -78,11 +78,8 @@ fn start_background_jobs() -> tokio::task::JoinHandle<()> {
         loop {
             interval.tick().await;
 
-            let (clear_sessions_result, convert_goals_result) =
+            let (_clear_sessions_result, _convert_goals_result) =
                 tokio::join!(clear_sessions(), convert_goals(&jobs_pool, &time));
-
-            debug!("🚧 {:#?}", convert_goals_result);
-            debug!("🚧 {:#?}", clear_sessions_result);
         }
     })
 }

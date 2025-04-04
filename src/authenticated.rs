@@ -62,8 +62,21 @@ async fn authenticated(
     mut request: Request,
     next: Next,
 ) -> Result<(SignedCookieJar, Response), StatusCode> {
+    let secure = env::var("SECURE").unwrap_or("false".to_string()) == "true";
+
     let Some(session_id) = jar.get("session_id") else {
-        return Ok((jar, Redirect::to("authentication/login").into_response()));
+        let redirect_cookie = Cookie::build(("redirect_to", request.uri().path().to_owned()))
+            .expires(None)
+            .http_only(true)
+            .path("/authentication")
+            .same_site(SameSite::Lax)
+            .secure(secure)
+            .build();
+
+        return Ok((
+            jar.add(redirect_cookie),
+            Redirect::temporary("authentication/login").into_response(),
+        ));
     };
 
     let session_id = session_id.value();
@@ -78,21 +91,28 @@ async fn authenticated(
             channel_sender: tx,
             channel_receiver: rx,
         });
-        Ok((jar, next.run(request).await))
-    } else {
-        let secure = env::var("SECURE").unwrap_or("false".to_string());
 
+        let cookie = Cookie::build(("session_id", session_id.to_string()))
+            .expires(None)
+            .http_only(true)
+            .path("/")
+            .same_site(SameSite::Strict)
+            .secure(secure)
+            .build();
+
+        Ok((jar.add(cookie), next.run(request).await))
+    } else {
         let redirect_cookie = Cookie::build(("redirect_to", request.uri().path().to_owned()))
             .expires(None)
             .http_only(true)
             .path("/authentication")
-            .same_site(SameSite::Strict)
-            .secure(secure == *"true")
+            .same_site(SameSite::Lax)
+            .secure(secure)
             .build();
 
         Ok((
             jar.add(redirect_cookie),
-            Redirect::to("authentication/login").into_response(),
+            Redirect::temporary("authentication/login").into_response(),
         ))
     }
 }

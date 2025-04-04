@@ -24,11 +24,12 @@ use tokio_postgres::{Client, GenericClient};
 use tracing::error;
 use uuid::Uuid;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct GoogleCallback {
     code: String,
 }
 
+#[tracing::instrument]
 pub async fn callback(
     shared_state: State<SharedState>,
     query: Query<GoogleCallback>,
@@ -42,7 +43,8 @@ pub async fn callback(
         Some(cookie) => cookie.value(),
         None => "/",
     };
-    let jar = jar.remove(Cookie::from("redirect_to"));
+
+    // let jar = jar.remove(Cookie::from("redirect_to"));
     let nonce = nonce_cookie.value().to_string();
 
     let claims = get_claims_from_authorization_code(query.code.clone(), nonce).await?;

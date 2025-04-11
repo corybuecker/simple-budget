@@ -4,9 +4,9 @@
         <div class="flex flex-row gap-4 justify-between shadow-md p-6 pb-2 w-full @xl:w-4/12 @sm:mx-2">
             <h1 class="basis-1/4 @sm:basis-1/3">
                 <span class="font-semibold">Goals</span>
-                {% if name %}
+                {% if goal %}
                     <br>
-                    <span class="text-slate-500">{{ name }}</span>
+                    <span class="text-slate-500">{{ goal.name }}</span>
                 {% endif %}
             </h1>
             <div class="grow">
@@ -19,7 +19,7 @@
                            name="name"
                            type="text"
                            required
-                           value="{% if name %}{{ name }}{% endif %}" />
+                           value="{% if goal %}{{ goal.name }}{% endif %}" />
                 </div>
                 <div data-controller="currency-input"
                      class="flex flex-col"
@@ -31,7 +31,7 @@
                            required
                            type="number"
                            data-action="currency-input#change"
-                           value="{% if target %}{{ target }}{% endif %}" />
+                           value="{% if goal %}{{ goal.target }}{% endif %}" />
                     <div data-currency-input-target="output" /></div>
                 <div class="flex flex-col">
                     <label for="target_date">Target date</label>
@@ -39,29 +39,29 @@
                            name="target_date"
                            required
                            type="date"
-                           value="{% if target_date %}{{ target_date }}{% endif %}" />
+                           value="{% if goal %}{{ goal.target_date | date }}{% endif %}" />
                 </div>
                 <div class="flex flex-col">
                     <label for="recurrence">Recurrence</label>
                     <select id="recurrence" name="recurrence" required>
                         <option value="never"
-                                {% if recurrence and recurrence=="Never" %}{{ "selected" }}{% endif %}>Never
+                                {% if goal and goal.recurrence and goal.recurrence=="Never" %}{{ "selected" }}{% endif %}>Never
                         </option>
                         <option value="daily"
-                                {% if recurrence and recurrence=="Daily" %}{{ "selected" }}{% endif %}>Daily
+                                {% if goal and goal.recurrence and goal.recurrence=="Daily" %}{{ "selected" }}{% endif %}>Daily
                         </option>
                         <option value="weekly"
-                                {% if recurrence and recurrence=="Weekly" %}{{ "selected" }}{% endif %}>Weekly
+                                {% if goal and goal.recurrence and goal.recurrence=="Weekly" %}{{ "selected" }}{% endif %}>Weekly
                         </option>
                         <option value="monthly"
-                                {% if recurrence and recurrence=="Monthly" %}{{ "selected" }}{% endif %}>Monthly
+                                {% if goal and goal.recurrence and goal.recurrence=="Monthly" %}{{ "selected" }}{% endif %}>Monthly
                         </option>
                         <option value="quarterly"
-                                {% if recurrence and recurrence=="Quarterly" %}{{ "selected" }}{% endif %}>
+                                {% if goal and goal.recurrence and goal.recurrence=="Quarterly" %}{{ "selected" }}{% endif %}>
                             Quarterly
                         </option>
                         <option value="yearly"
-                                {% if recurrence and recurrence=="Yearly" %}{{ "selected" }}{% endif %}>Yearly
+                                {% if goal and goal.recurrence and goal.recurrence=="Yearly" %}{{ "selected" }}{% endif %}>Yearly
                         </option>
                     </select>
                 </div>

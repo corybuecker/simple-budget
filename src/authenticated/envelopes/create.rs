@@ -1,6 +1,10 @@
 use super::{EnvelopeForm, schema};
 use crate::{
-    authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope, utilities::responses::{self, get_response_format}, SharedState
+    SharedState,
+    authenticated::UserExtension,
+    errors::AppResponse,
+    models::envelope::Envelope,
+    utilities::responses::{self, get_response_format},
 };
 use anyhow::anyhow;
 use axum::{
@@ -35,7 +39,7 @@ pub async fn page(
             let template_name = responses::get_template_name(&response_format, "envelopes", "form");
             let content = shared_state.tera.render(&template_name, &context)?;
 
-            return Ok(responses::form_error_response(
+            return Ok(responses::generate_response(
                 &response_format,
                 content,
                 StatusCode::BAD_REQUEST,
@@ -72,7 +76,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_envelope_success() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let client = shared_state.pool.get().await.unwrap();
         let client = client.client();
         let user_id = user_extension.0.id;
@@ -111,7 +115,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_envelope_validation_error() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
 
         let app = Router::new()
             .route("/envelopes/create", post(page))
@@ -138,7 +142,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_envelope_turbo_stream() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
 
         let app = Router::new()
             .route("/envelopes/create", post(page))

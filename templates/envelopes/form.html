@@ -5,9 +5,9 @@
             <h1 class="basis-1/4 @sm:basis-1/3">
                 <span class="font-semibold">
                     Envelopes
-                    {% if name %}
+                    {% if envelope %}
                         <br>
-                        <span class="text-slate-500">{{ name }}</span>
+                        <span class="text-slate-500">{{ envelope.name }}</span>
                     {% endif %}
                 </span>
             </h1>
@@ -20,7 +20,7 @@
                     <input name="name"
                            type="text"
                            required
-                           value="{% if name %}{{ name }}{% endif %}" />
+                           value="{% if envelope %}{{ envelope.name }}{% endif %}" />
                 </div>
                 <div data-controller="currency-input"
                      class="flex flex-col"
@@ -32,7 +32,7 @@
                            required
                            type="number"
                            data-action="currency-input#change"
-                           value="{% if amount %}{{ amount }}{% endif %}" />
+                           value="{% if envelope %}{{ envelope.amount }}{% endif %}" />
                     <div data-currency-input-target="output" /></div>
                 <div class="flex justify-end items-center gap-4">
                     <a href="/envelopes">Cancel</a>

@@ -1,11 +1,14 @@
 use super::{AccountForm, schema};
 use crate::{
-    SharedState, authenticated::UserExtension, errors::AppResponse, models::account::Account,
-    utilities::responses,
+    SharedState,
+    authenticated::UserExtension,
+    errors::AppResponse,
+    models::account::Account,
+    utilities::responses::{self, generate_response, get_response_format},
 };
 use anyhow::anyhow;
 use axum::{
-    Extension, Form,
+    Extension, Form, Json,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Redirect},
@@ -24,7 +27,7 @@ pub async fn action(
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
     let response_format = responses::get_response_format(&headers)?;
-    
+
     match valid {
         Ok(_) => {}
         Err(validation_errors) => {
@@ -35,11 +38,11 @@ pub async fn action(
             context.insert("name", &form.name);
             context.insert("amount", &form.amount);
             context.insert("debt", &form.debt);
-            
+
             let template_name = responses::get_template_name(&response_format, "accounts", "form");
             let content = shared_state.tera.render(&template_name, &context)?;
 
-            return Ok(responses::form_error_response(
+            return Ok(responses::generate_response(
                 &response_format,
                 content,
                 StatusCode::BAD_REQUEST,
@@ -57,7 +60,16 @@ pub async fn action(
         .update(shared_state.pool.get().await?.client())
         .await?;
 
-    Ok(Redirect::to("/accounts").into_response())
+    match get_response_format(&headers)? {
+        responses::ResponseFormat::Html | responses::ResponseFormat::Turbo => {
+            Ok(Redirect::to("/accounts").into_response())
+        }
+        responses::ResponseFormat::Json => Ok(generate_response(
+            &responses::ResponseFormat::Json,
+            Json(account),
+            StatusCode::OK,
+        )),
+    }
 }
 
 #[cfg(test)]
@@ -70,7 +82,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_account() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
 
         let account = Account {

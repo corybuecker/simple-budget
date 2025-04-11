@@ -9,10 +9,12 @@ use axum::Extension;
 use axum_extra::extract::cookie::Key;
 use deadpool_postgres::Object;
 use postgres_types::Json;
+use tera::Context;
 use tokio::sync::{mpsc, watch};
 use tokio_postgres::{Client, GenericClient};
 
-pub async fn state_for_tests() -> Result<(SharedState, Extension<UserExtension>)> {
+pub async fn state_for_tests() -> Result<(SharedState, Extension<UserExtension>, Extension<Context>)>
+{
     let pool = database_pool(Some(
         "postgres://simple_budget@localhost:5432/simple_budget_test",
     ))
@@ -34,7 +36,9 @@ pub async fn state_for_tests() -> Result<(SharedState, Extension<UserExtension>)
         pool,
     };
 
-    Ok((shared_state, user_extension))
+    let context_extension = Extension(tera::Context::new());
+
+    Ok((shared_state, user_extension, context_extension))
 }
 
 pub async fn client_for_tests() -> Result<Object> {

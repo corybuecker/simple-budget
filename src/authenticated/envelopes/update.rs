@@ -1,11 +1,14 @@
 use super::{EnvelopeForm, schema};
 use crate::{
-    SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
-    utilities::responses,
+    SharedState,
+    authenticated::UserExtension,
+    errors::AppResponse,
+    models::envelope::Envelope,
+    utilities::responses::{self, generate_response, get_response_format},
 };
 use anyhow::anyhow;
 use axum::{
-    Extension, Form,
+    Extension, Form, Json,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Redirect},
@@ -16,7 +19,7 @@ use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
-    Extension(user): Extension<UserExtension>,
+    user: Extension<UserExtension>,
     Path(id): Path<i32>,
     headers: HeaderMap,
     Form(form): Form<EnvelopeForm>,
@@ -38,10 +41,10 @@ pub async fn action(
             let template_name = responses::get_template_name(&response_format, "envelopes", "form");
             let content = shared_state.tera.render(&template_name, &context)?;
 
-            return Ok(responses::form_error_response(
+            return Ok(responses::generate_response(
                 &response_format,
                 content,
-                StatusCode::UNPROCESSABLE_ENTITY,
+                StatusCode::BAD_REQUEST,
             ));
         }
     }
@@ -56,7 +59,16 @@ pub async fn action(
         .update(shared_state.pool.get().await?.client())
         .await?;
 
-    Ok(Redirect::to("/envelopes").into_response())
+    match get_response_format(&headers)? {
+        responses::ResponseFormat::Html | responses::ResponseFormat::Turbo => {
+            Ok(Redirect::to("/envelopes").into_response())
+        }
+        responses::ResponseFormat::Json => Ok(generate_response(
+            &responses::ResponseFormat::Json,
+            Json(envelope),
+            StatusCode::OK,
+        )),
+    }
 }
 
 #[cfg(test)]
@@ -69,7 +81,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_envelope() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
         let envelope = Envelope {
             id: None,

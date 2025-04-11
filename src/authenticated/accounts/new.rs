@@ -1,16 +1,23 @@
-use crate::{SharedState, errors::AppResponse};
+use crate::{
+    SharedState,
+    errors::AppResponse,
+    utilities::responses::{generate_response, get_response_format, get_template_name},
+};
 use axum::{
     Extension,
     extract::State,
-    response::{Html, IntoResponse},
+    http::{HeaderMap, StatusCode},
 };
 use tera::Context;
 
-pub async fn page(
+pub async fn action(
     shared_state: State<SharedState>,
+    headers: HeaderMap,
     Extension(context): Extension<Context>,
 ) -> AppResponse {
-    let content = shared_state.tera.render("accounts/new.html", &context)?;
+    let response_format = get_response_format(&headers)?;
+    let template = get_template_name(&response_format, "accounts", "new");
+    let content = shared_state.tera.render(&template, &context)?;
 
-    Ok(Html::from(content).into_response())
+    Ok(generate_response(&response_format, content, StatusCode::OK))
 }

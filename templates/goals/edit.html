@@ -1,2 +1,2 @@
 {% extends "goals/form.html" %}
-{% block formtag %}<form class="flex flex-col gap-4" id="goals-{{ id }}" method="put" action="/goals/{{ id }}">{% endblock %}
+{% block formtag %}<form class="flex flex-col gap-4" id="goal-{{ goal.id }}" method="put" action="/goals/{{ goal.id }}">{% endblock %}

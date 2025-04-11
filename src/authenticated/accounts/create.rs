@@ -1,7 +1,9 @@
 use super::AccountForm;
 use crate::authenticated::accounts::schema;
 use crate::errors::AppResponse;
-use crate::{SharedState, authenticated::UserExtension, models::account::Account, utilities::responses};
+use crate::{
+    SharedState, authenticated::UserExtension, models::account::Account, utilities::responses,
+};
 use anyhow::{Context, anyhow};
 use axum::{
     Extension, Form,
@@ -13,7 +15,7 @@ use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
 use tokio_postgres::GenericClient;
 
-pub async fn page(
+pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
@@ -23,7 +25,7 @@ pub async fn page(
     let valid = jsonschema::validate(&schema(), &json);
 
     let response_format = responses::get_response_format(&headers)?;
-    
+
     match valid {
         Ok(_) => {}
         Err(validation_errors) => {
@@ -40,7 +42,7 @@ pub async fn page(
                 .render(&template_name, &context)
                 .context("Tera")?;
 
-            return Ok(responses::form_error_response(
+            return Ok(responses::generate_response(
                 &response_format,
                 content,
                 StatusCode::BAD_REQUEST,
@@ -78,13 +80,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_account_success() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
         let client = &shared_state.pool.get().await.unwrap();
         let client = client.client();
 
         let app = Router::new()
-            .route("/accounts/create", post(page))
+            .route("/accounts/create", post(action))
             .with_state(shared_state)
             .layer(user_extension);
 
@@ -117,10 +119,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_account_validation_error() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
 
         let app = Router::new()
-            .route("/accounts/create", post(page))
+            .route("/accounts/create", post(action))
             .with_state(shared_state)
             .layer(user_extension);
 
@@ -144,10 +146,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_account_turbo_stream() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
 
         let app = Router::new()
-            .route("/accounts/create", post(page))
+            .route("/accounts/create", post(action))
             .with_state(shared_state)
             .layer(user_extension);
 

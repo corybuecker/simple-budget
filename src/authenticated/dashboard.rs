@@ -3,12 +3,14 @@ use crate::errors::AppResponse;
 use crate::models::goal::Goal;
 use crate::models::user::Preferences;
 use crate::utilities::dates::{TimeProvider, TimeUtilities};
+use crate::utilities::responses::{ResponseFormat, generate_response, get_response_format};
 use crate::{Section, SharedState, models::user::User};
 use anyhow::{Result, anyhow};
 use axum::{
-    Extension,
+    Extension, Json,
     extract::State,
-    response::{Html, IntoResponse},
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
 };
 use chrono::{Duration, Local, NaiveTime};
 use chrono_tz::Tz;
@@ -19,6 +21,7 @@ use tokio_postgres::{Client, GenericClient};
 
 pub async fn index(
     shared_state: State<SharedState>,
+    headers: HeaderMap,
     user: Extension<UserExtension>,
 ) -> AppResponse {
     let csrf = user.csrf.clone();
@@ -27,9 +30,35 @@ pub async fn index(
         generate_dashboard_context_for(&user, shared_state.pool.get().await?.client()).await?;
     context.insert("csrf", &csrf);
     context.insert("section", &Section::Reports);
-    let content = shared_state.tera.render("dashboard.html", &context)?;
 
-    Ok(Html::from(content).into_response())
+    let response_format = get_response_format(&headers)?;
+
+    match response_format {
+        ResponseFormat::Html => Ok(generate_response(
+            &response_format,
+            shared_state.tera.render("dashboard.html", &context)?,
+            StatusCode::OK,
+        )),
+        ResponseFormat::Turbo => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
+        ResponseFormat::Json => {
+            // Extract the relevant data from context for JSON response
+            let dashboard_data = serde_json::json!({
+                "remaining_total": context.get("remaining_total"),
+                "tomorrow_remaining_total": context.get("tomorrow_remaining_total"),
+                "goals_accumulated_per_day": context.get("goals_accumulated_per_day"),
+                "remaining_days": context.get("remaining_days"),
+                "remaining_minutes": context.get("remaining_minutes"),
+                "forecast_offset": context.get("forecast_offset"),
+                "per_diem": context.get("per_diem"),
+            });
+
+            Ok(generate_response(
+                &response_format,
+                Json(dashboard_data),
+                StatusCode::OK,
+            ))
+        }
+    }
 }
 
 pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Result<Context> {

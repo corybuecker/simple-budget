@@ -27,7 +27,7 @@ use tokio::{
 use tokio_postgres::{Client, NoTls};
 use tower_http::trace::TraceLayer;
 use tracing::debug;
-use utilities::{dates::TimeProvider, initialize_logging, tera::digest_asset};
+use utilities::{dates::TimeProvider, initialize_tracing, tera::digest_asset};
 
 mod authenticated;
 mod authentication;
@@ -178,7 +178,7 @@ static ASSETS: Dir = include_dir!("static");
 
 #[tokio::main]
 async fn main() {
-    initialize_logging();
+    initialize_tracing().expect("could not initialize tracing and logging");
 
     let mut tera = Tera::default();
     tera.register_function("digest_asset", digest_asset());

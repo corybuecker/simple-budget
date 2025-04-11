@@ -1,33 +1,52 @@
 pub mod dates;
+pub mod responses;
 pub mod tera;
-pub mod turbo;
 
-use opentelemetry_otlp::WithExportConfig;
+use anyhow::Result;
+use opentelemetry::global;
+use opentelemetry_otlp::{MetricExporter, Protocol, WithExportConfig};
+use opentelemetry_sdk::Resource;
+use opentelemetry_sdk::metrics::SdkMeterProvider;
 use tracing::level_filters::LevelFilter;
+use tracing_subscriber::Layer;
 use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::{EnvFilter, util::SubscriberInitExt};
+use tracing_subscriber::util::SubscriberInitExt;
 
-pub fn initialize_logging() {
-    let metric_endpoint = std::env::var("METRIC_ENDPOINT").expect("cannot find metric endpoint");
+pub fn initialize_tracing() -> Result<Option<SdkMeterProvider>> {
+    let fmt = tracing_subscriber::fmt::layer()
+        .with_thread_names(true)
+        .with_level(true)
+        .with_filter(LevelFilter::DEBUG);
 
-    let exporter = opentelemetry_otlp::MetricExporter::builder()
-        .with_http()
-        .with_endpoint(metric_endpoint)
-        .build()
-        .unwrap();
+    tracing_subscriber::registry().with(fmt).init();
 
-    let provider = opentelemetry_sdk::metrics::SdkMeterProvider::builder()
+    let resource = Resource::builder().build();
+
+    if let Ok(metrics_endpoint) = std::env::var("METRICS_ENDPOINT") {
+        let exporter = MetricExporter::builder()
+            .with_http()
+            .with_protocol(Protocol::HttpBinary)
+            .with_endpoint(metrics_endpoint)
+            .build()
+            .expect("Failed to create metric exporter");
+
+        let meter_provider = SdkMeterProvider::builder()
+            .with_periodic_exporter(exporter)
+            .with_resource(resource)
+            .build();
+
+        global::set_meter_provider(meter_provider.clone());
+
+        return Ok(Some(meter_provider));
+    }
+
+    let exporter = opentelemetry_stdout::MetricExporter::builder().build();
+    let meter_provider = SdkMeterProvider::builder()
+        .with_resource(resource)
         .with_periodic_exporter(exporter)
         .build();
 
-    opentelemetry::global::set_meter_provider(provider);
+    global::set_meter_provider(meter_provider.clone());
 
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer().pretty())
-        .with(
-            EnvFilter::builder()
-                .with_default_directive(LevelFilter::DEBUG.into())
-                .from_env_lossy(),
-        )
-        .init()
+    Ok(Some(meter_provider))
 }

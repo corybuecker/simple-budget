@@ -1,7 +1,7 @@
 use super::AccountForm;
 use crate::authenticated::accounts::schema;
 use crate::errors::AppResponse;
-use crate::{SharedState, authenticated::UserExtension, models::account::Account, utilities::turbo};
+use crate::{SharedState, authenticated::UserExtension, models::account::Account, utilities::responses};
 use anyhow::{Context, anyhow};
 use axum::{
     Extension, Form,
@@ -22,7 +22,7 @@ pub async fn page(
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
 
-    let is_turbo = turbo::is_turbo_request(&headers)?;
+    let response_format = responses::get_response_format(&headers)?;
     
     match valid {
         Ok(_) => {}
@@ -34,14 +34,14 @@ pub async fn page(
             context.insert("amount", &form.amount);
             context.insert("debt", &form.debt);
 
-            let template_name = turbo::get_template_name(is_turbo, "accounts", "form");
+            let template_name = responses::get_template_name(&response_format, "accounts", "form");
             let content = shared_state
                 .tera
                 .render(&template_name, &context)
                 .context("Tera")?;
 
-            return Ok(turbo::form_error_response(
-                is_turbo,
+            return Ok(responses::form_error_response(
+                &response_format,
                 content,
                 StatusCode::BAD_REQUEST,
             ));

@@ -1,7 +1,6 @@
 use super::{EnvelopeForm, schema};
 use crate::{
-    SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
-    utilities::turbo,
+    authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope, utilities::responses::{self, get_response_format}, SharedState
 };
 use anyhow::anyhow;
 use axum::{
@@ -24,7 +23,7 @@ pub async fn page(
     let valid = jsonschema::validate(&schema(), &json);
 
     let mut context = Context::new();
-    let is_turbo = turbo::is_turbo_request(&headers)?;
+    let response_format = get_response_format(&headers)?;
 
     match valid {
         Ok(_) => {}
@@ -33,11 +32,11 @@ pub async fn page(
             context.insert("name", &form.name);
             context.insert("amount", &form.amount);
 
-            let template_name = turbo::get_template_name(is_turbo, "envelopes", "form");
+            let template_name = responses::get_template_name(&response_format, "envelopes", "form");
             let content = shared_state.tera.render(&template_name, &context)?;
 
-            return Ok(turbo::form_error_response(
-                is_turbo,
+            return Ok(responses::form_error_response(
+                &response_format,
                 content,
                 StatusCode::BAD_REQUEST,
             ));

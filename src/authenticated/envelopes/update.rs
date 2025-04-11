@@ -1,7 +1,7 @@
 use super::{EnvelopeForm, schema};
 use crate::{
     SharedState, authenticated::UserExtension, errors::AppResponse, models::envelope::Envelope,
-    utilities::turbo,
+    utilities::responses,
 };
 use anyhow::anyhow;
 use axum::{
@@ -23,7 +23,7 @@ pub async fn action(
 ) -> AppResponse {
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
-    let is_turbo = turbo::is_turbo_request(&headers)?;
+    let response_format = responses::get_response_format(&headers)?;
 
     match valid {
         Ok(_) => {}
@@ -35,11 +35,11 @@ pub async fn action(
             context.insert("name", &form.name);
             context.insert("amount", &form.amount);
 
-            let template_name = turbo::get_template_name(is_turbo, "envelopes", "form");
+            let template_name = responses::get_template_name(&response_format, "envelopes", "form");
             let content = shared_state.tera.render(&template_name, &context)?;
 
-            return Ok(turbo::form_error_response(
-                is_turbo,
+            return Ok(responses::form_error_response(
+                &response_format,
                 content,
                 StatusCode::UNPROCESSABLE_ENTITY,
             ));

@@ -4,7 +4,7 @@ use crate::{
     authenticated::UserExtension,
     errors::AppResponse,
     models::goal::{Goal, Recurrence},
-    utilities::turbo,
+    utilities::responses,
 };
 use anyhow::anyhow;
 use axum::{
@@ -29,8 +29,8 @@ pub async fn action(
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
 
-    let is_turbo = turbo::is_turbo_request(&headers)?;
-    
+    let response_format = responses::get_response_format(&headers)?;
+
     match valid {
         Ok(_) => {}
         Err(validation_errors) => {
@@ -43,11 +43,11 @@ pub async fn action(
             context.insert("target_date", &form.target_date);
             context.insert("recurrence", &form.recurrence);
 
-            let template_name = turbo::get_template_name(is_turbo, "goals", "form");
+            let template_name = responses::get_template_name(&response_format, "goals", "form");
             let content = shared_state.tera.render(&template_name, &context)?;
 
-            return Ok(turbo::form_error_response(
-                is_turbo,
+            return Ok(responses::form_error_response(
+                &response_format,
                 content,
                 StatusCode::BAD_REQUEST,
             ));

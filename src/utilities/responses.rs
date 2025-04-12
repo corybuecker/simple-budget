@@ -1,9 +1,8 @@
 use anyhow::Result;
 use axum::{
     http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Json, Response},
+    response::{Html, IntoResponse, Response},
 };
-use serde::Serialize;
 
 /// Represents the type of response format requested
 #[derive(Debug, PartialEq)]
@@ -37,7 +36,12 @@ pub fn get_template_name(format: &ResponseFormat, resource: &str, template_type:
         ResponseFormat::Html => format!(
             "{}/{}.html",
             resource,
-            if template_type == "form" {
+            if template_type == "form"
+                || template_type == "index"
+                || template_type == "delete"
+                || template_type == "edit"
+                || template_type == "new"
+            {
                 template_type
             } else {
                 "new"
@@ -47,7 +51,7 @@ pub fn get_template_name(format: &ResponseFormat, resource: &str, template_type:
 }
 
 /// Creates a response for an invalid form submission with appropriate headers and status
-pub fn form_error_response<T: Serialize + IntoResponse>(
+pub fn generate_response<T: IntoResponse>(
     format: &ResponseFormat,
     content: T,
     status: StatusCode,
@@ -59,12 +63,9 @@ pub fn form_error_response<T: Serialize + IntoResponse>(
             Html::from(content),
         )
             .into_response(),
-        ResponseFormat::Json => (
-            status,
-            [("content-type", "application/json")],
-            Json(content),
-        )
-            .into_response(),
+        ResponseFormat::Json => {
+            (status, [("content-type", "application/json")], content).into_response()
+        }
         ResponseFormat::Html => (status, Html::from(content)).into_response(),
     }
 }

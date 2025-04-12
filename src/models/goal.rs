@@ -379,7 +379,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_accumulate_from_over_accumulated() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
         let client = shared_state.pool.get().await.unwrap();
         let client = client.client();
@@ -405,7 +405,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_accumulate_from_over_target() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
         let client = shared_state.pool.get().await.unwrap();
         let client = client.client();
@@ -431,7 +431,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_accumulate_from_zero() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
         let client = shared_state.pool.get().await.unwrap();
         let client = client.client();

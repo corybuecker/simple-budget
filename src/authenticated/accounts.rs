@@ -54,12 +54,12 @@ async fn initialize_context(
 
 pub fn accounts_router() -> Router<SharedState> {
     Router::new()
-        .route("/", get(index::page).post(create::page))
+        .route("/", get(index::action).post(create::action))
         .route(
             "/{id}",
-            get(edit::page).put(update::action).delete(delete::action),
+            get(edit::action).put(update::action).delete(delete::action),
         )
-        .route("/new", get(new::page))
+        .route("/new", get(new::action))
         .route("/{id}/delete", get(delete::modal))
         .route_layer(from_fn(initialize_context))
 }

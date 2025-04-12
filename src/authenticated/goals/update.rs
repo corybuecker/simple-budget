@@ -4,11 +4,11 @@ use crate::{
     authenticated::UserExtension,
     errors::AppResponse,
     models::goal::{Goal, Recurrence},
-    utilities::responses,
+    utilities::responses::{self, generate_response, get_response_format},
 };
 use anyhow::anyhow;
 use axum::{
-    Extension, Form,
+    Extension, Form, Json,
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Redirect},
@@ -46,7 +46,7 @@ pub async fn action(
             let template_name = responses::get_template_name(&response_format, "goals", "form");
             let content = shared_state.tera.render(&template_name, &context)?;
 
-            return Ok(responses::form_error_response(
+            return Ok(responses::generate_response(
                 &response_format,
                 content,
                 StatusCode::BAD_REQUEST,
@@ -65,7 +65,16 @@ pub async fn action(
 
     goal.update(shared_state.pool.get().await?.client()).await?;
 
-    Ok(Redirect::to("/goals").into_response())
+    match get_response_format(&headers)? {
+        responses::ResponseFormat::Html | responses::ResponseFormat::Turbo => {
+            Ok(Redirect::to("/goals").into_response())
+        }
+        responses::ResponseFormat::Json => Ok(generate_response(
+            &responses::ResponseFormat::Json,
+            Json(goal),
+            StatusCode::OK,
+        )),
+    }
 }
 
 #[cfg(test)]
@@ -82,7 +91,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_goal() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
 
         let goal = Goal {

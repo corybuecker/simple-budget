@@ -42,7 +42,7 @@ pub async fn page(
         let template_name = responses::get_template_name(&response_format, "goals", "form");
         let content = shared_state.tera.render(&template_name, &context)?;
 
-        return Ok(responses::form_error_response(
+        return Ok(responses::generate_response(
             &response_format,
             content,
             StatusCode::BAD_REQUEST,
@@ -81,7 +81,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_goal_success() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let client = shared_state.pool.get().await.unwrap();
         let client = client.client();
         let user_id = user_extension.0.id;
@@ -122,7 +122,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_goal_validation_error() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
 
         let app = Router::new()
             .route("/goals/create", post(page))
@@ -149,7 +149,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_goal_turbo_stream() {
-        let (shared_state, user_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let app = Router::new()
             .route("/goals/create", post(page))
             .with_state(shared_state.clone())

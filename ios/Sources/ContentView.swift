@@ -92,14 +92,12 @@ struct AccountsView: View {
           VStack(alignment: .leading) {
             Text(account.name)
               .font(.headline)
-            Text("Created: \(formattedDate(account.createdAt))")
-              .font(.caption)
-              .foregroundColor(.secondary)
+
           }
           
           Spacer()
           
-          Text(formatCurrency(account.balance))
+          Text(formatCurrency(account.amount))
             .font(.headline)
         }
         .padding(.vertical, 8)

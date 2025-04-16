@@ -5,14 +5,12 @@ import Foundation
 struct Account: Identifiable, Codable {
     let id: Int
     let name: String
-    let balance: Decimal
-    let createdAt: Date
-    let updatedAt: Date
+    let amount: Decimal
+    let debt: Bool
+    let user_id: Int
     
     enum CodingKeys: String, CodingKey {
-        case id, name, balance
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
+        case id, name, amount, debt, user_id
     }
 }
 

@@ -72,10 +72,20 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Res
             monthly_income: Some(Decimal::ZERO),
         },
     };
+
     let timezone = preferences.timezone.clone().unwrap_or(String::from("UTC"));
     let timezone: Tz = timezone.parse()?;
     let time_provider = TimeProvider {};
     let time_utilities = &TimeUtilities { timezone };
+
+    let monthly_income = preferences.monthly_income.unwrap_or(Decimal::ZERO);
+    let length_of_month = time_utilities
+        .length_of_month(&time_provider)?
+        .num_seconds();
+    let monthly_income_per_day = monthly_income
+        / Decimal::from_i64(length_of_month).ok_or(anyhow!("could not convert time to decimal"))?
+        * Decimal::new(86400, 0);
+
     let goals = Goal::get_all(client, user.id).await.unwrap_or(vec![]);
     let goals_accumulated = goals
         .iter()
@@ -110,6 +120,9 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Res
 
     let remaining_days = remaining_days_in_seconds / Decimal::new(86400, 0);
     let remaining_days = remaining_days.round_dp(1).to_string();
+
+    let per_diem_diff_monthly = per_diem - monthly_income_per_day;
+
     context.insert("tomorrow_remaining_total", &tomorrow_remaining_total);
     context.insert("goals_accumulated_per_day", &goals_accumulated);
     context.insert("remaining_days", &remaining_days);
@@ -117,6 +130,7 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Res
     context.insert("remaining_total", &remaining_total);
     context.insert("forecast_offset", &forecast_offset);
     context.insert("per_diem", &per_diem);
+    context.insert("per_diem_diff_monthly", &per_diem_diff_monthly);
 
     Ok(context)
 }

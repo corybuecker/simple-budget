@@ -10,3 +10,11 @@ services:
     volumes:
       - ../migrations/schema.sql:/docker-entrypoint-initdb.d/0000.sql
       - ./seed.sql:/docker-entrypoint-initdb.d/0001.sql
+  prometheus:
+    image: prom/prometheus@sha256:339ce86a59413be18d0e445472891d022725b4803fab609069110205e79fb2f1 # v3.3.0
+    ports:
+      - 9090:9090
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-otlp-receiver

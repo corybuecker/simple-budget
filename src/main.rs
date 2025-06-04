@@ -13,7 +13,7 @@ use deadpool_postgres::{Config, Pool, RecyclingMethod, Runtime};
 use errors::AppResponse;
 use include_dir::{Dir, include_dir};
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
-use opentelemetry::{KeyValue, global};
+use rust_web_common::telemetry::TelemetryBuilder;
 use serde::Serialize;
 use std::{env, time::Duration};
 use tera::{Context, Tera};
@@ -22,12 +22,12 @@ use tokio::{
     signal::unix::{SignalKind, signal},
     spawn,
     sync::mpsc,
-    time::{Instant, interval},
+    time::interval,
 };
 use tokio_postgres::{Client, NoTls};
 use tower_http::trace::TraceLayer;
-use tracing::debug;
-use utilities::{dates::TimeProvider, initialize_tracing, tera::digest_asset};
+use tracing::{debug, info};
+use utilities::{dates::TimeProvider, tera::digest_asset};
 
 mod authenticated;
 mod authentication;
@@ -98,9 +98,16 @@ async fn inject_context(mut request: Request, next: Next) -> Response {
     let context = Context::new();
     let context_extension = ContextExtension { context };
 
+    let method = request.method().as_str().to_owned();
+    let path = request.uri().path().to_owned();
+
     request.extensions_mut().insert(context_extension);
 
-    next.run(request).await
+    let response = next.run(request).await;
+
+    info!(monotonic_counter.requests = 1, method = method, path = path);
+
+    response
 }
 
 async fn cache_header(request: Request, next: Next) -> Response {
@@ -145,46 +152,19 @@ async fn healthcheck() -> AppResponse {
     Ok(StatusCode::OK.into_response())
 }
 
-async fn capture_metrics(request: Request, next: Next) -> Response {
-    let path = (&request.uri().path()).to_string();
-    let method = request.method().as_str().to_string();
-    let meter = global::meter("simple_budget");
-    let counter = meter.u64_counter("requests").build();
-    let latency = meter.f64_gauge("latency").build();
-    counter.add(
-        1,
-        &[
-            KeyValue::new("method", method.clone()),
-            KeyValue::new("path", path.clone()),
-            KeyValue::new("app", "simple-budget"),
-        ],
-    );
-
-    let start = Instant::now();
-    let response = next.run(request).await;
-    latency.record(
-        start.elapsed().as_secs_f64(),
-        &[
-            KeyValue::new("method", method.clone()),
-            KeyValue::new("path", path.clone()),
-            KeyValue::new("app", "simple-budget"),
-        ],
-    );
-    response
-}
-
 static TEMPLATES: Dir = include_dir!("templates");
 static ASSETS: Dir = include_dir!("static");
 
 #[tokio::main]
 async fn main() {
-    initialize_tracing().expect("could not initialize tracing and logging");
+    let _telemetry = TelemetryBuilder::new("simple-budget")
+        .build()
+        .expect("failed to initialize telemetry");
 
     let mut tera = Tera::default();
     tera.register_function("digest_asset", digest_asset());
 
     for template in TEMPLATES.find("**/*.html").unwrap() {
-        debug!("{:#?}", template);
         let _ = tera.add_raw_template(
             template.path().to_str().unwrap(),
             TEMPLATES
@@ -218,8 +198,7 @@ async fn main() {
         .merge(Router::new().route("/healthcheck", get(healthcheck)))
         .with_state(shared_state)
         .layer(from_fn(inject_context))
-        .layer(TraceLayer::new_for_http())
-        .layer(from_fn(capture_metrics));
+        .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
 

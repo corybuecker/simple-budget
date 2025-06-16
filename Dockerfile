@@ -1,4 +1,4 @@
-FROM node@sha256:c332080545f1de96deb1c407e6fbe9a7bc2be3645e127845fdcce57a7af3cf56 AS frontend
+FROM node@sha256:d1db2ecd11f417ab2ff4fef891b4d27194c367d101f9b9cd546a26e424e93d31 AS frontend
 RUN mkdir -p /app/static
 COPY input.css /app
 COPY templates /app/templates
@@ -20,7 +20,7 @@ COPY static /app/static
 COPY --from=frontend /app/static/app.css /app/static/app.css
 RUN cargo build --release
 
-FROM debian@sha256:bd73076dc2cd9c88f48b5b358328f24f2a4289811bd73787c031e20db9f97123
+FROM debian@sha256:0d8498a0e9e6a60011df39aab78534cfe940785e7c59d19dfae1eb53ea59babe
 COPY --from=builder /app/target/release/simple-budget /app/simple-budget
 RUN chown 1000:1000 /app/simple-budget 
 RUN chmod 700 /app/simple-budget

@@ -10,25 +10,22 @@
         {% if csrf %}<meta name="csrf-token" content="{{ csrf }}" />{% endif %}
         <!--
         Import map generated with JSPM Generator
-        Edit here: https://generator.jspm.io/#Y2NlYGBiTs4vqkwqTU3OTi1icMjILynPLEpN0S8uycwtzSktdjDWM9IzQpIoKS1Kynew0DPQMzQGALxq1kVBAA
+        Edit here: https://generator.jspm.io/#TckxCoAwDADAgqivMW11ccxXNBYsVgNpgvh7147HDb1z3Ugs326JriQOG/jt2cqnmepEXEoiZcEIEYLDk/XNkg5fNd9WrOICM8xNqMnOuEKAuPwCKDkxaAA
         -->
         <script type="importmap">
-            {
-            "imports": {
-                "@hotwired/stimulus": "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js",
-                "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.13/dist/turbo.es2017-esm.js"
-            },
-            "integrity": {
-                "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js": "sha384-NStGXzUH4pFNGrLRkzXYz7zzDn8S6MvFPwfKSuYf6TlX25BrNVP4oCN2S04XUuOI",
-                "https://ga.jspm.io/npm:@hotwired/turbo@8.0.13/dist/turbo.es2017-esm.js": "sha384-Ar5BI7e7pT8hROa/8lS1X1ANGto4Pa7UJb06l16NbEqGKD/CCab3ZTrtWi18TVam"
-            }
-            }
+        {
+        "imports": {
+            "@corybuecker/analytics-collector": "https://ga.jspm.io/npm:@corybuecker/analytics-collector@1.1.0/lib/index.js",
+            "@hotwired/stimulus": "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js",
+            "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.13/dist/turbo.es2017-esm.js"
+        },
+        "integrity": {
+            "https://ga.jspm.io/npm:@corybuecker/analytics-collector@1.1.0/lib/index.js": "sha384-cp74jSxwBDV2dwfROLhk0P3Y0B6zsus3OACUvJVRmjlkufzCC+omDXEM87vB+hMz",
+            "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js": "sha384-NStGXzUH4pFNGrLRkzXYz7zzDn8S6MvFPwfKSuYf6TlX25BrNVP4oCN2S04XUuOI",
+            "https://ga.jspm.io/npm:@hotwired/turbo@8.0.13/dist/turbo.es2017-esm.js": "sha384-Ar5BI7e7pT8hROa/8lS1X1ANGto4Pa7UJb06l16NbEqGKD/CCab3ZTrtWi18TVam"
+        }
+        }
         </script>
-        <!-- ES Module Shims import maps polyfills -->
-        <script async
-                src="https://ga.jspm.io/npm:es-module-shims@2.0.10/dist/es-module-shims.js"
-                integrity="sha384-0n8zZ8Ab2hw10HvDlkJRq46/hZNkdL3GFLkwqU52b/j1T77ZAQJo1rDmxzFgV+uj"
-                crossorigin="anonymous"></script>
         <link rel="stylesheet" href={{ digest_asset(file="app.css") }}>
         <link rel="icon" href={{ digest_asset(file="favicon.png") }}>
         <link rel="mask-icon"
@@ -104,7 +101,8 @@
                 </div>
             </nav>
         </div>
-        <script type="module">
+        <script type="module" data-turbo-eval="false">
+          import AnalyticsCollector from '@corybuecker/analytics-collector'
           import * as Turbo from "@hotwired/turbo"
           import { Application, Controller } from "@hotwired/stimulus"
           import FormatterController from "{{ digest_asset(file="controllers/formatter_controller.js") | safe }}"
@@ -115,6 +113,9 @@
           Stimulus.register("modal", ModalController)
           Stimulus.register("formatter", FormatterController)
           Stimulus.register("currency-input", CurrencyInputController)
+
+          const collector = AnalyticsCollector.initialize('https://analytics.corybuecker.com', 'simple-budget')
+          collector.start()
         </script>
         <!-- <turbo-stream-source src="ws://localhost:8000/ws" signed-stream-name="test" /> -->
         <turbo-frame data-controller="modal" class="absolute w-full top-0" id="confirmation-modal"></turbo-frame>

@@ -31,8 +31,8 @@ pub fn get_response_format(headers: &HeaderMap) -> Result<ResponseFormat> {
 /// Returns the appropriate template name based on the response format
 pub fn get_template_name(format: &ResponseFormat, resource: &str, template_type: &str) -> String {
     match format {
-        ResponseFormat::Turbo => format!("{}/{}.turbo.html", resource, template_type),
-        ResponseFormat::Json => format!("{}/{}.json", resource, template_type),
+        ResponseFormat::Turbo => format!("{resource}/{template_type}.turbo.html"),
+        ResponseFormat::Json => format!("{resource}/{template_type}.json"),
         ResponseFormat::Html => format!(
             "{}/{}.html",
             resource,

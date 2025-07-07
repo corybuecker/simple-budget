@@ -14,7 +14,7 @@ futures-util = { version = "0.3.31" }
 include_dir = { version = "0.7.4", features = ["glob"] }
 jsonschema = { version = "0.30.0" }
 jsonwebtoken = { version = "9.3.1" }
-openidconnect = { version = "4.0.0", features = ["reqwest"] }
+openidconnect = { version = "4.0.1", features = ["reqwest"] }
 postgres-types = { version = "0.2.9", features = ["derive"] }
 rand = { version = "0.9.1" }
 rust_decimal = { version = "1.37.2", features = ["db-tokio-postgres"] }
@@ -22,7 +22,7 @@ rust-web-common = { git = "https://github.com/corybuecker/rust-web-common", bran
 serde = { version = "1.0.218", features = ["derive"] }
 serde_json = { version = "1.0.140" }
 tera = { version = "1.20.0" }
-tokio = { version = "1.45.1", features = ["full"] }
+tokio = { version = "1.46.1", features = ["full"] }
 tokio-postgres = { version = "0.7.13", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-1"] }
 tower = { version = "0.5.2", features = ["util"] }
 tower-http = { version = "0.6.6", features = ["fs", "trace"] }

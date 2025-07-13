@@ -102,20 +102,16 @@
             </nav>
         </div>
         <script type="module" data-turbo-eval="false">
-          import AnalyticsCollector from '@corybuecker/analytics-collector'
           import * as Turbo from "@hotwired/turbo"
           import { Application, Controller } from "@hotwired/stimulus"
           import FormatterController from "{{ digest_asset(file="controllers/formatter_controller.js") | safe }}"
           import ModalController from "{{ digest_asset(file="controllers/modal_controller.js") | safe }}"
           import CurrencyInputController from "{{ digest_asset(file="controllers/currency_input_controller.js") | safe }}"
-          
+
           window.Stimulus = Application.start()
           Stimulus.register("modal", ModalController)
           Stimulus.register("formatter", FormatterController)
           Stimulus.register("currency-input", CurrencyInputController)
-
-          const collector = AnalyticsCollector.initialize('https://analytics.corybuecker.com', 'simple-budget')
-          collector.start()
         </script>
         <!-- <turbo-stream-source src="ws://localhost:8000/ws" signed-stream-name="test" /> -->
         <turbo-frame data-controller="modal" class="absolute w-full top-0" id="confirmation-modal"></turbo-frame>

@@ -5,7 +5,7 @@ use axum::{
     extract::Request,
     middleware::{Next, from_fn},
     response::Response,
-    routing::get,
+    routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -16,6 +16,7 @@ mod delete;
 mod edit;
 mod index;
 mod new;
+mod resets;
 mod update;
 
 fn schema() -> serde_json::Value {
@@ -62,6 +63,7 @@ pub fn goals_router() -> Router<SharedState> {
             get(edit::action).put(update::action).delete(delete::action),
         )
         .route("/new", get(new::action))
+        .route("/resets/{recurrence}", post(resets::action))
         .route("/{id}/delete", get(delete::modal))
         .route_layer(from_fn(initialize_context))
 }

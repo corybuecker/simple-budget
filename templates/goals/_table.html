@@ -6,40 +6,64 @@
             <th scope="col" class="px-6 @sm:px-3 py-3 flex flex-row gap-1">
                 <form method="PUT" action="/preferences">
                     {% if goal_header == "Accumulated" %}
-                        <input name="goal_header" type="hidden" value="PerDay">
-                        <button type="submit" value="" class="flex gap-1">
-                            <span>Accum.</span>
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 class="stroke-2 stroke-current size-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                            </svg>
-                        </button>
-                    {% endif %}
-                    {% if goal_header == "PerDay" %}
-                        <input name="goal_header" type="hidden" value="DaysRemaining">
-                        <button type="submit" value="" class="flex gap-1">
-                            <span>Per day</span>
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 class="stroke-2 stroke-current size-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                            </svg>
-                        </button>
-                    {% endif %}
-                    {% if goal_header == "DaysRemaining" %}
-                        <input name="goal_header" type="hidden" value="Accumulated">
-                        <button type="submit" value="" class="flex gap-1">
-                            <span>Days remain.</span>
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 class="stroke-2 stroke-current size-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                            </svg>
-                        </button>
+                    <input name="goal_header" type="hidden" value="PerDay" />
+                    <button type="submit" value="" class="flex gap-1">
+                        <span>Accum.</span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            class="stroke-2 stroke-current size-4"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+                            />
+                        </svg>
+                    </button>
+                    {% endif %} {% if goal_header == "PerDay" %}
+                    <input
+                        name="goal_header"
+                        type="hidden"
+                        value="DaysRemaining"
+                    />
+                    <button type="submit" value="" class="flex gap-1">
+                        <span>Per day</span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            class="stroke-2 stroke-current size-4"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+                            />
+                        </svg>
+                    </button>
+                    {% endif %} {% if goal_header == "DaysRemaining" %}
+                    <input
+                        name="goal_header"
+                        type="hidden"
+                        value="Accumulated"
+                    />
+                    <button type="submit" value="" class="flex gap-1">
+                        <span>Days remain.</span>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            class="stroke-2 stroke-current size-4"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+                            />
+                        </svg>
+                    </button>
                     {% endif %}
                 </form>
             </th>
@@ -47,35 +71,8 @@
         </tr>
     </thead>
     <tbody>
-        {% for goal in goals %}
-            <tr class="odd:bg-white even:bg-gray-50 border-b" id="goal_{{ goal.id }}">
-                <th scope="row" class="px-6 @sm:px-3 py-2 font-medium text-gray-900">{{ goal.name }}</th>
-                <td class="px-6 @sm:px-3 py-2"
-                    data-controller="formatter"
-                    data-formatter-currency-value="{{ goal.target }}">{{ goal.target }}</td>
-                {% if goal_header == "Accumulated" %}
-                    <td class="px-6 @sm:px-3 py-2"
-                        data-controller="formatter"
-                        data-formatter-currency-value="{{ accumulations[goal.id] }}"
-                        data-formatter-currency-precision-value="2">{{ accumulations[goal.id] }}</td>
-                {% endif %}
-                {% if goal_header == "PerDay" %}
-                    <td class="px-6 @sm:px-3 py-2"
-                        data-controller="formatter"
-                        data-formatter-currency-value="{{ per_days[goal.id] }}"
-                        data-formatter-currency-precision-value="2">{{ per_days[goal.id] }}</td>
-                {% endif %}
-                {% if goal_header == "DaysRemaining" %}<td class="px-6 @sm:px-3 py-2">{{ days_remainings[goal.id] }}</td>{% endif %}
-                <td class="px-6 @sm:px-3 py-2">
-                    <div class="flex @lg:flex-row flex-col items-center gap-4">
-                        <a href="/goals/{{ goal.id }}"
-                           data-turbo-frame="_top"
-                           class="font-medium text-blue-600 hover:underline">Edit</a>
-                        <a data-turbo-frame="confirmation-modal"
-                           href="/goals/{{ goal.id }}/delete">Delete</a>
-                    </div>
-                </td>
-            </tr>
-        {% endfor %}
+        {% for goal in goals %} {{ macros::goal(goal=goal,
+        goal_header=goal_header, accumulations=accumulations, per_days=per_days,
+        days_remainings=days_remainings) }} {% endfor %}
     </tbody>
 </table>

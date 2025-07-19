@@ -6,7 +6,7 @@ use rust_decimal::{Decimal, prelude::FromPrimitive};
 use serde::Serialize;
 use tokio_postgres::Client;
 
-#[derive(Debug, Clone, Serialize, FromSql, ToSql)]
+#[derive(Debug, Clone, Serialize, FromSql, ToSql, PartialEq)]
 pub enum Recurrence {
     Never,
     Daily,

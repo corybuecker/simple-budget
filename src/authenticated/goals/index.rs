@@ -21,6 +21,7 @@ use rust_decimal::Decimal;
 use std::collections::HashMap;
 use tera::Context;
 use tokio_postgres::GenericClient;
+use tracing::debug;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -71,6 +72,9 @@ pub async fn action(
     context.insert("per_days", &per_days);
 
     let response_format = get_response_format(&headers)?;
+
+    let content = shared_state.tera.render("goals/index.html", &context);
+    debug!("{:#?}", content);
 
     match response_format {
         ResponseFormat::Turbo | ResponseFormat::Html => Ok(generate_response(

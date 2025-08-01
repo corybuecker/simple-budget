@@ -157,9 +157,9 @@ static ASSETS: Dir = include_dir!("static");
 
 #[tokio::main]
 async fn main() {
-    let _telemetry = TelemetryBuilder::new("simple-budget")
-        .build()
-        .expect("failed to initialize telemetry");
+    // Reads endpoints and log level from environment variables
+    let mut telemetry = TelemetryBuilder::new("blog".to_string());
+    telemetry.init().expect("could not initialize subscriber");
 
     let mut tera = Tera::default();
     tera.register_function("digest_asset", digest_asset());

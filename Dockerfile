@@ -1,4 +1,4 @@
-FROM node@sha256:e7db48bc35ee8d2e8d1511dfe779d78076966bd101ab074ea2858da8d59efb7f AS frontend
+FROM node@sha256:c7a63f857d6dc9b3780ceb1874544cc22f3e399333c82de2a46de0049e841729 AS frontend
 RUN mkdir -p /app/static
 COPY input.css /app
 COPY templates /app/templates

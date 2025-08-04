@@ -158,7 +158,7 @@ static ASSETS: Dir = include_dir!("static");
 #[tokio::main]
 async fn main() {
     // Reads endpoints and log level from environment variables
-    let mut telemetry = TelemetryBuilder::new("blog".to_string());
+    let mut telemetry = TelemetryBuilder::new("simple-budget".to_string());
     telemetry.init().expect("could not initialize subscriber");
 
     let mut tera = Tera::default();

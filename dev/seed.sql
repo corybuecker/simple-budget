@@ -1,2 +1,1 @@
--- INSERT INTO users (id, email)
--- VALUES (DEFAULT, 'ios@corybuecker.com');
+CREATE DATABASE simple_budget_test TEMPLATE simple_budget;

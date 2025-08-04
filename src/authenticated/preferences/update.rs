@@ -21,6 +21,7 @@ use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::collections::HashMap;
 use tera::Context;
 use tokio_postgres::GenericClient;
+use tracing::error;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -103,7 +104,13 @@ pub async fn action(
     goals_context.insert("per_days", &per_days);
     goals_context.insert("goals", &goals);
 
-    let goals_html = tera.render("goals/_table.html", &goals_context)?;
+    let goals_html = tera.render("goals/_table.html", &goals_context);
+
+    if goals_html.is_err() {
+        error!("{:?}", goals_html);
+    }
+
+    let goals_html = goals_html?;
 
     let dashboard_context =
         generate_dashboard_context_for(&user, shared_state.pool.get().await?.client()).await?;

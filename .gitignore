@@ -14,3 +14,4 @@ target/
 /static/app.css
 /k8s/output
 k8s/patch.yaml
+/.rules

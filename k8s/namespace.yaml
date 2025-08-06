@@ -4,4 +4,6 @@ metadata:
   name: simple-budget
   labels:
     name: simple-budget
+    pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted

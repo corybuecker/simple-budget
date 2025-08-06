@@ -12,11 +12,22 @@ use std::str::FromStr;
 use tracing::info;
 
 pub async fn convert_goals(pool: &Pool, time: &impl Times) -> Result<f64, AppError> {
-    info!("converting goals to envelopes at {}", Utc::now());
-
     let mut manager = pool.get().await?;
     let transaction = manager.transaction().await?;
     let client = transaction.client();
+
+    let results = private_convert_goals(client, time).await?;
+
+    transaction.commit().await?;
+
+    Ok(results)
+}
+
+async fn private_convert_goals(
+    client: &tokio_postgres::Client,
+    time: &impl Times,
+) -> Result<f64, AppError> {
+    info!("converting goals to envelopes at {}", Utc::now());
 
     let goals = Goal::get_expired(client, time.now()).await?;
     for goal in goals {
@@ -88,20 +99,19 @@ pub async fn convert_goals(pool: &Pool, time: &impl Times) -> Result<f64, AppErr
         goal.accelerate(client, acceleration_amount).await?;
     }
 
-    transaction.commit().await?;
-
     Ok(1.0)
 }
 
 #[cfg(test)]
 mod tests {
     use crate::database_pool;
+    use crate::jobs::convert_goals::private_convert_goals;
     use crate::models::account::Account;
+    use crate::models::envelope::Envelope;
     use crate::models::goal::{Goal, Recurrence};
     use crate::models::user::{Preferences, User};
     use crate::test_utils::user_for_tests;
     use crate::utilities::dates::Times;
-    use crate::{jobs::convert_goals::convert_goals, models::envelope::Envelope};
     use chrono::{Days, Duration, TimeZone, Timelike, Utc};
     use deadpool_postgres::Pool;
     use postgres_types::Json;
@@ -154,8 +164,10 @@ mod tests {
     #[tokio::test]
     async fn test_accelerate_goal() {
         let (user, pool, time, goal) = setup().await;
-        let client = pool.get().await.unwrap();
-        let client = client.client();
+
+        let mut manager = pool.get().await.unwrap();
+        let transaction = manager.transaction().await.unwrap();
+        let client = transaction.client();
 
         let account = Account {
             user_id: user.id,
@@ -178,7 +190,7 @@ mod tests {
         user.preferences = Some(Json(preferences));
         let user = user.update(client).await.unwrap();
 
-        convert_goals(&pool, &time).await.unwrap();
+        private_convert_goals(client, &time).await.unwrap();
 
         let goal: Goal = client
             .query_one(
@@ -191,15 +203,19 @@ mod tests {
             .unwrap();
 
         assert!(goal.accumulated_amount - Decimal::new(4516, 2) < Decimal::new(1, 2));
+
+        transaction.rollback().await.unwrap();
     }
 
     #[tokio::test]
     async fn test_accumulate_goal() {
         let (user, pool, time, _) = setup().await;
-        let client = pool.get().await.unwrap();
-        let client = client.client();
 
-        convert_goals(&pool, &time).await.unwrap();
+        let mut manager = pool.get().await.unwrap();
+        let transaction = manager.transaction().await.unwrap();
+        let client = transaction.client();
+
+        private_convert_goals(client, &time).await.unwrap();
 
         let goal: Goal = client
             .query_one(
@@ -212,15 +228,19 @@ mod tests {
             .unwrap();
 
         assert!(goal.accumulated_amount - Decimal::new(20, 0) < Decimal::new(1, 5));
+
+        transaction.rollback().await.unwrap();
     }
 
     #[tokio::test]
     async fn test_convert_goal_to_envelope() {
         let (user, pool, time, _) = setup().await;
-        let client = pool.get().await.unwrap();
-        let client = client.client();
 
-        convert_goals(&pool, &time).await.unwrap();
+        let mut manager = pool.get().await.unwrap();
+        let transaction = manager.transaction().await.unwrap();
+        let client = transaction.client();
+
+        private_convert_goals(client, &time).await.unwrap();
 
         let envelope = client
             .query_one(
@@ -245,5 +265,7 @@ mod tests {
             .unwrap();
 
         assert!(goal.target_date > time.now());
+
+        transaction.rollback().await.unwrap();
     }
 }

@@ -32,7 +32,7 @@ Simple Budget is a full-stack web application that helps you manage your persona
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/corybuecker/simple-budget
    cd simple-budget
    ```
 
@@ -43,9 +43,12 @@ Simple Budget is a full-stack web application that helps you manage your persona
 
 3. **Set up environment variables**
    ```bash
-   export DATABASE_URL="postgresql://username:password@localhost:5432/simple_budget"
-   export SECRET_KEY="your-session-signing-key"
-   export SECURE="false"  # Set to "true" in production
+   export DATABASE_URL="postgresql://simple_budget@localhost:5432/simple_budget"
+   export SECURE="false"
+   export GOOGLE_CALLBACK_URL="http://localhost:8000/authentication/callback"
+   export GOOGLE_CLIENT_ID="<must be provided>"
+   export GOOGLE_CLIENT_SECRET="<must be provided>"
+   export SECRET_KEY="<must be provided>"
    ```
 
 4. **Compile CSS**
@@ -134,10 +137,13 @@ Required environment variables:
 - `DATABASE_URL`: PostgreSQL connection string
 - `SECRET_KEY`: Session signing key (generate securely for production)
 - `SECURE`: Set to "true" in production for HTTPS cookies
+- `GOOGLE_CALLBACK_URL`: Definition TBA
+- `GOOGLE_CLIENT_ID`: Definition TBA
+- `GOOGLE_CLIENT_SECRET`: Definition TBA
 
 Optional:
 
-- `LOG_LEVEL`: Logging verbosity
+- `LOG_LEVEL`: Logging verbosity, e.g. "debug"
 - `METRICS_ENDPOINT`: Prometheus metrics export URL
 - `TRACING_ENDPOINT`: Jaeger traces export URL
 

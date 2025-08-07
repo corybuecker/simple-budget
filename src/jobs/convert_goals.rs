@@ -161,7 +161,15 @@ mod tests {
         )
     }
 
+    // These tests are prone to database deadlocks due to the nature of the tests.
+    // Running them sequentially can help avoid deadlocks.
     #[tokio::test]
+    async fn test_convert_goalsrunner() {
+        test_accelerate_goal().await;
+        test_accumulate_goal().await;
+        test_convert_goal_to_envelope().await;
+    }
+
     async fn test_accelerate_goal() {
         let (user, pool, time, goal) = setup().await;
 
@@ -207,7 +215,6 @@ mod tests {
         transaction.rollback().await.unwrap();
     }
 
-    #[tokio::test]
     async fn test_accumulate_goal() {
         let (user, pool, time, _) = setup().await;
 
@@ -232,7 +239,6 @@ mod tests {
         transaction.rollback().await.unwrap();
     }
 
-    #[tokio::test]
     async fn test_convert_goal_to_envelope() {
         let (user, pool, time, _) = setup().await;
 

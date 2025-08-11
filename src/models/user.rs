@@ -1,25 +1,12 @@
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
-use core::fmt;
 use postgres_types::Json;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 use tokio_postgres::Client;
 use uuid::Uuid;
 
 use crate::errors::AppError;
-
-#[derive(Debug)]
-pub struct NotFoundError {}
-
-impl fmt::Display for NotFoundError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", 1)
-    }
-}
-
-impl Error for NotFoundError {}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum GoalHeader {

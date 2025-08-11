@@ -29,8 +29,7 @@ pub async fn page(
     let valid = jsonschema::validate(&schema(), &json);
     let response_format = responses::get_response_format(&headers)?;
 
-    if valid.is_err() {
-        let validation_errors = valid.unwrap_err();
+    if let Err(validation_errors) = valid {
         let mut context = Context::new();
 
         context.insert("errors", &validation_errors.to_string());

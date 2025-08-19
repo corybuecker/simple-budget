@@ -20,7 +20,7 @@ COPY static /app/static
 COPY --from=frontend /app/static/app.css /app/static/app.css
 RUN cargo build --release
 
-FROM debian@sha256:b6507e340c43553136f5078284c8c68d86ec8262b1724dde73c325e8d3dcdeba
+FROM debian@sha256:6d87375016340817ac2391e670971725a9981cfc24e221c47734681ed0f6c0f5
 COPY --from=builder /app/target/release/simple-budget /app/simple-budget
 RUN chown 1000:1000 /app/simple-budget 
 RUN chmod 700 /app/simple-budget

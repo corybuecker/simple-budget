@@ -7,7 +7,7 @@ WORKDIR /app
 RUN npm install tailwindcss @tailwindcss/cli
 RUN npx tailwindcss -i input.css -o static/app.css
 
-FROM rust@sha256:e090f7b4adf86191313dba91260351d7f5e15cac0fe34f26706a805c0cb9641f AS builder
+FROM rust@sha256:6e6d04bd50cd4c433a805c58c13f186a508c5b5417b9b61cae40ec28e0593c51 AS builder
 RUN mkdir -p /app/src
 WORKDIR /app
 COPY Cargo.toml Cargo.lock /app/

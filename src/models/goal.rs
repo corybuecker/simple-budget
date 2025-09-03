@@ -42,6 +42,7 @@ pub struct Goal {
     pub target_date: DateTime<Utc>,
     pub target: Decimal,
     pub accumulated_amount: Decimal,
+    pub start_date: Option<DateTime<Utc>>,
 }
 
 impl TryInto<Goal> for tokio_postgres::Row {
@@ -70,6 +71,9 @@ impl TryInto<Goal> for tokio_postgres::Row {
             accumulated_amount: self
                 .try_get("accumulated_amount")
                 .map_err(AppError::RecordDeserializationError)?,
+            start_date: self
+                .try_get("start_date")
+                .map_err(AppError::RecordDeserializationError)?,
         })
     }
 }
@@ -78,9 +82,15 @@ impl Goal {
     pub async fn create(&self, client: &Client) -> Result<Self, AppError> {
         let row = client
             .query_one(
-                "INSERT INTO goals
-            (user_id, name, recurrence, target_date, target, accumulated_amount)
-            VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+                "INSERT INTO goals (
+                    user_id
+                    , name
+                    , recurrence
+                    , target_date
+                    , target
+                    , accumulated_amount
+                    , start_date
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
                 &[
                     &self.user_id,
                     &self.name,
@@ -88,6 +98,7 @@ impl Goal {
                     &self.target_date,
                     &self.target,
                     &Decimal::ZERO,
+                    &self.start_date,
                 ],
             )
             .await?;
@@ -289,6 +300,7 @@ impl Goal {
             name: self.name.clone(),
             user_id: self.user_id,
             accumulated_amount,
+            start_date: None,
         };
 
         goal.update(client).await
@@ -396,6 +408,7 @@ mod tests {
                 NaiveTime::MIN,
             )
             .and_utc(),
+            start_date: None,
         };
         let goal = goal.create(client).await.unwrap();
         let goal = goal.accumulate(client, time_provider).await.unwrap();
@@ -422,6 +435,7 @@ mod tests {
                 NaiveTime::MIN,
             )
             .and_utc(),
+            start_date: None,
         };
         let goal = goal.create(client).await.unwrap();
         let goal = goal.accumulate(client, time_provider).await.unwrap();
@@ -448,6 +462,7 @@ mod tests {
                 NaiveTime::MIN,
             )
             .and_utc(),
+            start_date: None,
         };
         let goal = goal.create(client).await.unwrap();
 

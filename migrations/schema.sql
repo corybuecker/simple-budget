@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.4 (Debian 17.4-1.pgdg120+2)
--- Dumped by pg_dump version 17.4 (Homebrew)
+-- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
+-- Dumped by pg_dump version 17.6 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -18,7 +18,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: Recurrence; Type: TYPE; Schema: public; Owner: simple_budget
+-- Name: Recurrence; Type: TYPE; Schema: public; Owner: -
 --
 
 CREATE TYPE public."Recurrence" AS ENUM (
@@ -31,14 +31,12 @@ CREATE TYPE public."Recurrence" AS ENUM (
 );
 
 
-ALTER TYPE public."Recurrence" OWNER TO simple_budget;
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: accounts; Type: TABLE; Schema: public; Owner: simple_budget
+-- Name: accounts; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.accounts (
@@ -50,10 +48,8 @@ CREATE TABLE public.accounts (
 );
 
 
-ALTER TABLE public.accounts OWNER TO simple_budget;
-
 --
--- Name: accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: simple_budget
+-- Name: accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.accounts_id_seq
@@ -65,17 +61,15 @@ CREATE SEQUENCE public.accounts_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.accounts_id_seq OWNER TO simple_budget;
-
 --
--- Name: accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: simple_budget
+-- Name: accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.accounts_id_seq OWNED BY public.accounts.id;
 
 
 --
--- Name: envelopes; Type: TABLE; Schema: public; Owner: simple_budget
+-- Name: envelopes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.envelopes (
@@ -86,10 +80,8 @@ CREATE TABLE public.envelopes (
 );
 
 
-ALTER TABLE public.envelopes OWNER TO simple_budget;
-
 --
--- Name: envelopes_id_seq; Type: SEQUENCE; Schema: public; Owner: simple_budget
+-- Name: envelopes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.envelopes_id_seq
@@ -101,17 +93,15 @@ CREATE SEQUENCE public.envelopes_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.envelopes_id_seq OWNER TO simple_budget;
-
 --
--- Name: envelopes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: simple_budget
+-- Name: envelopes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.envelopes_id_seq OWNED BY public.envelopes.id;
 
 
 --
--- Name: goals; Type: TABLE; Schema: public; Owner: simple_budget
+-- Name: goals; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.goals (
@@ -121,14 +111,13 @@ CREATE TABLE public.goals (
     target numeric NOT NULL,
     target_date timestamp with time zone NOT NULL,
     recurrence public."Recurrence" NOT NULL,
-    accumulated_amount numeric NOT NULL
+    accumulated_amount numeric NOT NULL,
+    start_date timestamp with time zone
 );
 
 
-ALTER TABLE public.goals OWNER TO simple_budget;
-
 --
--- Name: goals_id_seq; Type: SEQUENCE; Schema: public; Owner: simple_budget
+-- Name: goals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.goals_id_seq
@@ -140,17 +129,15 @@ CREATE SEQUENCE public.goals_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.goals_id_seq OWNER TO simple_budget;
-
 --
--- Name: goals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: simple_budget
+-- Name: goals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.goals_id_seq OWNED BY public.goals.id;
 
 
 --
--- Name: sessions; Type: TABLE; Schema: public; Owner: simple_budget
+-- Name: sessions; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.sessions (
@@ -161,10 +148,8 @@ CREATE TABLE public.sessions (
 );
 
 
-ALTER TABLE public.sessions OWNER TO simple_budget;
-
 --
--- Name: users; Type: TABLE; Schema: public; Owner: simple_budget
+-- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.users (
@@ -175,10 +160,8 @@ CREATE TABLE public.users (
 );
 
 
-ALTER TABLE public.users OWNER TO simple_budget;
-
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: simple_budget
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.users_id_seq
@@ -190,45 +173,43 @@ CREATE SEQUENCE public.users_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.users_id_seq OWNER TO simple_budget;
-
 --
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: simple_budget
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: accounts id; Type: DEFAULT; Schema: public; Owner: simple_budget
+-- Name: accounts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.accounts ALTER COLUMN id SET DEFAULT nextval('public.accounts_id_seq'::regclass);
 
 
 --
--- Name: envelopes id; Type: DEFAULT; Schema: public; Owner: simple_budget
+-- Name: envelopes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.envelopes ALTER COLUMN id SET DEFAULT nextval('public.envelopes_id_seq'::regclass);
 
 
 --
--- Name: goals id; Type: DEFAULT; Schema: public; Owner: simple_budget
+-- Name: goals id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.goals ALTER COLUMN id SET DEFAULT nextval('public.goals_id_seq'::regclass);
 
 
 --
--- Name: users id; Type: DEFAULT; Schema: public; Owner: simple_budget
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
--- Name: accounts accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: accounts accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.accounts
@@ -236,7 +217,7 @@ ALTER TABLE ONLY public.accounts
 
 
 --
--- Name: envelopes envelopes_pkey; Type: CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: envelopes envelopes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.envelopes
@@ -244,7 +225,7 @@ ALTER TABLE ONLY public.envelopes
 
 
 --
--- Name: goals goals_pkey; Type: CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: goals goals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.goals
@@ -252,7 +233,7 @@ ALTER TABLE ONLY public.goals
 
 
 --
--- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.sessions
@@ -260,7 +241,7 @@ ALTER TABLE ONLY public.sessions
 
 
 --
--- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -268,7 +249,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -276,7 +257,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_subject_key; Type: CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: users users_subject_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -284,7 +265,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: accounts accounts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: accounts accounts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.accounts
@@ -292,7 +273,7 @@ ALTER TABLE ONLY public.accounts
 
 
 --
--- Name: envelopes envelopes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: envelopes envelopes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.envelopes
@@ -300,7 +281,7 @@ ALTER TABLE ONLY public.envelopes
 
 
 --
--- Name: goals goals_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: goals goals_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.goals
@@ -308,7 +289,7 @@ ALTER TABLE ONLY public.goals
 
 
 --
--- Name: sessions sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: simple_budget
+-- Name: sessions sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.sessions
@@ -318,4 +299,3 @@ ALTER TABLE ONLY public.sessions
 --
 -- PostgreSQL database dump complete
 --
-

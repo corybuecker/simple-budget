@@ -13,7 +13,7 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Redirect},
 };
-use chrono::{NaiveDateTime, NaiveTime};
+use chrono::{NaiveDateTime, NaiveTime, Utc};
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::str::FromStr;
 use tera::Context;
@@ -48,15 +48,22 @@ pub async fn page(
         ));
     }
 
+    let recurrence = Recurrence::from_str(&form.recurrence).map_err(|e| anyhow!("{:#?}", e))?;
+    let start_date = match recurrence {
+        Recurrence::Never => Some(Utc::now()),
+        _ => None,
+    };
+
     let goal = Goal {
         id: None,
         name: form.name.to_owned(),
         target: Decimal::from_f64(form.target.to_owned())
             .ok_or_else(|| anyhow!("could not parse decimal"))?,
-        recurrence: Recurrence::from_str(&form.recurrence).map_err(|e| anyhow!("{:#?}", e))?,
         target_date: NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc(),
         user_id: user.id,
         accumulated_amount: Decimal::ZERO,
+        recurrence,
+        start_date,
     };
 
     goal.create(shared_state.pool.get().await?.client()).await?;
@@ -170,5 +177,50 @@ mod tests {
             response.headers().get("content-type").unwrap(),
             "text/vnd.turbo-stream.html"
         );
+    }
+
+    #[tokio::test]
+    async fn test_create_goal_with_explicit_start_date_never_recurrence() {
+        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get().await.unwrap();
+        let client = client.client();
+        let user_id = user_extension.0.id;
+
+        let app = Router::new()
+            .route("/goals/create", post(page))
+            .with_state(shared_state.clone())
+            .layer(user_extension);
+
+        let target_date = Utc::now().add(Duration::days(7));
+
+        let form_data = format!(
+            "name=test_create_goal_success&target=124&target_date={}&recurrence=never",
+            target_date.format("%Y-%m-%d")
+        );
+        let request = Request::builder()
+            .method("POST")
+            .uri("/goals/create")
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(Body::from(form_data))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers().get("location").unwrap(), "/goals");
+
+        let goal = client
+            .query_one(
+                "SELECT * FROM goals WHERE user_id = $1 LIMIT 1",
+                &[&user_id],
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(goal.get::<_, String>("name"), "test_create_goal_success");
+        let start_date_str = goal
+            .get::<_, chrono::DateTime<chrono::Utc>>("start_date")
+            .to_rfc3339();
+        assert!(chrono::DateTime::parse_from_rfc3339(&start_date_str).is_ok());
     }
 }

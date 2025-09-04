@@ -102,6 +102,7 @@ mod tests {
             target: Decimal::new(1000, 0),
             target_date: Utc::now(),
             recurrence: Recurrence::Weekly,
+            start_date: None,
         };
 
         let mut goal = goal

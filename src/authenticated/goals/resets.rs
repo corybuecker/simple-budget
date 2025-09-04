@@ -129,6 +129,7 @@ mod tests {
             target: Decimal::new(1000, 0),
             target_date: Utc::now() + Duration::days(30),
             accumulated_amount: Decimal::new(500, 0), // This should be reset to 0
+            start_date: None,
         };
         let mut goal = goal.create(client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
@@ -175,6 +176,7 @@ mod tests {
             target: Decimal::new(1000, 0),
             target_date: Utc::now() + Duration::days(30),
             accumulated_amount: Decimal::new(750, 0),
+            start_date: None,
         };
         let mut monthly_goal = monthly_goal.create(client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
@@ -189,6 +191,7 @@ mod tests {
             target: Decimal::new(200, 0),
             target_date: Utc::now() + Duration::days(7),
             accumulated_amount: Decimal::new(100, 0),
+            start_date: None,
         };
         let mut weekly_goal = weekly_goal.create(client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
@@ -260,6 +263,7 @@ mod tests {
             target: Decimal::new(300, 0),
             target_date: Utc::now() + Duration::days(15),
             accumulated_amount: Decimal::new(150, 0),
+            start_date: None,
         };
         let mut goal = goal.create(client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
@@ -304,6 +308,7 @@ mod tests {
             target: Decimal::new(50, 0),
             target_date: Utc::now() + Duration::days(1),
             accumulated_amount: Decimal::new(25, 0),
+            start_date: None,
         };
         let mut daily_goal = daily_goal.create(client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
@@ -318,6 +323,7 @@ mod tests {
             target: Decimal::new(5000, 0),
             target_date: Utc::now() + Duration::days(365),
             accumulated_amount: Decimal::new(2500, 0),
+            start_date: None,
         };
         let mut yearly_goal = yearly_goal.create(client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO

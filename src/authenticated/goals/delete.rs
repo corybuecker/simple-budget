@@ -101,6 +101,7 @@ mod tests {
             target: Decimal::new(1000, 0),
             target_date: Utc::now(),
             accumulated_amount: Decimal::ZERO,
+            start_date: None,
         };
 
         let goal = goal
@@ -137,6 +138,7 @@ mod tests {
             target: Decimal::new(1000, 0),
             target_date: Utc::now(),
             accumulated_amount: Decimal::ZERO,
+            start_date: None,
         };
 
         let goal = goal

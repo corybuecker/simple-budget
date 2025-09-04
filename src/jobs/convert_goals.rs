@@ -149,6 +149,7 @@ mod tests {
             target_date: time.now().sub(Duration::days(2)),
             target: Decimal::new(70, 0),
             recurrence: Recurrence::Weekly,
+            start_date: None,
         };
 
         let goal = goal.create(client).await.unwrap();

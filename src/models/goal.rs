@@ -112,15 +112,21 @@ impl Goal {
     pub async fn update(&self, client: &Client) -> Result<Self, AppError> {
         client
             .execute(
-                "UPDATE goals
-            SET name = $1, recurrence = $2, target_date = $3, target = $4, accumulated_amount = $5
-            WHERE id = $6 AND user_id = $7",
+                "UPDATE goals SET
+                    name = $1
+                    , recurrence = $2
+                    , target_date = $3
+                    , target = $4
+                    , accumulated_amount = $5
+                    , start_date = $6
+            WHERE id = $7 AND user_id = $8",
                 &[
                     &self.name,
                     &self.recurrence,
                     &self.target_date,
                     &self.target,
                     &self.accumulated_amount,
+                    &self.start_date,
                     &self.id,
                     &self.user_id,
                 ],
@@ -300,7 +306,7 @@ impl Goal {
             name: self.name.clone(),
             user_id: self.user_id,
             accumulated_amount,
-            start_date: None,
+            start_date: self.start_date,
         };
 
         goal.update(client).await

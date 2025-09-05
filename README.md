@@ -53,7 +53,7 @@ Simple Budget is a full-stack web application that helps you manage your persona
 
 4. **Compile CSS**
    ```bash
-   npx tailwindcss -i input.css -o assets/app.css
+   npx tailwindcss -i input.css -o static/app.css
    ```
 
 4. **Start the development server**
@@ -71,7 +71,7 @@ cargo watch -x run
 For CSS changes, run TailwindCSS in watch mode:
 
 ```bash
-npx tailwindcss -i input.css -o assets/app.css --watch
+npx tailwindcss -i input.css -o static/app.css --watch
 ```
 
 ## Development Services

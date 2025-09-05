@@ -2,11 +2,8 @@
 <div class="flex @lg:justify-center mt-8">
     <div class="flex @lg:basis-1/2 @sm:w-full @sm:mx-3 flex-col gap-4">
         <p>
-            <a
-                class="inline-block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-                href="/accounts/new"
-                >New account</a
-            >
+            <a class="inline-block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+                href="/accounts/new">New account</a>
         </p>
         <div class="shadow-md">
             <table class="w-full text-sm text-left text-gray-500">
@@ -20,40 +17,23 @@
                 </thead>
                 <tbody>
                     {% for account in accounts %}
-                    <tr
-                        class="odd:bg-white even:bg-gray-50 border-b"
-                        id="account_{{ account.id }}"
-                    >
-                        <th
-                            scope="row"
-                            class="px-6 @sm:px-3 py-2 font-medium text-gray-900"
-                        >
+                    <tr class="odd:bg-white even:bg-gray-50 border-b last:border-b-0" id="account_{{ account.id }}">
+                        <th scope="row" class="px-6 @sm:px-3 py-2 font-medium text-gray-900">
                             {{ account.name }}
                         </th>
-                        <td
-                            class="px-6 @sm:px-3 py-2"
-                            data-controller="formatter"
-                            data-formatter-currency-value="{{ account.amount }}"
-                        >
+                        <td class="px-6 @sm:px-3 py-2" data-controller="formatter"
+                            data-formatter-currency-value="{{ account.amount }}">
                             {{ account.amount }}
                         </td>
                         <td class="px-6 @sm:px-3 py-2">
                             {% if account.debt %} Yes {% else %} No {% endif %}
                         </td>
                         <td class="px-6 @sm:px-3 py-2">
-                            <div
-                                class="flex @lg:flex-row flex-col items-center gap-4"
-                            >
-                                <a
-                                    href="/accounts/{{ account.id }}"
-                                    class="font-medium text-blue-600 hover:underline"
-                                    >Edit</a
-                                >
-                                <a
-                                    data-turbo-frame="confirmation-modal"
-                                    href="/accounts/{{ account.id }}/delete"
-                                    >Delete</a
-                                >
+                            <div class="flex @lg:flex-row flex-col items-center gap-4">
+                                <a href="/accounts/{{ account.id }}"
+                                    class="font-medium text-blue-600 hover:underline">Edit</a>
+                                <a data-turbo-frame="confirmation-modal"
+                                    href="/accounts/{{ account.id }}/delete">Delete</a>
                             </div>
                         </td>
                     </tr>

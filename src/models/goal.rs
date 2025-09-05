@@ -1,6 +1,6 @@
 use crate::{errors::AppError, utilities::dates::Times};
 use anyhow::{Result, anyhow};
-use chrono::{DateTime, Datelike, Days, Months, TimeDelta, Timelike, Utc};
+use chrono::{DateTime, Days, Months, TimeDelta, Utc};
 use postgres_types::{FromSql, ToSql};
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use serde::Serialize;
@@ -261,8 +261,8 @@ impl Goal {
         Ok(goal)
     }
 
-    pub fn accumulated_per_day(&self, time_provider: &impl Times) -> Result<Decimal> {
-        if self.start_at(time_provider)? > Utc::now() {
+    pub fn accumulated_per_day(&self) -> Result<Decimal> {
+        if self.start_at()? > Utc::now() {
             return Ok(Decimal::ZERO);
         }
 
@@ -270,7 +270,7 @@ impl Goal {
             return Ok(Decimal::ZERO);
         }
 
-        let total_time_in_days = Decimal::from_i64(self.total_time(time_provider)?.num_days())
+        let total_time_in_days = Decimal::from_i64(self.total_time()?.num_days())
             .ok_or(anyhow!("could not convert decimal"))?;
 
         Ok(self.target / total_time_in_days)
@@ -313,7 +313,7 @@ impl Goal {
     }
 
     fn accumulated_now(&self, time_provider: &impl Times) -> Result<Decimal> {
-        if self.start_at(time_provider)? > time_provider.now() {
+        if self.start_at()? > time_provider.now() {
             return Ok(Decimal::ZERO);
         }
 
@@ -329,49 +329,31 @@ impl Goal {
             Decimal::from_i64(self.elapsed_time(time_provider)?.num_seconds())
                 .ok_or(anyhow!("could not convert decimal"))?;
 
-        let total_time_in_seconds =
-            Decimal::from_i64(self.total_time(time_provider)?.num_seconds())
-                .ok_or(anyhow!("could not convert decimal"))?;
+        let total_time_in_seconds = Decimal::from_i64(self.total_time()?.num_seconds())
+            .ok_or(anyhow!("could not convert decimal"))?;
 
         Ok(self.target / total_time_in_seconds * elapsed_time_in_seconds)
     }
 
-    fn total_time(&self, time_provider: &impl Times) -> Result<TimeDelta> {
-        Ok(self.target_date - self.start_at(time_provider)?)
+    fn total_time(&self) -> Result<TimeDelta> {
+        Ok(self.target_date - self.start_at()?)
     }
 
     fn elapsed_time(&self, time_provider: &impl Times) -> Result<TimeDelta> {
-        let start_at = self.start_at(time_provider)?;
+        let start_at = self.start_at()?;
 
         Ok(time_provider.now() - start_at)
     }
 
-    fn start_at(&self, time_provider: &impl Times) -> Result<DateTime<Utc>> {
+    fn start_at(&self) -> Result<DateTime<Utc>> {
         match self.recurrence {
-            Recurrence::Never => Self::start_of_month(time_provider),
+            Recurrence::Never => self.start_date.ok_or_else(|| anyhow!("missing start date")),
             Recurrence::Daily => Ok(self.target_date - Days::new(1)),
             Recurrence::Weekly => Ok(self.target_date - Days::new(7)),
             Recurrence::Yearly => Ok(self.target_date - Months::new(12)),
             Recurrence::Monthly => Ok(self.target_date - Months::new(1)),
             Recurrence::Quarterly => Ok(self.target_date - Months::new(3)),
         }
-    }
-
-    fn start_of_month(time_provider: &impl Times) -> Result<DateTime<Utc>> {
-        let now = time_provider.now();
-        let now = now
-            .with_hour(0)
-            .ok_or_else(|| anyhow!("could not set time"))?;
-        let now = now
-            .with_minute(0)
-            .ok_or_else(|| anyhow!("could not set time"))?;
-        let now = now
-            .with_second(0)
-            .ok_or_else(|| anyhow!("could not set time"))?;
-        let now = now
-            .with_day0(0)
-            .ok_or_else(|| anyhow!("could not set time"))?;
-        Ok(now)
     }
 }
 

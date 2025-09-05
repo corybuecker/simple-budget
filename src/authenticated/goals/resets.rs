@@ -6,10 +6,7 @@ use crate::{
         goal::{Goal, Recurrence},
         user::{GoalHeader, User},
     },
-    utilities::{
-        dates::TimeProvider,
-        responses::{self, ResponseFormat, generate_response},
-    },
+    utilities::responses::{self, ResponseFormat, generate_response},
 };
 use anyhow::anyhow;
 use axum::{
@@ -32,7 +29,6 @@ pub async fn action(
     Extension(user): Extension<UserExtension>,
     Extension(mut context): Extension<Context>,
 ) -> AppResponse {
-    let time_provider = TimeProvider {};
     let response_format = responses::get_response_format(&headers)?;
     let client = shared_state.pool.get().await?;
     let client = client.client();
@@ -50,7 +46,7 @@ pub async fn action(
         }
 
         accumulations.insert(goal.id.unwrap(), goal.accumulated_amount);
-        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day(&time_provider)?);
+        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day()?);
         days_remainings.insert(
             goal.id.unwrap(),
             (goal.target_date - Utc::now())

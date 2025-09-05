@@ -89,7 +89,7 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Res
     let goals = Goal::get_all(client, user.id).await.unwrap_or(vec![]);
     let goals_accumulated = goals
         .iter()
-        .map(|g| g.accumulated_per_day(&time_provider))
+        .map(|g| g.accumulated_per_day())
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()
         .reduce(|memo, d| memo + d)

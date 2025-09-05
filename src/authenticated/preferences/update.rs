@@ -7,7 +7,6 @@ use crate::{
         goal::Goal,
         user::{Preferences, User},
     },
-    utilities::dates::TimeProvider,
 };
 use anyhow::anyhow;
 use axum::{
@@ -87,14 +86,13 @@ pub async fn action(
 
     goals_context.insert("goal_header", &goal_header);
 
-    let time_provider = TimeProvider {};
     for goal in &goals {
         let goal_id = goal
             .id
             .ok_or_else(|| anyhow!("could not find id for goal"))?;
 
         accumulations.insert(goal_id, goal.accumulated_amount);
-        per_days.insert(goal_id, goal.accumulated_per_day(&time_provider)?);
+        per_days.insert(goal_id, goal.accumulated_per_day()?);
         days_remainings.insert(goal_id, (goal.target_date - Utc::now()).num_days());
     }
 

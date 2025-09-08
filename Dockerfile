@@ -22,6 +22,7 @@ RUN cargo build --release
 
 FROM debian@sha256:6d87375016340817ac2391e670971725a9981cfc24e221c47734681ed0f6c0f5
 COPY --from=builder /app/target/release/simple-budget /app/simple-budget
+COPY templates /app/templates
 RUN chown 1000:1000 /app/simple-budget
 RUN chmod 700 /app/simple-budget
 USER 1000

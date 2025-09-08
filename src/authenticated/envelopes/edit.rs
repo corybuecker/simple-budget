@@ -27,7 +27,10 @@ pub async fn action(
     match response_format {
         ResponseFormat::Html => {
             context.insert("partial".to_string(), to_json("envelopes/edit"));
-            context.insert("envelope".to_string(), to_json(&envelope));
+
+            context.insert("id".to_string(), to_json(envelope.id));
+            context.insert("name".to_string(), to_json(envelope.name));
+            context.insert("amount".to_string(), to_json(envelope.amount));
 
             Ok(generate_response(
                 &response_format,

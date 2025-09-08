@@ -1,4 +1,13 @@
+mod create;
+mod delete;
+mod edit;
+mod index;
+mod new;
+mod resets;
+mod update;
+
 use super::UserExtension;
+use crate::HandlebarsContext;
 use crate::{Section, SharedState};
 use axum::{
     Extension, Router,
@@ -7,17 +16,9 @@ use axum::{
     response::Response,
     routing::{get, post},
 };
+use handlebars::to_json;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tera::Context;
-
-mod create;
-mod delete;
-mod edit;
-mod index;
-mod new;
-mod resets;
-mod update;
 
 fn schema() -> serde_json::Value {
     json!({
@@ -43,13 +44,15 @@ pub struct GoalForm {
 
 async fn initialize_context(
     Extension(user_extension): Extension<UserExtension>,
+    Extension(context): Extension<HandlebarsContext>,
     mut request: Request,
     next: Next,
 ) -> Response {
-    let mut context = Context::new();
+    let mut context = context.clone();
 
-    context.insert("section", &Section::Goals);
-    context.insert("csrf", &user_extension.csrf);
+    context.insert("section".to_string(), to_json(Section::Goals));
+    context.insert("csrf".to_string(), to_json(user_extension.csrf));
+
     request.extensions_mut().insert(context);
 
     next.run(request).await
@@ -57,7 +60,7 @@ async fn initialize_context(
 
 pub fn goals_router() -> Router<SharedState> {
     Router::new()
-        .route("/", get(index::action).post(create::page))
+        .route("/", get(index::action).post(create::action))
         .route(
             "/{id}",
             get(edit::action).put(update::action).delete(delete::action),

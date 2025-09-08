@@ -1,6 +1,6 @@
 use super::PreferencesForm;
 use crate::{
-    SharedState,
+    HandlebarsContext, SharedState,
     authenticated::{UserExtension, dashboard::generate_dashboard_context_for},
     errors::AppResponse,
     models::{
@@ -15,16 +15,16 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use chrono::Utc;
+use handlebars::to_json;
 use postgres_types::Json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
-use std::collections::HashMap;
-use tera::Context;
 use tokio_postgres::GenericClient;
 use tracing::error;
 
 pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
+    Extension(mut context): Extension<HandlebarsContext>,
     form: Form<PreferencesForm>,
 ) -> AppResponse {
     let mut user = User::get_by_id(shared_state.pool.get().await?.client(), user.id).await?;
@@ -76,33 +76,28 @@ pub async fn action(
     user.preferences = Some(Json(preferences.clone()));
     user.update(shared_state.pool.get().await?.client()).await?;
 
-    let tera = &shared_state.tera;
-    let mut goals_context = Context::new();
     let goal_header = preferences.goal_header.clone();
-    let mut accumulations: HashMap<i32, Decimal> = HashMap::new();
-    let mut days_remainings: HashMap<i32, i64> = HashMap::new();
-    let mut per_days: HashMap<i32, Decimal> = HashMap::new();
+    let mut accumulations: Vec<Decimal> = Vec::new();
+    let mut days_remaining: Vec<i64> = Vec::new();
+    let mut per_days: Vec<Decimal> = Vec::new();
     let goals = Goal::get_all(shared_state.pool.get().await?.client(), user.id).await?;
 
-    goals_context.insert("goal_header", &goal_header);
+    context.insert("goal_header".to_string(), to_json(goal_header));
 
     for goal in &goals {
-        let goal_id = goal
-            .id
-            .ok_or_else(|| anyhow!("could not find id for goal"))?;
-
-        accumulations.insert(goal_id, goal.accumulated_amount);
-        per_days.insert(goal_id, goal.accumulated_per_day()?);
-        days_remainings.insert(goal_id, (goal.target_date - Utc::now()).num_days());
+        accumulations.push(goal.accumulated_amount);
+        per_days.push(goal.accumulated_per_day()?);
+        days_remaining.push((goal.target_date - Utc::now()).num_days());
     }
 
-    goals_context.insert("goals", &goals);
-    goals_context.insert("accumulations", &accumulations);
-    goals_context.insert("days_remainings", &days_remainings);
-    goals_context.insert("per_days", &per_days);
-    goals_context.insert("goals", &goals);
+    context.insert("goals".to_string(), to_json(goals));
+    context.insert("accumulations".to_string(), to_json(accumulations));
+    context.insert("days_remainings".to_string(), to_json(days_remaining));
+    context.insert("per_days".to_string(), to_json(per_days));
 
-    let goals_html = tera.render("goals/_table.html", &goals_context);
+    let goals_html = shared_state
+        .handlebars
+        .render("preferences/goals", &context);
 
     if goals_html.is_err() {
         error!("{:?}", goals_html);
@@ -114,13 +109,14 @@ pub async fn action(
         generate_dashboard_context_for(&user, shared_state.pool.get().await?.client()).await?;
 
     let dashboard_content = shared_state
-        .tera
-        .render("_dashboard.html", &dashboard_context)?;
+        .handlebars
+        .render("_dashboard", &dashboard_context)?;
 
-    let mut context = Context::new();
-    context.insert("goals_update", &goals_html);
-    context.insert("dashboard_update", &dashboard_content);
-    let html = tera.render("preferences/update.html", &context)?;
+    context.insert("goals_update".to_string(), to_json(goals_html));
+    context.insert("dashboard_update".to_string(), to_json(dashboard_content));
+    let html = shared_state
+        .handlebars
+        .render("preferences/update", &context)?;
 
     Ok((
         [("content-type", "text/vnd.turbo-stream.html")],

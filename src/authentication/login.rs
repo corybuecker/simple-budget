@@ -1,9 +1,10 @@
 use super::client::clients_from_metadata;
 use crate::{
-    SharedState,
+    HandlebarsContext, SharedState,
     errors::{AppError, AppResponse},
 };
 use axum::{
+    Extension,
     extract::State,
     response::{Html, IntoResponse, Redirect, Response},
 };
@@ -11,13 +12,18 @@ use axum_extra::extract::{
     SignedCookieJar,
     cookie::{Cookie, SameSite},
 };
+use handlebars::to_json;
 use openidconnect::{CsrfToken, Nonce, Scope, core::CoreAuthenticationFlow};
 use std::env;
-use tera::Context;
 
-pub async fn login(state: State<SharedState>) -> AppResponse {
-    let tera = &state.tera;
-    let content = tera.render("authentication/login.html", &Context::new())?;
+pub async fn login(
+    state: State<SharedState>,
+    Extension(context): Extension<HandlebarsContext>,
+) -> AppResponse {
+    let mut context = context.clone();
+    context.insert("partial".to_string(), to_json("authentication/login"));
+    let handlebars = &state.handlebars;
+    let content = handlebars.render("layout", &context)?;
 
     Ok(Html::from(content).into_response())
 }

@@ -1,11 +1,9 @@
 use crate::{
-    SharedState,
+    HandlebarsContext, SharedState,
     authenticated::UserExtension,
     errors::AppResponse,
     models::goal::Goal,
-    utilities::responses::{
-        ResponseFormat, generate_response, get_response_format, get_template_name,
-    },
+    utilities::responses::{ResponseFormat, generate_response, get_response_format},
 };
 use axum::{
     Extension, Json,
@@ -13,7 +11,7 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
 };
-use tera::Context;
+use handlebars::to_json;
 use tokio_postgres::GenericClient;
 
 pub async fn modal(
@@ -21,19 +19,26 @@ pub async fn modal(
     Path(id): Path<i32>,
     headers: HeaderMap,
     Extension(user): Extension<UserExtension>,
-    Extension(mut context): Extension<Context>,
+    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
     let response_format = get_response_format(&headers)?;
 
     match response_format {
         ResponseFormat::Html => {
-            context.insert("goal", &goal);
+            let mut context = context.clone();
+            context.insert(
+                "prompt".to_string(),
+                to_json("Are you sure you want to delete this goal?"),
+            );
+            context.insert("action".to_string(), to_json(format!("/goals/{}", id)));
+            context.insert("entity".to_string(), to_json(goal.name));
+            context.insert("partial".to_string(), to_json("delete_confirmation"));
             Ok(generate_response(
                 &response_format,
                 shared_state
-                    .tera
-                    .render("goals/delete/confirm.html", &context)?,
+                    .handlebars
+                    .render("delete_confirmation", &context)?,
                 StatusCode::OK,
             ))
         }
@@ -51,12 +56,11 @@ pub async fn action(
     Path(id): Path<i32>,
     headers: HeaderMap,
     Extension(user): Extension<UserExtension>,
-    Extension(mut context): Extension<Context>,
+    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
     goal.delete(shared_state.pool.get().await?.client()).await?;
     let response_format = get_response_format(&headers)?;
-    let template_name = get_template_name(&response_format, "goals", "delete");
 
     match response_format {
         ResponseFormat::Html => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
@@ -66,11 +70,12 @@ pub async fn action(
             StatusCode::OK,
         )),
         ResponseFormat::Turbo => {
-            context.insert("goal", &goal);
+            let mut context = context.clone();
+            context.insert("goal".to_string(), to_json(&goal));
 
             Ok(generate_response(
                 &response_format,
-                shared_state.tera.render(&template_name, &context)?,
+                shared_state.handlebars.render("goals/delete", &context)?,
                 StatusCode::OK,
             ))
         }
@@ -79,11 +84,13 @@ pub async fn action(
 
 #[cfg(test)]
 mod tests {
+    use std::str::from_utf8;
+
     use super::*;
     use crate::models::goal::{Goal, Recurrence};
     use crate::test_utils::state_for_tests;
     use axum::Router;
-    use axum::body::Body;
+    use axum::body::{Body, to_bytes};
     use axum::http::Request;
     use chrono::Utc;
     use rust_decimal::Decimal;
@@ -160,8 +167,11 @@ mod tests {
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
+        let (parts, body) = response.into_parts();
+        let bytes = to_bytes(body, usize::MAX).await.unwrap();
+        let body_str = from_utf8(&bytes).unwrap().to_string();
+        println!("{:?}", body_str);
+        assert_eq!(parts.status, StatusCode::OK);
 
         let deleted_goal = Goal::get_one(
             shared_state.pool.get().await.unwrap().client(),

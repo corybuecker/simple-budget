@@ -1,14 +1,16 @@
-use crate::errors::AppResponse;
-use crate::models::envelope::Envelope;
-use crate::utilities::responses::{
-    ResponseFormat, generate_response, get_response_format, get_template_name,
+use crate::{
+    HandlebarsContext, SharedState,
+    authenticated::UserExtension,
+    errors::AppResponse,
+    models::envelope::Envelope,
+    utilities::responses::{ResponseFormat, generate_response, get_response_format},
 };
-use crate::{SharedState, authenticated::UserExtension};
-use axum::Json;
-use axum::extract::Path;
-use axum::http::{HeaderMap, StatusCode};
-use axum::{Extension, extract::State};
-use tera::Context;
+use axum::{
+    Extension, Json,
+    extract::{Path, State},
+    http::{HeaderMap, StatusCode},
+};
+use handlebars::to_json;
 use tokio_postgres::GenericClient;
 
 pub async fn action(
@@ -16,26 +18,36 @@ pub async fn action(
     Path(id): Path<i32>,
     headers: HeaderMap,
     user: Extension<UserExtension>,
-    Extension(mut context): Extension<Context>,
+    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let envelope = Envelope::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
+    let mut context = context.clone();
     let response_format = get_response_format(&headers)?;
-    let template_name = get_template_name(&response_format, "envelopes", "edit");
 
     match response_format {
+        ResponseFormat::Html => {
+            context.insert("partial".to_string(), to_json("envelopes/edit"));
+            context.insert("envelope".to_string(), to_json(&envelope));
+
+            Ok(generate_response(
+                &response_format,
+                shared_state.handlebars.render("layout", &context)?,
+                StatusCode::OK,
+            ))
+        }
+        ResponseFormat::Turbo => {
+            context.insert("envelope".to_string(), to_json(&envelope));
+
+            Ok(generate_response(
+                &response_format,
+                shared_state.handlebars.render("envelopes/edit", &context)?,
+                StatusCode::OK,
+            ))
+        }
         ResponseFormat::Json => Ok(generate_response(
             &response_format,
             Json(envelope),
             StatusCode::OK,
         )),
-        ResponseFormat::Html | ResponseFormat::Turbo => {
-            context.insert("envelope", &envelope);
-
-            Ok(generate_response(
-                &response_format,
-                shared_state.tera.render(&template_name, &context)?,
-                StatusCode::OK,
-            ))
-        }
     }
 }

@@ -1,5 +1,5 @@
 use crate::{
-    SharedState,
+    HandlebarsContext, SharedState,
     authenticated::UserExtension,
     errors::AppResponse,
     models::{
@@ -16,9 +16,9 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use chrono::Utc;
+use handlebars::to_json;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
-use tera::Context;
 use tokio_postgres::GenericClient;
 use tracing::debug;
 
@@ -27,8 +27,9 @@ pub async fn action(
     Path(_recurrence): Path<String>,
     headers: HeaderMap,
     Extension(user): Extension<UserExtension>,
-    Extension(mut context): Extension<Context>,
+    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
+    let mut context = context.clone();
     let response_format = responses::get_response_format(&headers)?;
     let client = shared_state.pool.get().await?;
     let client = client.client();
@@ -68,18 +69,18 @@ pub async fn action(
             // Use a cloned value for the context to avoid the move issue
             let goal_header_for_context = goal_header.clone();
             context.insert(
-                "goal_header",
-                &goal_header_for_context.or(Some(GoalHeader::Accumulated)),
+                "goal_header".to_string(),
+                to_json(goal_header_for_context.or(Some(GoalHeader::Accumulated))),
             );
 
-            context.insert("goals", &goals);
-            context.insert("accumulations", &accumulations);
-            context.insert("days_remainings", &days_remainings);
-            context.insert("per_days", &per_days);
+            context.insert("goals".to_string(), to_json(&goals));
+            context.insert("accumulations".to_string(), to_json(&accumulations));
+            context.insert("days_remainings".to_string(), to_json(&days_remainings));
+            context.insert("per_days".to_string(), to_json(&per_days));
 
             let content = shared_state
-                .tera
-                .render("goals/resets.turbo.html", &context);
+                .handlebars
+                .render("goals/resets.turbo", &context);
 
             debug!("{:#?}", content);
 

@@ -1,5 +1,5 @@
 use crate::{
-    SharedState,
+    HandlebarsContext, SharedState,
     authenticated::UserExtension,
     errors::AppResponse,
     models::user::{Preferences, User},
@@ -10,27 +10,32 @@ use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
 };
+use handlebars::to_json;
 use postgres_types::Json as PgJson;
-use tera::Context;
 use tokio_postgres::GenericClient;
 
 pub async fn action(
     state: State<SharedState>,
     headers: HeaderMap,
     user: Extension<UserExtension>,
-    Extension(mut context): Extension<Context>,
+    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let user = User::get_by_id(state.pool.get().await?.client(), user.id).await?;
     let preferences = user.preferences.unwrap_or(PgJson(Preferences::default())).0;
     let response_format = get_response_format(&headers)?;
+    let mut context = context.clone();
 
-    context.insert("timezone", &preferences.timezone);
-    context.insert("monthly_income", &preferences.monthly_income);
+    context.insert("timezone".to_string(), to_json(&preferences.timezone));
+    context.insert(
+        "monthly_income".to_string(),
+        to_json(preferences.monthly_income),
+    );
+    context.insert("partial".to_string(), to_json("preferences/index"));
 
     match response_format {
         ResponseFormat::Turbo | ResponseFormat::Html => Ok(generate_response(
             &ResponseFormat::Html,
-            state.tera.render("preferences/index.html", &context)?,
+            state.handlebars.render("layout", &context)?,
             StatusCode::OK,
         )),
         ResponseFormat::Json => Ok(generate_response(

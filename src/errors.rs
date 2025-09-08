@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -11,12 +9,12 @@ pub enum AppError {
     InvalidRecord(anyhow::Error),
     RecordDeserializationError(tokio_postgres::Error),
     RecordNotFound(tokio_postgres::Error),
-    TemplateError(tera::Error),
+    TemplateError(handlebars::RenderError),
     Unknown(anyhow::Error),
 }
 
-impl From<tera::Error> for AppError {
-    fn from(value: tera::Error) -> Self {
+impl From<handlebars::RenderError> for AppError {
+    fn from(value: handlebars::RenderError) -> Self {
         Self::TemplateError(value)
     }
 }
@@ -104,17 +102,8 @@ impl IntoResponse for AppError {
                 error!("{}", err);
                 StatusCode::NOT_FOUND.into_response()
             }
-            AppError::TemplateError(err) => {
-                error!("{:?} - {:?}", err.kind, err.source());
-
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Sorry, something has gone wrong",
-                )
-                    .into_response()
-            }
             _ => {
-                error!("Unhandled error: {:?}", self);
+                println!("Unhandled error: {:?}", self);
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Sorry, something has gone wrong",

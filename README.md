@@ -31,17 +31,20 @@ Simple Budget is a full-stack web application that helps you manage your persona
 ### Development Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/corybuecker/simple-budget
    cd simple-budget
    ```
 
 2. **Start development services**
+
    ```bash
    cd dev && docker-compose up -d
    ```
 
 3. **Set up environment variables**
+
    ```bash
    export DATABASE_URL="postgresql://simple_budget@localhost:5432/simple_budget"
    export SECURE="false"
@@ -52,11 +55,12 @@ Simple Budget is a full-stack web application that helps you manage your persona
    ```
 
 4. **Compile CSS**
+
    ```bash
    npx tailwindcss -i input.css -o static/app.css
    ```
 
-4. **Start the development server**
+5. **Start the development server**
    ```bash
    cargo run
    ```
@@ -91,6 +95,7 @@ kubectl apply -f k8s/
 ```
 
 The application includes:
+
 - Namespace isolation
 - Resource limits (512M memory, 150m CPU)
 - Health check endpoints
@@ -107,7 +112,7 @@ The application includes:
 │   └── main.rs              # Application entry point
 ├── migrations/              # Database schema migrations
 ├── assets/                  # Static assets and compiled CSS
-├── templates/               # Tera HTML templates
+├── templates_legacy/        # Tera HTML templates
 ├── k8s/                     # Kubernetes deployment manifests
 ├── ios/                     # Companion iOS application
 └── dev/docker-compose.yaml  # Local development environment
@@ -116,6 +121,7 @@ The application includes:
 ## Database Schema
 
 Core entities include:
+
 - **users**: User profiles with OAuth integration
 - **accounts**: Financial accounts (assets and debts)
 - **envelopes**: Budget categories with allocated amounts
@@ -153,4 +159,4 @@ MIT License - see LICENSE file for details.
 
 ## Notes
 
-* This README was written by AI.
+- This README was written by AI.

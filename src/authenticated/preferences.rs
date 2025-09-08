@@ -1,5 +1,8 @@
+mod index;
+mod update;
+
 use super::UserExtension;
-use crate::{Section, SharedState, models::user::GoalHeader};
+use crate::{HandlebarsContext, Section, SharedState, models::user::GoalHeader};
 use axum::{
     Extension, Router,
     extract::Request,
@@ -7,11 +10,8 @@ use axum::{
     response::Response,
     routing::get,
 };
+use handlebars::to_json;
 use serde::Deserialize;
-use tera::Context;
-
-mod index;
-mod update;
 
 #[derive(Debug, Deserialize)]
 pub struct PreferencesForm {
@@ -23,13 +23,15 @@ pub struct PreferencesForm {
 
 async fn initialize_context(
     Extension(user_extension): Extension<UserExtension>,
+    Extension(context): Extension<HandlebarsContext>,
     mut request: Request,
     next: Next,
 ) -> Response {
-    let mut context = Context::new();
+    let mut context = context.clone();
 
-    context.insert("section", &Section::Preferences);
-    context.insert("csrf", &user_extension.csrf);
+    context.insert("section".to_string(), to_json(Section::Preferences));
+    context.insert("csrf".to_string(), to_json(user_extension.csrf));
+
     request.extensions_mut().insert(context);
 
     next.run(request).await

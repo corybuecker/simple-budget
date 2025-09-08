@@ -1,0 +1,36 @@
+{{#each goals}}
+<turbo-stream action="replace" target="goal_{{id}}">
+    <template>
+        <tr class="odd:bg-white even:bg-gray-50 border-b last:border-b-0" id="goal_{{id}}">
+            <th scope="row" class="px-6 @sm:px-3 py-2 font-medium text-gray-900">
+                {{name}}
+            </th>
+            <td class="px-6 @sm:px-3 py-2" data-controller="formatter" data-formatter-currency-value="{{target}}">
+                {{target}}
+            </td>
+            {{#if (eq ../goal_header "Accumulated")}}
+            <td class="px-6 @sm:px-3 py-2" data-controller="formatter"
+                data-formatter-currency-value="{{lookup ../accumulations id}}" data-formatter-currency-precision-value="2">
+                {{lookup ../accumulations id}}
+            </td>
+            {{/if}}
+            {{#if (eq ../goal_header "PerDay")}}
+            <td class="px-6 @sm:px-3 py-2" data-controller="formatter" data-formatter-currency-value="{{lookup ../per_days id}}"
+                data-formatter-currency-precision-value="2">
+                {{lookup ../per_days id}}
+            </td>
+            {{/if}}
+            {{#if (eq ../goal_header "DaysRemaining")}}
+            <td class="px-6 @sm:px-3 py-2">{{lookup ../days_remainings id}}</td>
+            {{/if}}
+            <td class="px-6 @sm:px-3 py-2">
+                <div class="flex @lg:flex-row flex-col items-center gap-4">
+                    <a href="/goals/{{id}}" data-turbo-frame="_top"
+                        class="font-medium text-blue-600 hover:underline">Edit</a>
+                    <a data-turbo-frame="confirmation-modal" href="/goals/{{id}}/delete">Delete</a>
+                </div>
+            </td>
+        </tr>
+    </template>
+</turbo-stream>
+{{/each}}

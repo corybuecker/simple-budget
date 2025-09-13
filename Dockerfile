@@ -1,7 +1,7 @@
 FROM node@sha256:701c8a634cb3ddbc1dc9584725937619716882525356f0989f11816ba3747a22 AS frontend
 RUN mkdir -p /app/static
 COPY input.css /app
-COPY templates_legacy /app/templates
+COPY templates /app/templates
 COPY static /app/static
 WORKDIR /app
 RUN npm install tailwindcss @tailwindcss/cli
@@ -15,7 +15,7 @@ RUN echo "fn main(){}" > /app/src/main.rs
 RUN cargo build --release
 COPY src /app/src
 RUN touch /app/src/main.rs
-COPY templates_legacy /app/templates
+COPY templates /app/templates
 COPY static /app/static
 COPY --from=frontend /app/static/app.css /app/static/app.css
 RUN cargo build --release

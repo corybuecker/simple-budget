@@ -1,11 +1,9 @@
 use crate::{
-    SharedState,
+    HandlebarsContext, SharedState,
     authenticated::UserExtension,
     errors::AppResponse,
     models::envelope::Envelope,
-    utilities::responses::{
-        ResponseFormat, generate_response, get_response_format, get_template_name,
-    },
+    utilities::responses::{ResponseFormat, generate_response, get_response_format},
 };
 use axum::{
     Extension, Json,
@@ -13,7 +11,7 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
 };
-use tera::Context;
+use handlebars::to_json;
 use tokio_postgres::GenericClient;
 
 pub async fn modal(
@@ -21,19 +19,26 @@ pub async fn modal(
     Path(id): Path<i32>,
     headers: HeaderMap,
     Extension(user): Extension<UserExtension>,
-    Extension(mut context): Extension<Context>,
+    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let envelope = Envelope::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
     let response_format = get_response_format(&headers)?;
 
     match response_format {
         ResponseFormat::Html => {
-            context.insert("envelope", &envelope);
+            let mut context = context.clone();
+            context.insert(
+                "prompt".to_string(),
+                to_json("Are you sure you want to delete this envelope?"),
+            );
+            context.insert("action".to_string(), to_json(format!("/envelopes/{}", id)));
+            context.insert("entity".to_string(), to_json(envelope.name));
+            context.insert("partial".to_string(), to_json("delete_confirmation"));
             Ok(generate_response(
                 &response_format,
                 shared_state
-                    .tera
-                    .render("envelopes/delete/confirm.html", &context)?,
+                    .handlebars
+                    .render("delete_confirmation", &context)?,
                 StatusCode::OK,
             ))
         }
@@ -51,14 +56,13 @@ pub async fn action(
     Path(id): Path<i32>,
     headers: HeaderMap,
     Extension(user): Extension<UserExtension>,
-    Extension(mut context): Extension<Context>,
+    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let envelope = Envelope::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
     envelope
         .delete(shared_state.pool.get().await?.client())
         .await?;
     let response_format = get_response_format(&headers)?;
-    let template_name = get_template_name(&response_format, "envelopes", "delete");
 
     match response_format {
         ResponseFormat::Html => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
@@ -68,11 +72,14 @@ pub async fn action(
             StatusCode::OK,
         )),
         ResponseFormat::Turbo => {
-            context.insert("envelope", &envelope);
+            let mut context = context.clone();
+            context.insert("envelope".to_string(), to_json(&envelope));
 
             Ok(generate_response(
                 &response_format,
-                shared_state.tera.render(&template_name, &context)?,
+                shared_state
+                    .handlebars
+                    .render("envelopes/delete", &context)?,
                 StatusCode::OK,
             ))
         }
@@ -81,6 +88,7 @@ pub async fn action(
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use crate::models::envelope::Envelope;
     use crate::test_utils::state_for_tests;
@@ -119,8 +127,9 @@ mod tests {
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();
+        let (parts, _body) = response.into_parts();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(parts.status, StatusCode::OK);
     }
 
     #[tokio::test]

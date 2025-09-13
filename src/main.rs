@@ -9,25 +9,29 @@ use axum::{
     routing::get,
 };
 use axum_extra::extract::cookie::Key;
+use chrono::Utc;
 use deadpool_postgres::{Config, Pool, RecyclingMethod, Runtime};
 use errors::AppResponse;
+use handlebars::Handlebars;
 use include_dir::{Dir, include_dir};
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
 use rust_web_common::telemetry::TelemetryBuilder;
 use serde::Serialize;
-use std::{env, time::Duration};
-use tera::{Context, Tera};
+use std::{collections::BTreeMap, env, time::Duration};
 use tokio::{
     select,
     signal::unix::{SignalKind, signal},
     spawn,
-    sync::mpsc,
     time::interval,
 };
 use tokio_postgres::{Client, NoTls};
 use tower_http::trace::TraceLayer;
-use tracing::{debug, info};
-use utilities::{dates::TimeProvider, tera::digest_asset};
+use tracing::debug;
+use utilities::dates::TimeProvider;
+
+use crate::utilities::handlebars::{
+    DigestAssetHandlebarsHelper, EqHandlebarsHelper, walk_directory,
+};
 
 mod authenticated;
 mod authentication;
@@ -45,22 +49,13 @@ pub enum Section {
     Preferences,
 }
 
-#[derive(Clone)]
-pub struct ContextExtension {
-    pub context: Context,
-}
-
-#[derive(Debug, Clone)]
-struct Broker {
-    sender: mpsc::Sender<String>,
-}
+pub type HandlebarsContext = BTreeMap<String, serde_json::Value>;
 
 #[derive(Clone, Debug)]
 pub struct SharedState {
-    broker: Broker,
     key: Key,
     pool: Pool,
-    tera: Tera,
+    handlebars: Handlebars<'static>,
 }
 
 impl FromRef<SharedState> for Key {
@@ -84,30 +79,11 @@ fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     })
 }
 
-fn start_broker(mut receiver: mpsc::Receiver<String>) -> tokio::task::JoinHandle<()> {
-    spawn(async move {
-        loop {
-            if let Some(message) = receiver.recv().await {
-                debug!("{}", message);
-            }
-        }
-    })
-}
-
 async fn inject_context(mut request: Request, next: Next) -> Response {
-    let context = Context::new();
-    let context_extension = ContextExtension { context };
+    let handlebars_context = HandlebarsContext::new();
+    request.extensions_mut().insert(handlebars_context);
 
-    let method = request.method().as_str().to_owned();
-    let path = request.uri().path().to_owned();
-
-    request.extensions_mut().insert(context_extension);
-
-    let response = next.run(request).await;
-
-    info!(monotonic_counter.requests = 1, method = method, path = path);
-
-    response
+    next.run(request).await
 }
 
 async fn cache_header(request: Request, next: Next) -> Response {
@@ -152,7 +128,6 @@ async fn healthcheck() -> AppResponse {
     Ok(StatusCode::OK.into_response())
 }
 
-static TEMPLATES: Dir = include_dir!("templates");
 static ASSETS: Dir = include_dir!("static");
 
 #[tokio::main]
@@ -161,30 +136,37 @@ async fn main() {
     let mut telemetry = TelemetryBuilder::new("simple-budget".to_string());
     telemetry.init().expect("could not initialize subscriber");
 
-    let mut tera = Tera::default();
-    tera.register_function("digest_asset", digest_asset());
+    let mut handlebars = Handlebars::new();
+    handlebars.set_dev_mode(true);
+    handlebars.set_strict_mode(true);
+    handlebars.register_helper(
+        "digest_asset",
+        Box::new(DigestAssetHandlebarsHelper {
+            key: Utc::now().timestamp_millis().to_string(),
+        }),
+    );
+    handlebars.register_helper("eq", Box::new(EqHandlebarsHelper {}));
 
-    for template in TEMPLATES.find("**/*.html").unwrap() {
-        let _ = tera.add_raw_template(
-            template.path().to_str().unwrap(),
-            TEMPLATES
-                .get_file(template.path())
-                .unwrap()
-                .contents_utf8()
-                .unwrap(),
-        );
+    for template in walk_directory("./templates").unwrap() {
+        let name = template
+            .to_str()
+            .unwrap()
+            .replace("./templates/", "")
+            .replace(".hbs", "");
+        handlebars
+            .register_template_file(&name, template.to_str().unwrap())
+            .unwrap();
     }
 
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
-    let (sender, receiver) = mpsc::channel::<String>(100);
+
     let pool = database_pool(None).await.unwrap();
 
     let shared_state = SharedState {
-        tera,
         key,
         pool,
-        broker: Broker { sender },
+        handlebars,
     };
 
     let app = Router::new()
@@ -206,7 +188,6 @@ async fn main() {
         axum::serve(listener, app).await.unwrap();
     });
     let background_jobs = start_background_jobs();
-    let broker_handle = start_broker(receiver);
 
     let mut signal = signal(SignalKind::terminate()).unwrap();
 
@@ -220,7 +201,6 @@ async fn main() {
         _ = signal_listener => {},
         _ = background_jobs => {},
         _ = server_handle => {},
-        _ = broker_handle => {},
     }
 }
 

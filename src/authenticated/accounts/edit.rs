@@ -1,14 +1,17 @@
-use crate::errors::AppResponse;
-use crate::models::account::Account;
-use crate::utilities::responses::{
-    ResponseFormat, generate_response, get_response_format, get_template_name,
+use crate::{
+    HandlebarsContext, SharedState,
+    authenticated::UserExtension,
+    errors::AppResponse,
+    models::account::Account,
+    utilities::responses::{ResponseFormat, generate_response, get_response_format},
 };
-use crate::{SharedState, authenticated::UserExtension};
-use axum::Json;
-use axum::extract::Path;
-use axum::http::{HeaderMap, StatusCode};
-use axum::{Extension, extract::State};
-use tera::Context;
+use axum::{
+    Extension, Json,
+    extract::{Path, State},
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+};
+use handlebars::to_json;
 use tokio_postgres::GenericClient;
 
 pub async fn action(
@@ -16,26 +19,30 @@ pub async fn action(
     Path(id): Path<i32>,
     headers: HeaderMap,
     user: Extension<UserExtension>,
-    Extension(mut context): Extension<Context>,
+    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let account = Account::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
+    let mut context = context.clone();
     let response_format = get_response_format(&headers)?;
-    let template_name = get_template_name(&response_format, "accounts", "edit");
-
+    context.insert("id".to_string(), to_json(account.id));
+    context.insert("name".to_string(), to_json(&account.name));
+    context.insert("debt".to_string(), to_json(account.debt));
+    context.insert("amount".to_string(), to_json(account.amount));
     match response_format {
+        ResponseFormat::Html => {
+            context.insert("partial".to_string(), to_json("accounts/edit"));
+
+            Ok(generate_response(
+                &response_format,
+                shared_state.handlebars.render("layout", &context)?,
+                StatusCode::OK,
+            ))
+        }
+        ResponseFormat::Turbo => Ok(StatusCode::BAD_REQUEST.into_response()),
         ResponseFormat::Json => Ok(generate_response(
             &response_format,
             Json(account),
             StatusCode::OK,
         )),
-        ResponseFormat::Html | ResponseFormat::Turbo => {
-            context.insert("account", &account);
-
-            Ok(generate_response(
-                &response_format,
-                shared_state.tera.render(&template_name, &context)?,
-                StatusCode::OK,
-            ))
-        }
     }
 }

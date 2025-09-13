@@ -1,16 +1,18 @@
 use super::AccountForm;
+use crate::HandlebarsContext;
 use crate::authenticated::accounts::schema;
 use crate::errors::AppResponse;
 use crate::{
     SharedState, authenticated::UserExtension, models::account::Account, utilities::responses,
 };
-use anyhow::{Context, anyhow};
+use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::State,
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Redirect},
 };
+use handlebars::to_json;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
 use tokio_postgres::GenericClient;
@@ -19,6 +21,7 @@ pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
+    Extension(context): Extension<HandlebarsContext>,
     Form(form): Form<AccountForm>,
 ) -> AppResponse {
     let json = serde_json::to_value(&form)?;
@@ -29,24 +32,39 @@ pub async fn action(
     match valid {
         Ok(_) => {}
         Err(validation_errors) => {
-            let mut context = tera::Context::new();
+            let mut context = context.clone();
 
-            context.insert("errors", &validation_errors.to_string());
-            context.insert("name", &form.name);
-            context.insert("amount", &form.amount);
-            context.insert("debt", &form.debt);
+            context.insert("errors".to_string(), to_json(validation_errors.to_string()));
+            context.insert("name".to_string(), to_json(&form.name));
+            context.insert("amount".to_string(), to_json(form.amount));
+            context.insert("debt".to_string(), to_json(form.debt));
 
-            let template_name = responses::get_template_name(&response_format, "accounts", "form");
-            let content = shared_state
-                .tera
-                .render(&template_name, &context)
-                .context("Tera")?;
-
-            return Ok(responses::generate_response(
-                &response_format,
-                content,
-                StatusCode::BAD_REQUEST,
-            ));
+            match response_format {
+                responses::ResponseFormat::Html => {
+                    context.insert("partial".to_string(), to_json("accounts/new"));
+                    return Ok(responses::generate_response(
+                        &responses::ResponseFormat::Html,
+                        shared_state.handlebars.render("layout", &context)?,
+                        StatusCode::BAD_REQUEST,
+                    ));
+                }
+                responses::ResponseFormat::Turbo => {
+                    return Ok(responses::generate_response(
+                        &response_format,
+                        shared_state
+                            .handlebars
+                            .render("accounts/_form.turbo", &context)?,
+                        StatusCode::BAD_REQUEST,
+                    ));
+                }
+                responses::ResponseFormat::Json => {
+                    return Ok(responses::generate_response(
+                        &response_format,
+                        serde_json::to_string(&context)?,
+                        StatusCode::BAD_REQUEST,
+                    ));
+                }
+            }
         }
     }
 
@@ -80,7 +98,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_account_success() {
-        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
         let client = &shared_state.pool.get().await.unwrap();
         let client = client.client();
@@ -88,7 +106,8 @@ mod tests {
         let app = Router::new()
             .route("/accounts/create", post(action))
             .with_state(shared_state)
-            .layer(user_extension);
+            .layer(user_extension)
+            .layer(context_extension);
 
         let form_data = "name=test_create_account_success&amount=100.00&debt=true";
         let request = Request::builder()
@@ -119,12 +138,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_account_validation_error() {
-        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
 
         let app = Router::new()
             .route("/accounts/create", post(action))
             .with_state(shared_state)
-            .layer(user_extension);
+            .layer(user_extension)
+            .layer(context_extension);
 
         let form_data = "name=test&amount=1&debt=false";
         let request = Request::builder()
@@ -141,17 +161,19 @@ mod tests {
         let body_str = from_utf8(&bytes).unwrap().to_string();
 
         assert_eq!(parts.status, StatusCode::BAD_REQUEST);
+        println!("body_str: {}", body_str);
         assert!(body_str.contains("test"))
     }
 
     #[tokio::test]
     async fn test_create_account_turbo_stream() {
-        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
 
         let app = Router::new()
             .route("/accounts/create", post(action))
             .with_state(shared_state)
-            .layer(user_extension);
+            .layer(user_extension)
+            .layer(context_extension);
 
         let form_data = "name=test&amount=1&debt=false";
         let request = Request::builder()

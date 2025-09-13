@@ -1,44 +1,64 @@
-#[cfg(test)]
 use crate::{
-    Broker, SharedState, authenticated::UserExtension, database_pool, digest_asset,
-    models::user::User,
+    HandlebarsContext,
+    errors::AppError,
+    models::user::Preferences,
+    utilities::handlebars::{DigestAssetHandlebarsHelper, walk_directory},
 };
-use crate::{errors::AppError, models::user::Preferences};
+#[cfg(test)]
+use crate::{SharedState, authenticated::UserExtension, database_pool, models::user::User};
 use anyhow::{Result, anyhow};
 use axum::Extension;
 use axum_extra::extract::cookie::Key;
+use chrono::Utc;
 use deadpool_postgres::Object;
+use handlebars::Handlebars;
 use postgres_types::Json;
-use tera::Context;
-use tokio::sync::{mpsc, watch};
 use tokio_postgres::{Client, GenericClient};
 
-pub async fn state_for_tests() -> Result<(SharedState, Extension<UserExtension>, Extension<Context>)>
-{
+pub async fn state_for_tests() -> Result<(
+    SharedState,
+    Extension<UserExtension>,
+    Extension<HandlebarsContext>,
+)> {
     let pool = database_pool(Some(
         "postgres://simple_budget@localhost:5432/simple_budget_test",
     ))
     .await?;
 
-    let (sender, _rx) = mpsc::channel(1);
-    let mut tera = tera::Tera::new("templates/**/*.html").unwrap();
-
-    tera.register_function("digest_asset", digest_asset());
-
     let user_extension = user_extension_for_tests(pool.get().await?.client())
         .await
         .unwrap();
+    let mut handlebars = Handlebars::new();
+    handlebars.set_dev_mode(true);
+    handlebars.register_helper(
+        "digest_asset",
+        Box::new(DigestAssetHandlebarsHelper {
+            key: Utc::now().timestamp_millis().to_string(),
+        }),
+    );
+
+    for template in walk_directory("./templates").unwrap() {
+        let name = template
+            .to_str()
+            .unwrap()
+            .replace("./templates/", "")
+            .replace(".hbs", "");
+        handlebars
+            .register_template_file(&name, template.to_str().unwrap())
+            .unwrap();
+    }
 
     let shared_state = SharedState {
         key: Key::generate(),
-        broker: Broker { sender },
-        tera,
         pool,
+        handlebars,
     };
 
-    let context_extension = Extension(tera::Context::new());
-
-    Ok((shared_state, user_extension, context_extension))
+    Ok((
+        shared_state,
+        user_extension,
+        Extension(HandlebarsContext::new()),
+    ))
 }
 
 pub async fn client_for_tests() -> Result<Object> {
@@ -75,14 +95,10 @@ pub async fn user_for_tests(
 }
 
 async fn user_extension_for_tests(client: &Client) -> Result<Extension<UserExtension>, AppError> {
-    let (tx, rx) = watch::channel("".to_owned());
-
     let user = user_for_tests(client, None).await?;
 
     Ok(Extension(UserExtension {
         id: user.id,
         csrf: "test".to_owned(),
-        channel_sender: tx,
-        channel_receiver: rx,
     }))
 }

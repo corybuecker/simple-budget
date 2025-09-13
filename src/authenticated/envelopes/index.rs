@@ -1,5 +1,5 @@
 use crate::{
-    SharedState,
+    HandlebarsContext, SharedState,
     authenticated::UserExtension,
     errors::AppResponse,
     models::envelope::Envelope,
@@ -10,24 +10,27 @@ use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
 };
-use tera::Context;
+use handlebars::to_json;
 use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
     headers: HeaderMap,
     user: Extension<UserExtension>,
-    Extension(mut context): Extension<Context>,
+    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
+    let mut context = context.clone();
     let envelopes = Envelope::get_all(shared_state.pool.get().await?.client(), user.id).await?;
     let response_format = get_response_format(&headers)?;
 
     match response_format {
-        ResponseFormat::Turbo | ResponseFormat::Html => {
-            context.insert("envelopes", &envelopes);
+        ResponseFormat::Html | ResponseFormat::Turbo => {
+            context.insert("envelopes".to_string(), to_json(envelopes));
+            context.insert("partial".to_string(), to_json("envelopes/index"));
+
             Ok(generate_response(
                 &ResponseFormat::Html,
-                shared_state.tera.render("envelopes/index.html", &context)?,
+                shared_state.handlebars.render("layout", &context)?,
                 StatusCode::OK,
             ))
         }

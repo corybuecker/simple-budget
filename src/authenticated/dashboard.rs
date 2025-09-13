@@ -1,4 +1,5 @@
 use super::UserExtension;
+use crate::HandlebarsContext;
 use crate::errors::AppResponse;
 use crate::models::goal::Goal;
 use crate::models::user::Preferences;
@@ -14,9 +15,9 @@ use axum::{
 };
 use chrono::{Duration, Local, NaiveTime};
 use chrono_tz::Tz;
+use handlebars::to_json;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
-use tera::Context;
 use tokio_postgres::{Client, GenericClient};
 
 pub async fn index(
@@ -28,15 +29,15 @@ pub async fn index(
     let user = User::get_by_id(shared_state.pool.get().await?.client(), user.id).await?;
     let mut context =
         generate_dashboard_context_for(&user, shared_state.pool.get().await?.client()).await?;
-    context.insert("csrf", &csrf);
-    context.insert("section", &Section::Reports);
-
+    context.insert("csrf".to_string(), to_json(csrf));
+    context.insert("section".to_string(), to_json(Section::Reports));
+    context.insert("partial".to_string(), to_json("dashboard"));
     let response_format = get_response_format(&headers)?;
 
     match response_format {
         ResponseFormat::Html => Ok(generate_response(
             &response_format,
-            shared_state.tera.render("dashboard.html", &context)?,
+            shared_state.handlebars.render("layout", &context)?,
             StatusCode::OK,
         )),
         ResponseFormat::Turbo => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
@@ -61,8 +62,12 @@ pub async fn index(
     }
 }
 
-pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Result<Context> {
-    let mut context = Context::new();
+pub async fn generate_dashboard_context_for(
+    user: &User,
+    client: &Client,
+) -> Result<HandlebarsContext> {
+    let mut handlebars_context = HandlebarsContext::new();
+
     let preferences = match &user.preferences {
         Some(preferences) => &preferences.0,
         None => &Preferences {
@@ -123,14 +128,27 @@ pub async fn generate_dashboard_context_for(user: &User, client: &Client) -> Res
 
     let per_diem_diff_monthly = per_diem - monthly_income_per_day;
 
-    context.insert("tomorrow_remaining_total", &tomorrow_remaining_total);
-    context.insert("goals_accumulated_per_day", &goals_accumulated);
-    context.insert("remaining_days", &remaining_days);
-    context.insert("remaining_minutes", &duration_until_tomorrow.num_minutes());
-    context.insert("remaining_total", &remaining_total);
-    context.insert("forecast_offset", &forecast_offset);
-    context.insert("per_diem", &per_diem);
-    context.insert("per_diem_diff_monthly", &per_diem_diff_monthly);
+    handlebars_context.insert(
+        "tomorrow_remaining_total".to_string(),
+        to_json(tomorrow_remaining_total),
+    );
+    handlebars_context.insert(
+        "goals_accumulated_per_day".to_string(),
+        to_json(goals_accumulated),
+    );
+    handlebars_context.insert("remaining_days".to_string(), to_json(remaining_days));
+    handlebars_context.insert(
+        "remaining_minutes".to_string(),
+        to_json(duration_until_tomorrow.num_minutes()),
+    );
 
-    Ok(context)
+    handlebars_context.insert("remaining_total".to_string(), to_json(remaining_total));
+    handlebars_context.insert("forecast_offset".to_string(), to_json(forecast_offset));
+    handlebars_context.insert("per_diem".to_string(), to_json(per_diem));
+    handlebars_context.insert(
+        "per_diem_diff_monthly".to_string(),
+        to_json(per_diem_diff_monthly),
+    );
+
+    Ok(handlebars_context)
 }

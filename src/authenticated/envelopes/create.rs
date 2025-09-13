@@ -1,10 +1,8 @@
 use super::{EnvelopeForm, schema};
+use crate::errors::AppResponse;
 use crate::{
-    SharedState,
-    authenticated::UserExtension,
-    errors::AppResponse,
-    models::envelope::Envelope,
-    utilities::responses::{self, get_response_format},
+    HandlebarsContext, SharedState, authenticated::UserExtension, models::envelope::Envelope,
+    utilities::responses,
 };
 use anyhow::anyhow;
 use axum::{
@@ -13,37 +11,58 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Redirect},
 };
-use rust_decimal::{Decimal, prelude::FromPrimitive};
-use tera::Context;
+use handlebars::to_json;
+use rust_decimal::Decimal;
+use rust_decimal::prelude::FromPrimitive;
 use tokio_postgres::GenericClient;
 
-pub async fn page(
+pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
+    Extension(context): Extension<HandlebarsContext>,
     Form(form): Form<EnvelopeForm>,
 ) -> AppResponse {
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
 
-    let mut context = Context::new();
-    let response_format = get_response_format(&headers)?;
+    let response_format = responses::get_response_format(&headers)?;
 
     match valid {
         Ok(_) => {}
         Err(validation_errors) => {
-            context.insert("errors", &validation_errors.to_string());
-            context.insert("name", &form.name);
-            context.insert("amount", &form.amount);
+            let mut context = context.clone();
 
-            let template_name = responses::get_template_name(&response_format, "envelopes", "form");
-            let content = shared_state.tera.render(&template_name, &context)?;
+            context.insert("errors".to_string(), to_json(validation_errors.to_string()));
+            context.insert("name".to_string(), to_json(&form.name));
+            context.insert("amount".to_string(), to_json(form.amount));
 
-            return Ok(responses::generate_response(
-                &response_format,
-                content,
-                StatusCode::BAD_REQUEST,
-            ));
+            match response_format {
+                responses::ResponseFormat::Html => {
+                    context.insert("partial".to_string(), to_json("envelopes/new"));
+                    return Ok(responses::generate_response(
+                        &responses::ResponseFormat::Html,
+                        shared_state.handlebars.render("layout", &context)?,
+                        StatusCode::BAD_REQUEST,
+                    ));
+                }
+                responses::ResponseFormat::Turbo => {
+                    return Ok(responses::generate_response(
+                        &response_format,
+                        shared_state
+                            .handlebars
+                            .render("envelopes/_form.turbo", &context)?,
+                        StatusCode::BAD_REQUEST,
+                    ));
+                }
+                responses::ResponseFormat::Json => {
+                    return Ok(responses::generate_response(
+                        &response_format,
+                        serde_json::to_string(&context)?,
+                        StatusCode::BAD_REQUEST,
+                    ));
+                }
+            }
         }
     }
 
@@ -51,7 +70,7 @@ pub async fn page(
         id: None,
         name: form.name.to_owned(),
         amount: Decimal::from_f64(form.amount.to_owned())
-            .ok_or(anyhow!("could not parse decimal"))?,
+            .ok_or_else(|| anyhow!("could not parse decimal"))?,
         user_id: user.id,
     };
 
@@ -76,17 +95,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_envelope_success() {
-        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
+        let client = &shared_state.pool.get().await.unwrap();
+        let client = client.client();
 
         let app = Router::new()
-            .route("/envelopes/create", post(page))
-            .with_state(shared_state.clone())
-            .layer(user_extension);
+            .route("/envelopes/create", post(action))
+            .with_state(shared_state)
+            .layer(user_extension)
+            .layer(context_extension);
 
-        let form_data = "name=test_create_envelope_success&amount=300".to_string();
+        let form_data = "name=test_create_envelope_success&amount=300.00";
         let request = Request::builder()
             .method("POST")
             .uri("/envelopes/create")
@@ -115,12 +135,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_envelope_validation_error() {
-        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
 
         let app = Router::new()
-            .route("/envelopes/create", post(page))
+            .route("/envelopes/create", post(action))
             .with_state(shared_state)
-            .layer(user_extension);
+            .layer(user_extension)
+            .layer(context_extension);
 
         let form_data = "name=t&amount=300";
         let request = Request::builder()
@@ -135,19 +156,19 @@ mod tests {
         let (parts, body) = response.into_parts();
         let bytes = to_bytes(body, usize::MAX).await.unwrap();
         let body_str = from_utf8(&bytes).unwrap().to_string();
-
         assert_eq!(parts.status, StatusCode::BAD_REQUEST);
-        assert!(body_str.contains("test"))
+        assert!(body_str.contains("300.0"))
     }
 
     #[tokio::test]
     async fn test_create_envelope_turbo_stream() {
-        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
 
         let app = Router::new()
-            .route("/envelopes/create", post(page))
+            .route("/envelopes/create", post(action))
             .with_state(shared_state)
-            .layer(user_extension);
+            .layer(user_extension)
+            .layer(context_extension);
 
         let form_data = "name=t&amount=3400";
         let request = Request::builder()

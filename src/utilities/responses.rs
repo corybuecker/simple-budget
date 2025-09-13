@@ -28,28 +28,6 @@ pub fn get_response_format(headers: &HeaderMap) -> Result<ResponseFormat> {
     }
 }
 
-/// Returns the appropriate template name based on the response format
-pub fn get_template_name(format: &ResponseFormat, resource: &str, template_type: &str) -> String {
-    match format {
-        ResponseFormat::Turbo => format!("{resource}/{template_type}.turbo.html"),
-        ResponseFormat::Json => format!("{resource}/{template_type}.json"),
-        ResponseFormat::Html => format!(
-            "{}/{}.html",
-            resource,
-            if template_type == "form"
-                || template_type == "index"
-                || template_type == "delete"
-                || template_type == "edit"
-                || template_type == "new"
-            {
-                template_type
-            } else {
-                "new"
-            }
-        ),
-    }
-}
-
 /// Creates a response for an invalid form submission with appropriate headers and status
 pub fn generate_response<T: IntoResponse>(
     format: &ResponseFormat,

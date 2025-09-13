@@ -1,6 +1,6 @@
 use super::{GoalForm, schema};
 use crate::{
-    SharedState,
+    HandlebarsContext, SharedState,
     authenticated::UserExtension,
     errors::AppResponse,
     models::goal::{Goal, Recurrence},
@@ -14,38 +14,60 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use chrono::{NaiveDateTime, NaiveTime, Utc};
+use handlebars::to_json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::str::FromStr;
-use tera::Context;
 use tokio_postgres::GenericClient;
 
-pub async fn page(
+pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     headers: HeaderMap,
+    Extension(context): Extension<HandlebarsContext>,
     Form(form): Form<GoalForm>,
 ) -> AppResponse {
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
     let response_format = responses::get_response_format(&headers)?;
 
-    if let Err(validation_errors) = valid {
-        let mut context = Context::new();
+    match valid {
+        Ok(_) => {}
+        Err(validation_errors) => {
+            let mut context = context.clone();
 
-        context.insert("errors", &validation_errors.to_string());
-        context.insert("name", &form.name);
-        context.insert("target", &form.target);
-        context.insert("target_date", &form.target_date);
-        context.insert("recurrence", &form.recurrence);
+            context.insert("errors".to_string(), to_json(validation_errors.to_string()));
+            context.insert("name".to_string(), to_json(&form.name));
+            context.insert("target".to_string(), to_json(form.target));
+            context.insert("target_date".to_string(), to_json(form.target_date));
+            context.insert("recurrence".to_string(), to_json(&form.recurrence));
 
-        let template_name = responses::get_template_name(&response_format, "goals", "form");
-        let content = shared_state.tera.render(&template_name, &context)?;
-
-        return Ok(responses::generate_response(
-            &response_format,
-            content,
-            StatusCode::BAD_REQUEST,
-        ));
+            match response_format {
+                responses::ResponseFormat::Html => {
+                    context.insert("partial".to_string(), to_json("goals/new"));
+                    return Ok(responses::generate_response(
+                        &responses::ResponseFormat::Html,
+                        shared_state.handlebars.render("layout", &context)?,
+                        StatusCode::BAD_REQUEST,
+                    ));
+                }
+                responses::ResponseFormat::Turbo => {
+                    return Ok(responses::generate_response(
+                        &response_format,
+                        shared_state
+                            .handlebars
+                            .render("goals/_form.turbo", &context)?,
+                        StatusCode::BAD_REQUEST,
+                    ));
+                }
+                responses::ResponseFormat::Json => {
+                    return Ok(responses::generate_response(
+                        &response_format,
+                        serde_json::to_string(&context)?,
+                        StatusCode::BAD_REQUEST,
+                    ));
+                }
+            }
+        }
     }
 
     let recurrence = Recurrence::from_str(&form.recurrence).map_err(|e| anyhow!("{:#?}", e))?;
@@ -87,15 +109,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_goal_success() {
-        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
         let client = shared_state.pool.get().await.unwrap();
         let client = client.client();
         let user_id = user_extension.0.id;
 
         let app = Router::new()
-            .route("/goals/create", post(page))
+            .route("/goals/create", post(action))
             .with_state(shared_state.clone())
-            .layer(user_extension);
+            .layer(user_extension)
+            .layer(context_extension);
 
         let target_date = Utc::now().add(Duration::days(7));
 
@@ -128,12 +151,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_goal_validation_error() {
-        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
 
         let app = Router::new()
-            .route("/goals/create", post(page))
+            .route("/goals/create", post(action))
             .with_state(shared_state)
-            .layer(user_extension);
+            .layer(user_extension)
+            .layer(context_extension);
 
         let form_data = "name=t&target=124&target_date=2024-09-13&recurrence=monthly";
         let request = Request::builder()
@@ -150,16 +174,17 @@ mod tests {
         let body_str = from_utf8(&bytes).unwrap().to_string();
 
         assert_eq!(parts.status, StatusCode::BAD_REQUEST);
-        assert!(body_str.contains("test"))
+        assert!(body_str.contains("124"))
     }
 
     #[tokio::test]
     async fn test_create_goal_turbo_stream() {
-        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
         let app = Router::new()
-            .route("/goals/create", post(page))
+            .route("/goals/create", post(action))
             .with_state(shared_state.clone())
-            .layer(user_extension);
+            .layer(user_extension)
+            .layer(context_extension);
 
         let form_data = "name=t&target=124&target_date=2024-09-13&recurrence=monthly";
         let request = Request::builder()
@@ -181,15 +206,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_goal_with_explicit_start_date_never_recurrence() {
-        let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
+        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
         let client = shared_state.pool.get().await.unwrap();
         let client = client.client();
         let user_id = user_extension.0.id;
 
         let app = Router::new()
-            .route("/goals/create", post(page))
+            .route("/goals/create", post(action))
             .with_state(shared_state.clone())
-            .layer(user_extension);
+            .layer(user_extension)
+            .layer(context_extension);
 
         let target_date = Utc::now().add(Duration::days(7));
 

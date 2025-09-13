@@ -1,14 +1,17 @@
-use crate::errors::AppResponse;
-use crate::models::goal::Goal;
-use crate::utilities::responses::{
-    ResponseFormat, generate_response, get_response_format, get_template_name,
+use crate::{
+    HandlebarsContext, SharedState,
+    authenticated::UserExtension,
+    errors::AppResponse,
+    models::goal::Goal,
+    utilities::responses::{ResponseFormat, generate_response, get_response_format},
 };
-use crate::{SharedState, authenticated::UserExtension};
-use axum::Json;
-use axum::extract::Path;
-use axum::http::{HeaderMap, StatusCode};
-use axum::{Extension, extract::State};
-use tera::Context;
+use axum::{
+    Extension, Json,
+    extract::{Path, State},
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+};
+use handlebars::to_json;
 use tokio_postgres::GenericClient;
 
 pub async fn action(
@@ -16,26 +19,37 @@ pub async fn action(
     Path(id): Path<i32>,
     headers: HeaderMap,
     user: Extension<UserExtension>,
-    Extension(mut context): Extension<Context>,
+    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
+    let mut context = context.clone();
     let response_format = get_response_format(&headers)?;
-    let template_name = get_template_name(&response_format, "goals", "edit");
-
+    context.insert("id".to_string(), to_json(goal.id));
+    context.insert("name".to_string(), to_json(&goal.name));
+    context.insert("target".to_string(), to_json(goal.target));
+    context.insert(
+        "target_date".to_string(),
+        to_json(goal.target_date.format("%Y-%m-%d").to_string()),
+    );
+    context.insert(
+        "recurrence".to_string(),
+        to_json(format!("{:?}", goal.recurrence).to_lowercase()),
+    );
     match response_format {
+        ResponseFormat::Html => {
+            context.insert("partial".to_string(), to_json("goals/edit"));
+
+            Ok(generate_response(
+                &response_format,
+                shared_state.handlebars.render("layout", &context)?,
+                StatusCode::OK,
+            ))
+        }
+        ResponseFormat::Turbo => Ok(StatusCode::BAD_REQUEST.into_response()),
         ResponseFormat::Json => Ok(generate_response(
             &response_format,
             Json(goal),
             StatusCode::OK,
         )),
-        ResponseFormat::Html | ResponseFormat::Turbo => {
-            context.insert("goal", &goal);
-
-            Ok(generate_response(
-                &response_format,
-                shared_state.tera.render(&template_name, &context)?,
-                StatusCode::OK,
-            ))
-        }
     }
 }

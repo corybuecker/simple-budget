@@ -1,5 +1,12 @@
+mod create;
+mod delete;
+mod edit;
+mod index;
+mod new;
+mod update;
+
 use super::UserExtension;
-use crate::{Section, SharedState};
+use crate::{HandlebarsContext, Section, SharedState};
 use axum::{
     Extension, Router,
     extract::Request,
@@ -7,16 +14,9 @@ use axum::{
     response::Response,
     routing::get,
 };
+use handlebars::to_json;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tera::Context;
-
-mod create;
-mod delete;
-mod edit;
-mod index;
-mod new;
-mod update;
 
 fn schema() -> serde_json::Value {
     json!({
@@ -40,15 +40,16 @@ pub struct AccountForm {
 
 async fn initialize_context(
     Extension(user_extension): Extension<UserExtension>,
+    Extension(context): Extension<HandlebarsContext>,
     mut request: Request,
     next: Next,
 ) -> Response {
-    let mut context = Context::new();
+    let mut context = context.clone();
 
-    context.insert("section", &Section::Accounts);
-    context.insert("csrf", &user_extension.csrf);
+    context.insert("section".to_string(), to_json(Section::Accounts));
+    context.insert("csrf".to_string(), to_json(user_extension.csrf));
+
     request.extensions_mut().insert(context);
-
     next.run(request).await
 }
 

@@ -1,9 +1,0 @@
-{% import "goals/_goal.html" as macros %} {% for goal in goals %}
-<turbo-stream action="replace" target="goal_{{ goal.id }}">
-    <template>
-        {{ macros::goal(goal=goal, goal_header=goal_header,
-        accumulations=accumulations, per_days=per_days,
-        days_remainings=days_remainings) }}
-    </template>
-</turbo-stream>
-{% endfor %}

@@ -16,6 +16,7 @@ pub async fn action(
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let mut context = context.clone();
+    context.insert("id".to_string(), to_json(""));
     context.insert("name".to_string(), to_json(""));
     context.insert("amount".to_string(), to_json(""));
     context.insert("target".to_string(), to_json(""));

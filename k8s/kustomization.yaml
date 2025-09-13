@@ -4,7 +4,7 @@ kind: Kustomization
 images:
   - name: simple-budget
     newName: ghcr.io/corybuecker/simple-budget
-    digest: sha256:7d549af43bc50672dcd96c7366b944aba31ceae24d3ffa02c3506e76a05acce3
+    digest: sha256:adc7f8a954364046d1a106045e8c0b918b36e00144887dce32bd0f31b1e71025
 
 resources:
   - namespace.yaml

@@ -1,8 +1,17 @@
+mod authenticated;
+mod authentication;
+mod errors;
+mod jobs;
+mod models;
+mod utilities;
+
+use crate::utilities::handlebars::{
+    DigestAssetHandlebarsHelper, EqHandlebarsHelper, walk_directory,
+};
 use anyhow::Result;
 use axum::{
     Router,
-    body::Body,
-    extract::{FromRef, Path, Request},
+    extract::{FromRef, Request},
     http::{HeaderValue, StatusCode},
     middleware::{Next, from_fn},
     response::{IntoResponse, Response},
@@ -13,7 +22,6 @@ use chrono::Utc;
 use deadpool_postgres::{Config, Pool, RecyclingMethod, Runtime};
 use errors::AppResponse;
 use handlebars::Handlebars;
-use include_dir::{Dir, include_dir};
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
 use rust_web_common::telemetry::TelemetryBuilder;
 use serde::Serialize;
@@ -25,20 +33,9 @@ use tokio::{
     time::interval,
 };
 use tokio_postgres::{Client, NoTls};
-use tower_http::trace::TraceLayer;
+use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::debug;
 use utilities::dates::TimeProvider;
-
-use crate::utilities::handlebars::{
-    DigestAssetHandlebarsHelper, EqHandlebarsHelper, walk_directory,
-};
-
-mod authenticated;
-mod authentication;
-mod errors;
-mod jobs;
-mod models;
-mod utilities;
 
 #[derive(Serialize, Clone)]
 pub enum Section {
@@ -86,49 +83,22 @@ async fn inject_context(mut request: Request, next: Next) -> Response {
     next.run(request).await
 }
 
-async fn cache_header(request: Request, next: Next) -> Response {
-    let mut response = next.run(request).await;
-    let headers = response.headers_mut();
-    headers.insert(
-        "cache-control",
-        HeaderValue::from_str("public, max-age=31536000").unwrap(),
-    );
-    response
-}
-
-async fn fetch_asset(Path(file): Path<String>) -> Response {
-    debug!("{}", file);
-
-    let mut content_type: &str = "text/plain";
-
-    if file.ends_with(".png") {
-        content_type = "image/png"
-    };
-
-    if file.ends_with(".js") {
-        content_type = "application/javascript"
-    };
-
-    if file.ends_with(".css") {
-        content_type = "text/css"
-    };
-
-    match ASSETS.get_file(&file) {
-        Some(asset) => {
-            let mut response = Body::from(asset.contents()).into_response();
-            let headers = response.headers_mut();
-            headers.insert("content-type", HeaderValue::from_str(content_type).unwrap());
-            response
-        }
-        None => StatusCode::NOT_FOUND.into_response(),
-    }
-}
-
 async fn healthcheck() -> AppResponse {
     Ok(StatusCode::OK.into_response())
 }
 
-static ASSETS: Dir = include_dir!("static");
+async fn cache_assets(request: Request, next: Next) -> Response {
+    let mut response = next.run(request).await;
+
+    if response.status().is_success() {
+        response.headers_mut().insert(
+            "Cache-Control",
+            HeaderValue::from_static("public, max-age=31536000"),
+        );
+    }
+
+    response
+}
 
 #[tokio::main]
 async fn main() {
@@ -172,14 +142,14 @@ async fn main() {
     let app = Router::new()
         .merge(authentication::authentication_router())
         .merge(authenticated::authenticated_router(shared_state.clone()))
-        .merge(
-            Router::new()
-                .route("/assets/{*file}", get(fetch_asset))
-                .layer(from_fn(cache_header)),
-        )
         .merge(Router::new().route("/healthcheck", get(healthcheck)))
         .with_state(shared_state)
         .layer(from_fn(inject_context))
+        .merge(
+            Router::new()
+                .nest_service("/assets", ServeDir::new("static"))
+                .layer(from_fn(cache_assets)),
+        )
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();

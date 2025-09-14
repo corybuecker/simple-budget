@@ -18,8 +18,9 @@ use axum::{
 use chrono::Utc;
 use handlebars::to_json;
 use rust_decimal::Decimal;
-use std::collections::HashMap;
 use tokio_postgres::GenericClient;
+
+#[allow(unused)]
 use tracing::debug;
 
 pub async fn action(
@@ -36,9 +37,9 @@ pub async fn action(
     let user_id = user.id;
 
     let mut goals = Goal::get_all(client, user_id).await?;
-    let mut accumulations: HashMap<i32, Decimal> = HashMap::new();
-    let mut days_remainings: HashMap<i32, i16> = HashMap::new();
-    let mut per_days: HashMap<i32, Decimal> = HashMap::new();
+    let mut accumulations: Vec<Decimal> = Vec::new();
+    let mut days_remaining: Vec<i64> = Vec::new();
+    let mut per_days: Vec<Decimal> = Vec::new();
 
     for goal in &mut goals {
         if goal.recurrence.eq(&Recurrence::Monthly) {
@@ -46,15 +47,9 @@ pub async fn action(
             goal.update(client).await?;
         }
 
-        accumulations.insert(goal.id.unwrap(), goal.accumulated_amount);
-        per_days.insert(goal.id.unwrap(), goal.accumulated_per_day()?);
-        days_remainings.insert(
-            goal.id.unwrap(),
-            (goal.target_date - Utc::now())
-                .num_days()
-                .try_into()
-                .unwrap(),
-        );
+        accumulations.push(goal.accumulated_amount);
+        per_days.push(goal.accumulated_per_day()?);
+        days_remaining.push((goal.target_date - Utc::now()).num_days());
     }
 
     match response_format {
@@ -73,16 +68,14 @@ pub async fn action(
                 to_json(goal_header_for_context.or(Some(GoalHeader::Accumulated))),
             );
 
-            context.insert("goals".to_string(), to_json(&goals));
-            context.insert("accumulations".to_string(), to_json(&accumulations));
-            context.insert("days_remainings".to_string(), to_json(&days_remainings));
-            context.insert("per_days".to_string(), to_json(&per_days));
+            context.insert("goals".to_string(), to_json(goals));
+            context.insert("accumulations".to_string(), to_json(accumulations));
+            context.insert("days_remainings".to_string(), to_json(days_remaining));
+            context.insert("per_days".to_string(), to_json(per_days));
 
             let content = shared_state
                 .handlebars
                 .render("goals/resets.turbo", &context);
-
-            debug!("{:#?}", content);
 
             Ok(generate_response(
                 &response_format,

@@ -17,7 +17,7 @@ COPY src /app/src
 RUN touch /app/src/main.rs
 RUN cargo build --release
 
-FROM debian@sha256:6d87375016340817ac2391e670971725a9981cfc24e221c47734681ed0f6c0f5
+FROM debian@sha256:833c135acfe9521d7a0035a296076f98c182c542a2b6b5a0fd7063d355d696be
 COPY --from=builder /app/target/release/simple-budget /app/simple-budget
 WORKDIR /app
 RUN chmod 700 /app/simple-budget

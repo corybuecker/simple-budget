@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      everything:
+      cargo:
         patterns:
           - "*"
 
@@ -13,8 +13,16 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      docker:
+        patterns:
+          - "*"

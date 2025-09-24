@@ -12,15 +12,15 @@ use axum::{
 };
 use handlebars::to_json;
 use postgres_types::Json as PgJson;
-use tokio_postgres::GenericClient;
 
 pub async fn action(
-    state: State<SharedState>,
+    shared_state: State<SharedState>,
     headers: HeaderMap,
     user: Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
-    let user = User::get_by_id(state.pool.get().await?.client(), user.id).await?;
+    let client = shared_state.pool.get_client().await?;
+    let user = User::get_by_id(&client, user.id).await?;
     let preferences = user.preferences.unwrap_or(PgJson(Preferences::default())).0;
     let response_format = get_response_format(&headers)?;
     let mut context = context.clone();
@@ -35,7 +35,7 @@ pub async fn action(
     match response_format {
         ResponseFormat::Turbo | ResponseFormat::Html => Ok(generate_response(
             &ResponseFormat::Html,
-            state.handlebars.render("layout", &context)?,
+            shared_state.handlebars.render("layout", &context)?,
             StatusCode::OK,
         )),
         ResponseFormat::Json => Ok(generate_response(

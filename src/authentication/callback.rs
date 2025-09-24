@@ -18,9 +18,9 @@ use rand::{
     distr::{Alphanumeric, SampleString},
     rng,
 };
+use rust_database_common::GenericClient;
 use serde::Deserialize;
 use std::env;
-use tokio_postgres::{Client, GenericClient};
 use tracing::error;
 use uuid::Uuid;
 
@@ -53,7 +53,7 @@ pub async fn callback(
     let email = email.to_string();
     let secure = env::var("SECURE").unwrap_or("false".to_string()) == "true";
 
-    let id = create_session(shared_state.pool.get().await?.client(), &subject, &email).await?;
+    let id = create_session(&shared_state.pool.get_client().await?, &subject, &email).await?;
     let cookie = Cookie::build(("session_id", id.to_string()))
         .expires(None)
         .http_only(true)
@@ -65,7 +65,11 @@ pub async fn callback(
     Ok((jar.add(cookie), Redirect::to(redirect).into_response()))
 }
 
-async fn create_session(client: &Client, subject: &str, email: &str) -> Result<Uuid, AppError> {
+async fn create_session(
+    client: &impl GenericClient,
+    subject: &str,
+    email: &str,
+) -> Result<Uuid, AppError> {
     let csrf = Alphanumeric.sample_string(&mut rng(), 32);
     let user = upsert_subject(client, subject.to_owned(), email.to_owned()).await?;
     let expiration = Utc::now()
@@ -84,7 +88,11 @@ async fn create_session(client: &Client, subject: &str, email: &str) -> Result<U
     id.ok_or(anyhow!("could not create a session").into())
 }
 
-async fn upsert_subject(client: &Client, subject: String, email: String) -> Result<User, AppError> {
+async fn upsert_subject(
+    client: &impl GenericClient,
+    subject: String,
+    email: String,
+) -> Result<User, AppError> {
     match User::get_by_subject(client, subject.clone()).await {
         Ok(user) => Ok(user),
         Err(e) => {
@@ -98,31 +106,30 @@ async fn upsert_subject(client: &Client, subject: String, email: String) -> Resu
 #[cfg(test)]
 mod tests {
     use super::create_session;
-    use crate::{models::user::User, test_utils::client_for_tests};
-    use tokio_postgres::GenericClient;
+    use crate::{models::user::User, test_utils::state_for_tests};
     use uuid::Uuid;
 
     #[tokio::test]
     async fn test_create_session_for_new_user() {
         let uuid = Uuid::new_v4().to_string();
-        let client = client_for_tests().await.unwrap();
-        let client = client.client();
-        let session = create_session(client, &uuid, &uuid).await;
+        let (shared_state, _, _) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
+        let session = create_session(&client, &uuid, &uuid).await;
         assert!(session.is_ok());
-        let user = User::get_by_subject(client, uuid.clone()).await;
+        let user = User::get_by_subject(&client, uuid.clone()).await;
         assert!(user.is_ok());
     }
 
     #[tokio::test]
     async fn test_create_session_for_existing_user() {
         let uuid = &Uuid::new_v4().to_string();
-        let client = client_for_tests().await.unwrap();
-        let client = client.client();
-        let user = User::create(client, uuid.clone(), uuid.clone()).await;
+        let (shared_state, _, _) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
+        let user = User::create(&client, uuid.clone(), uuid.clone()).await;
         assert!(user.is_ok());
-        let session = create_session(client, uuid, uuid).await;
+        let session = create_session(&client, uuid, uuid).await;
         assert!(session.is_ok());
-        let user = User::get_by_subject(client, uuid.to_string()).await;
+        let user = User::get_by_subject(&client, uuid.to_string()).await;
         assert!(user.is_ok());
     }
 }

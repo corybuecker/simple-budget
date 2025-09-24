@@ -12,7 +12,6 @@ use axum::{
     response::IntoResponse,
 };
 use handlebars::to_json;
-use tokio_postgres::GenericClient;
 
 pub async fn modal(
     shared_state: State<SharedState>,
@@ -21,7 +20,8 @@ pub async fn modal(
     Extension(user): Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
-    let goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
+    let client = shared_state.pool.get_client().await?;
+    let goal = Goal::get_one(&client, id, user.id).await?;
     let response_format = get_response_format(&headers)?;
 
     match response_format {
@@ -58,8 +58,9 @@ pub async fn action(
     Extension(user): Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
-    let goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
-    goal.delete(shared_state.pool.get().await?.client()).await?;
+    let client = shared_state.pool.get_client().await?;
+    let goal = Goal::get_one(&client, id, user.id).await?;
+    goal.delete(&client).await?;
     let response_format = get_response_format(&headers)?;
 
     match response_format {
@@ -94,7 +95,6 @@ mod tests {
     use axum::http::Request;
     use chrono::Utc;
     use rust_decimal::Decimal;
-    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -110,11 +110,9 @@ mod tests {
             accumulated_amount: Decimal::ZERO,
             start_date: None,
         };
+        let client = shared_state.pool.get_client().await.unwrap();
 
-        let goal = goal
-            .create(shared_state.pool.get().await.unwrap().client())
-            .await
-            .unwrap();
+        let goal = goal.create(&client).await.unwrap();
 
         let app = Router::new()
             .route("/goals/{id}/delete", axum::routing::get(modal))
@@ -148,10 +146,9 @@ mod tests {
             start_date: None,
         };
 
-        let goal = goal
-            .create(shared_state.pool.get().await.unwrap().client())
-            .await
-            .unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
+
+        let goal = goal.create(&client).await.unwrap();
 
         let app = Router::new()
             .route("/goals/{id}", axum::routing::delete(action))
@@ -173,12 +170,7 @@ mod tests {
         println!("{:?}", body_str);
         assert_eq!(parts.status, StatusCode::OK);
 
-        let deleted_goal = Goal::get_one(
-            shared_state.pool.get().await.unwrap().client(),
-            goal.id.unwrap(),
-            user_id,
-        )
-        .await;
+        let deleted_goal = Goal::get_one(&client, goal.id.unwrap(), user_id).await;
         assert!(deleted_goal.is_err());
     }
 }

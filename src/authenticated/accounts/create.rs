@@ -15,7 +15,6 @@ use axum::{
 use handlebars::to_json;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
-use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -76,10 +75,8 @@ pub async fn action(
         debt: form.debt.unwrap_or(false),
         user_id: user.id,
     };
-
-    account
-        .create(shared_state.pool.get().await?.client())
-        .await?;
+    let client = &shared_state.pool.get_client().await?;
+    account.create(client).await?;
 
     Ok(Redirect::to("/accounts").into_response())
 }
@@ -92,23 +89,22 @@ mod tests {
     use axum::body::{Body, to_bytes};
     use axum::http::{Request, StatusCode};
     use axum::routing::post;
+    use rust_database_common::GenericClient;
     use std::str::from_utf8;
-    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_create_account_success() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let client = &shared_state.pool.get().await.unwrap();
-        let client = client.client();
 
         let app = Router::new()
             .route("/accounts/create", post(action))
-            .with_state(shared_state)
+            .with_state(shared_state.clone())
             .layer(user_extension)
             .layer(context_extension);
-
+        let pool = shared_state.pool;
+        let client = pool.get_client().await.unwrap();
         let form_data = "name=test_create_account_success&amount=100.00&debt=true";
         let request = Request::builder()
             .method("POST")

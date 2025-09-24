@@ -12,7 +12,6 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
 };
 use std::env;
-use tokio_postgres::GenericClient;
 
 pub mod accounts;
 mod dashboard;
@@ -74,7 +73,7 @@ async fn authenticated(
 
     let session_id = session_id.value();
 
-    let session = Session::get_by_id(state.pool.get().await.unwrap().client(), session_id).await;
+    let session = Session::get_by_id(&state.pool.get_client().await.unwrap(), session_id).await;
 
     if let Ok(session) = session {
         request.extensions_mut().insert(UserExtension {

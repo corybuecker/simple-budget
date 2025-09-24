@@ -18,7 +18,6 @@ use axum::{
 use chrono::Utc;
 use handlebars::to_json;
 use rust_decimal::Decimal;
-use tokio_postgres::GenericClient;
 
 #[allow(unused)]
 use tracing::debug;
@@ -32,11 +31,10 @@ pub async fn action(
 ) -> AppResponse {
     let mut context = context.clone();
     let response_format = responses::get_response_format(&headers)?;
-    let client = shared_state.pool.get().await?;
-    let client = client.client();
+    let client = shared_state.pool.get_client().await?;
     let user_id = user.id;
 
-    let mut goals = Goal::get_all(client, user_id).await?;
+    let mut goals = Goal::get_all(&client, user_id).await?;
     let mut accumulations: Vec<Decimal> = Vec::new();
     let mut days_remaining: Vec<i64> = Vec::new();
     let mut per_days: Vec<Decimal> = Vec::new();
@@ -44,7 +42,7 @@ pub async fn action(
     for goal in &mut goals {
         if goal.recurrence.eq(&Recurrence::Monthly) {
             goal.accumulated_amount = Decimal::ZERO;
-            goal.update(client).await?;
+            goal.update(&client).await?;
         }
 
         accumulations.push(goal.accumulated_amount);
@@ -55,7 +53,7 @@ pub async fn action(
     match response_format {
         ResponseFormat::Html => Ok(Redirect::to("/goals").into_response()),
         ResponseFormat::Turbo => {
-            let user = User::get_by_id(client, user_id).await?;
+            let user = User::get_by_id(&client, user_id).await?;
             let goal_header = match user.preferences {
                 Some(preferences) => preferences.0.goal_header,
                 None => Some(GoalHeader::Accumulated),
@@ -99,15 +97,14 @@ mod tests {
     use axum::routing::post;
     use chrono::{Duration, Utc};
     use postgres_types::Json;
+    use rust_database_common::GenericClient;
     use rust_decimal::Decimal;
-    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_resets_action_html_redirect() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
 
         // Create a monthly goal that will be reset
@@ -121,10 +118,10 @@ mod tests {
             accumulated_amount: Decimal::new(500, 0), // This should be reset to 0
             start_date: None,
         };
-        let mut goal = goal.create(client).await.unwrap();
+        let mut goal = goal.create(&client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
         goal.accumulated_amount = Decimal::new(500, 0);
-        let goal = goal.update(client).await.unwrap();
+        let goal = goal.update(&client).await.unwrap();
 
         let app = Router::new()
             .route("/goals/resets/{recurrence}", post(action))
@@ -144,7 +141,7 @@ mod tests {
         assert_eq!(response.headers().get("location").unwrap(), "/goals");
 
         // Verify the goal was reset
-        let updated_goal = Goal::get_one(client, goal.id.unwrap(), user_id)
+        let updated_goal = Goal::get_one(&client, goal.id.unwrap(), user_id)
             .await
             .unwrap();
         assert_eq!(updated_goal.accumulated_amount, Decimal::ZERO);
@@ -153,8 +150,7 @@ mod tests {
     #[tokio::test]
     async fn test_resets_action_turbo_response() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
 
         // Create goals with different recurrences
@@ -168,10 +164,10 @@ mod tests {
             accumulated_amount: Decimal::new(750, 0),
             start_date: None,
         };
-        let mut monthly_goal = monthly_goal.create(client).await.unwrap();
+        let mut monthly_goal = monthly_goal.create(&client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
         monthly_goal.accumulated_amount = Decimal::new(750, 0);
-        let monthly_goal = monthly_goal.update(client).await.unwrap();
+        let monthly_goal = monthly_goal.update(&client).await.unwrap();
 
         let weekly_goal = Goal {
             id: None,
@@ -183,10 +179,10 @@ mod tests {
             accumulated_amount: Decimal::new(100, 0),
             start_date: None,
         };
-        let mut weekly_goal = weekly_goal.create(client).await.unwrap();
+        let mut weekly_goal = weekly_goal.create(&client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
         weekly_goal.accumulated_amount = Decimal::new(100, 0);
-        let weekly_goal = weekly_goal.update(client).await.unwrap();
+        let weekly_goal = weekly_goal.update(&client).await.unwrap();
 
         let app = Router::new()
             .route("/goals/resets/{recurrence}", post(action))
@@ -210,12 +206,12 @@ mod tests {
         );
 
         // Verify only monthly goals were reset
-        let updated_monthly = Goal::get_one(client, monthly_goal.id.unwrap(), user_id)
+        let updated_monthly = Goal::get_one(&client, monthly_goal.id.unwrap(), user_id)
             .await
             .unwrap();
         assert_eq!(updated_monthly.accumulated_amount, Decimal::ZERO);
 
-        let updated_weekly = Goal::get_one(client, weekly_goal.id.unwrap(), user_id)
+        let updated_weekly = Goal::get_one(&client, weekly_goal.id.unwrap(), user_id)
             .await
             .unwrap();
         assert_eq!(updated_weekly.accumulated_amount, Decimal::new(100, 0)); // Should not be reset
@@ -224,8 +220,7 @@ mod tests {
     #[tokio::test]
     async fn test_resets_action_with_user_preferences() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
 
         // Update user preferences
@@ -255,10 +250,10 @@ mod tests {
             accumulated_amount: Decimal::new(150, 0),
             start_date: None,
         };
-        let mut goal = goal.create(client).await.unwrap();
+        let mut goal = goal.create(&client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
         goal.accumulated_amount = Decimal::new(150, 0);
-        let _goal = goal.update(client).await.unwrap();
+        let _goal = goal.update(&client).await.unwrap();
 
         let app = Router::new()
             .route("/goals/resets/{recurrence}", post(action))
@@ -285,8 +280,7 @@ mod tests {
     #[tokio::test]
     async fn test_resets_action_non_monthly_goals_unchanged() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
 
         // Create goals with different recurrences
@@ -300,10 +294,10 @@ mod tests {
             accumulated_amount: Decimal::new(25, 0),
             start_date: None,
         };
-        let mut daily_goal = daily_goal.create(client).await.unwrap();
+        let mut daily_goal = daily_goal.create(&client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
         daily_goal.accumulated_amount = Decimal::new(25, 0);
-        let daily_goal = daily_goal.update(client).await.unwrap();
+        let daily_goal = daily_goal.update(&client).await.unwrap();
 
         let yearly_goal = Goal {
             id: None,
@@ -315,10 +309,10 @@ mod tests {
             accumulated_amount: Decimal::new(2500, 0),
             start_date: None,
         };
-        let mut yearly_goal = yearly_goal.create(client).await.unwrap();
+        let mut yearly_goal = yearly_goal.create(&client).await.unwrap();
         // Set accumulated amount after creation since create() sets it to ZERO
         yearly_goal.accumulated_amount = Decimal::new(2500, 0);
-        let yearly_goal = yearly_goal.update(client).await.unwrap();
+        let yearly_goal = yearly_goal.update(&client).await.unwrap();
 
         let app = Router::new()
             .route("/goals/resets/{recurrence}", post(action))
@@ -338,12 +332,12 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
 
         // Verify non-monthly goals were not reset
-        let updated_daily = Goal::get_one(client, daily_goal.id.unwrap(), user_id)
+        let updated_daily = Goal::get_one(&client, daily_goal.id.unwrap(), user_id)
             .await
             .unwrap();
         assert_eq!(updated_daily.accumulated_amount, Decimal::new(25, 0));
 
-        let updated_yearly = Goal::get_one(client, yearly_goal.id.unwrap(), user_id)
+        let updated_yearly = Goal::get_one(&client, yearly_goal.id.unwrap(), user_id)
             .await
             .unwrap();
         assert_eq!(updated_yearly.accumulated_amount, Decimal::new(2500, 0));

@@ -2,6 +2,7 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use rust_database_common::DatabasePoolError;
 use tracing::error;
 
 #[derive(Debug)]
@@ -11,6 +12,12 @@ pub enum AppError {
     RecordNotFound(tokio_postgres::Error),
     TemplateError(handlebars::RenderError),
     Unknown(anyhow::Error),
+}
+
+impl From<DatabasePoolError> for AppError {
+    fn from(value: DatabasePoolError) -> Self {
+        Self::Unknown(value.into())
+    }
 }
 
 impl From<handlebars::RenderError> for AppError {
@@ -27,12 +34,6 @@ impl From<tokio_postgres::Error> for AppError {
 
 impl From<serde_json::Error> for AppError {
     fn from(value: serde_json::Error) -> Self {
-        Self::Unknown(value.into())
-    }
-}
-
-impl From<deadpool_postgres::PoolError> for AppError {
-    fn from(value: deadpool_postgres::PoolError) -> Self {
         Self::Unknown(value.into())
     }
 }

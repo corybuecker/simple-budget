@@ -6,17 +6,16 @@ use crate::{
 use anyhow::{Result, anyhow};
 use chrono::Utc;
 use chrono_tz::Tz;
-use deadpool_postgres::Pool;
+use rust_database_common::{DatabasePool, GenericClient};
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::str::FromStr;
 use tracing::info;
 
-pub async fn convert_goals(pool: &Pool, time: &impl Times) -> Result<f64, AppError> {
-    let mut manager = pool.get().await?;
+pub async fn convert_goals(pool: &DatabasePool, time: &impl Times) -> Result<f64, AppError> {
+    let mut manager = pool.get_client().await?;
     let transaction = manager.transaction().await?;
-    let client = transaction.client();
 
-    let results = private_convert_goals(client, time).await?;
+    let results = private_convert_goals(&transaction, time).await?;
 
     transaction.commit().await?;
 
@@ -24,7 +23,7 @@ pub async fn convert_goals(pool: &Pool, time: &impl Times) -> Result<f64, AppErr
 }
 
 async fn private_convert_goals(
-    client: &tokio_postgres::Client,
+    client: &impl GenericClient,
     time: &impl Times,
 ) -> Result<f64, AppError> {
     info!("converting goals to envelopes at {}", Utc::now());
@@ -113,8 +112,8 @@ mod tests {
     use crate::test_utils::user_for_tests;
     use crate::utilities::dates::Times;
     use chrono::{Days, Duration, TimeZone, Timelike, Utc};
-    use deadpool_postgres::Pool;
     use postgres_types::Json;
+    use rust_database_common::DatabasePool;
     use rust_decimal::Decimal;
     use std::ops::Sub;
     use tokio_postgres::GenericClient;
@@ -129,17 +128,16 @@ mod tests {
         }
     }
 
-    async fn setup() -> (User, Pool, MockTimeProvider, Goal) {
-        let pool = database_pool(Some(
+    async fn setup() -> (User, DatabasePool, MockTimeProvider, Goal) {
+        let database_pool = database_pool(Some(
             "postgres://simple_budget@localhost:5432/simple_budget_test",
         ))
         .await
         .unwrap();
         let time = MockTimeProvider {};
 
-        let client = pool.get().await.unwrap();
-        let client = client.client();
-        let user = user_for_tests(client, None).await.unwrap();
+        let client = &database_pool.get_client().await.unwrap();
+        let user = user_for_tests(&client, None).await.unwrap();
 
         let goal = Goal {
             id: None,
@@ -156,7 +154,7 @@ mod tests {
 
         (
             user.clone(),
-            pool.clone(),
+            database_pool.clone(),
             MockTimeProvider {},
             goal.clone(),
         )

@@ -12,10 +12,10 @@ use rand::{
     distr::{Alphanumeric, SampleString},
     rng,
 };
+use rust_database_common::GenericClient;
 use serde::Deserialize;
 use serde_json::json;
 use std::env;
-use tokio_postgres::{Client, GenericClient};
 use uuid::Uuid;
 
 use crate::{
@@ -58,7 +58,7 @@ pub async fn token(
     let status = decode::<Claims>(&token.id_token, &DecodingKey::from_jwk(&jwk)?, &validation)?;
 
     let id = create_session(
-        shared_state.pool.get().await?.client(),
+        &shared_state.pool.get_client().await?,
         &status.claims.sub,
         &status.claims.email,
     )
@@ -77,7 +77,11 @@ pub async fn token(
     Ok((jar.add(cookie), Html::from("OK")).into_response())
 }
 
-async fn create_session(client: &Client, subject: &str, email: &str) -> Result<Uuid, AppError> {
+async fn create_session(
+    client: &impl GenericClient,
+    subject: &str,
+    email: &str,
+) -> Result<Uuid, AppError> {
     let csrf = Alphanumeric.sample_string(&mut rng(), 32);
 
     let user = upsert_subject(client, subject.to_owned(), email.to_owned()).await?;
@@ -97,7 +101,11 @@ async fn create_session(client: &Client, subject: &str, email: &str) -> Result<U
     id.ok_or(anyhow!("could not create a session").into())
 }
 
-async fn upsert_subject(client: &Client, subject: String, email: String) -> Result<User, AppError> {
+async fn upsert_subject(
+    client: &impl GenericClient,
+    subject: String,
+    email: String,
+) -> Result<User, AppError> {
     match User::get_by_subject(client, subject.clone()).await {
         Ok(user) => Ok(user),
         Err(_) => Ok(User::create(client, email, subject).await?),

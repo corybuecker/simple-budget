@@ -1,9 +1,8 @@
+use crate::errors::AppError;
 use anyhow::Result;
+use rust_database_common::GenericClient;
 use rust_decimal::Decimal;
 use serde::Serialize;
-use tokio_postgres::Client;
-
-use crate::errors::AppError;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct Envelope {
@@ -35,7 +34,11 @@ impl TryInto<Envelope> for tokio_postgres::Row {
 }
 
 impl Envelope {
-    pub async fn get_one(client: &Client, id: i32, user_id: i32) -> Result<Self, AppError> {
+    pub async fn get_one(
+        client: &impl GenericClient,
+        id: i32,
+        user_id: i32,
+    ) -> Result<Self, AppError> {
         client
             .query_one(
                 "SELECT envelopes.* FROM envelopes
@@ -48,7 +51,7 @@ impl Envelope {
             .try_into()
     }
 
-    pub async fn get_all(client: &Client, user_id: i32) -> Result<Vec<Self>, AppError> {
+    pub async fn get_all(client: &impl GenericClient, user_id: i32) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
                 "SELECT envelopes.* FROM envelopes INNER
@@ -65,7 +68,7 @@ impl Envelope {
         Ok(envelopes)
     }
 
-    pub async fn delete(&self, client: &Client) -> Result<(), AppError> {
+    pub async fn delete(&self, client: &impl GenericClient) -> Result<(), AppError> {
         client
             .execute(
                 "DELETE FROM envelopes WHERE user_id = $1 and id = $2",
@@ -75,7 +78,7 @@ impl Envelope {
         Ok(())
     }
 
-    pub async fn create(self, client: &Client) -> Result<Self, AppError> {
+    pub async fn create(self, client: &impl GenericClient) -> Result<Self, AppError> {
         let row = client
             .query_one(
                 "INSERT INTO envelopes (user_id, name, amount) VALUES ($1, $2, $3) RETURNING id",
@@ -88,7 +91,7 @@ impl Envelope {
         Ok(new_envelope)
     }
 
-    pub async fn update(&self, client: &Client) -> Result<(), AppError> {
+    pub async fn update(&self, client: &impl GenericClient) -> Result<(), AppError> {
         client
             .query(
                 "UPDATE envelopes SET name = $1, amount = $2 WHERE id = $3 AND user_id = $4",

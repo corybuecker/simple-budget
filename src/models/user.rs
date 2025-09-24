@@ -1,9 +1,9 @@
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
 use postgres_types::Json;
+use rust_database_common::GenericClient;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use tokio_postgres::Client;
 use uuid::Uuid;
 
 use crate::errors::AppError;
@@ -69,7 +69,7 @@ impl TryInto<Session> for tokio_postgres::Row {
 }
 
 impl Session {
-    pub async fn delete_expired(client: &Client) -> Result<u64> {
+    pub async fn delete_expired(client: &impl GenericClient) -> Result<u64> {
         let rows = client
             .execute("DELETE FROM sessions WHERE expiration < NOW()", &[])
             .await?;
@@ -77,7 +77,7 @@ impl Session {
         Ok(rows)
     }
 
-    pub async fn get_by_id(client: &Client, id: &str) -> Result<Self> {
+    pub async fn get_by_id(client: &impl GenericClient, id: &str) -> Result<Self> {
         let id = Uuid::parse_str(id)?;
         client
             .query_one("SELECT * FROM sessions WHERE id = $1", &[&id])
@@ -85,7 +85,7 @@ impl Session {
             .try_into()
     }
 
-    pub async fn create(self: &mut Session, client: &Client) -> Result<()> {
+    pub async fn create(self: &mut Session, client: &impl GenericClient) -> Result<()> {
         let id = client
             .query_one(
                 "INSERT INTO sessions (id, user_id, expiration, csrf) VALUES ($1, $2, $3, $4) RETURNING id",
@@ -129,7 +129,7 @@ impl TryInto<User> for tokio_postgres::Row {
 }
 
 impl User {
-    pub async fn total_balance(&self, client: &Client) -> Result<Decimal> {
+    pub async fn total_balance(&self, client: &impl GenericClient) -> Result<Decimal> {
         let query = r#"WITH
             debt AS (
                 SELECT
@@ -178,7 +178,11 @@ impl User {
         Ok(Decimal::max(Decimal::ZERO, total_balance))
     }
 
-    pub async fn create(client: &Client, email: String, subject: String) -> Result<Self, AppError> {
+    pub async fn create(
+        client: &impl GenericClient,
+        email: String,
+        subject: String,
+    ) -> Result<Self, AppError> {
         let id = client
             .query_one(
                 "INSERT INTO users (email, subject) VALUES ($1, $2) RETURNING id",
@@ -191,7 +195,7 @@ impl User {
         Self::get_by_id(client, id).await
     }
 
-    pub async fn update(&self, client: &Client) -> Result<Self, AppError> {
+    pub async fn update(&self, client: &impl GenericClient) -> Result<Self, AppError> {
         let id = client
             .query_one(
                 "UPDATE users SET preferences = $1 WHERE id = $2 RETURNING id",
@@ -204,14 +208,17 @@ impl User {
         Self::get_by_id(client, id).await
     }
 
-    pub async fn get_by_subject(client: &Client, subject: String) -> Result<Self, AppError> {
+    pub async fn get_by_subject(
+        client: &impl GenericClient,
+        subject: String,
+    ) -> Result<Self, AppError> {
         client
             .query_one("SELECT * FROM users WHERE subject = $1", &[&subject])
             .await?
             .try_into()
     }
 
-    pub async fn get_by_id(client: &Client, id: i32) -> Result<Self, AppError> {
+    pub async fn get_by_id(client: &impl GenericClient, id: i32) -> Result<Self, AppError> {
         client
             .query_one("SELECT * FROM users WHERE id = $1", &[&id])
             .await?

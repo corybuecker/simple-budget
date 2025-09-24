@@ -13,9 +13,9 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use handlebars::to_json;
+use rust_database_common::GenericClient;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
-use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -76,10 +76,8 @@ pub async fn action(
         debt: form.debt.unwrap_or(false),
         user_id: user.id,
     };
-
-    account
-        .create(shared_state.pool.get().await?.client())
-        .await?;
+    let client = shared_state.pool.get_client().await?;
+    account.create(client).await?;
 
     Ok(Redirect::to("/accounts").into_response())
 }

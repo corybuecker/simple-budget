@@ -18,9 +18,9 @@ use rand::{
     distr::{Alphanumeric, SampleString},
     rng,
 };
+use rust_database_common::GenericClient;
 use serde::Deserialize;
 use std::env;
-use tokio_postgres::{Client, GenericClient};
 use tracing::error;
 use uuid::Uuid;
 
@@ -53,7 +53,7 @@ pub async fn callback(
     let email = email.to_string();
     let secure = env::var("SECURE").unwrap_or("false".to_string()) == "true";
 
-    let id = create_session(shared_state.pool.get().await?.client(), &subject, &email).await?;
+    let id = create_session(&shared_state.pool.get_client().await?, &subject, &email).await?;
     let cookie = Cookie::build(("session_id", id.to_string()))
         .expires(None)
         .http_only(true)
@@ -65,7 +65,11 @@ pub async fn callback(
     Ok((jar.add(cookie), Redirect::to(redirect).into_response()))
 }
 
-async fn create_session(client: &Client, subject: &str, email: &str) -> Result<Uuid, AppError> {
+async fn create_session(
+    client: &impl GenericClient,
+    subject: &str,
+    email: &str,
+) -> Result<Uuid, AppError> {
     let csrf = Alphanumeric.sample_string(&mut rng(), 32);
     let user = upsert_subject(client, subject.to_owned(), email.to_owned()).await?;
     let expiration = Utc::now()
@@ -84,7 +88,11 @@ async fn create_session(client: &Client, subject: &str, email: &str) -> Result<U
     id.ok_or(anyhow!("could not create a session").into())
 }
 
-async fn upsert_subject(client: &Client, subject: String, email: String) -> Result<User, AppError> {
+async fn upsert_subject(
+    client: &impl GenericClient,
+    subject: String,
+    email: String,
+) -> Result<User, AppError> {
     match User::get_by_subject(client, subject.clone()).await {
         Ok(user) => Ok(user),
         Err(e) => {

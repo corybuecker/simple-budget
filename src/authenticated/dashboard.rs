@@ -16,22 +16,24 @@ use axum::{
 use chrono::{Duration, Local, NaiveTime};
 use chrono_tz::Tz;
 use handlebars::to_json;
+use rust_database_common::GenericClient;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
-use tokio_postgres::{Client, GenericClient};
 
 pub async fn index(
     shared_state: State<SharedState>,
     headers: HeaderMap,
     user: Extension<UserExtension>,
 ) -> AppResponse {
+    let client = shared_state.pool.get_client().await?;
     let csrf = user.csrf.clone();
-    let user = User::get_by_id(shared_state.pool.get().await?.client(), user.id).await?;
-    let mut context =
-        generate_dashboard_context_for(&user, shared_state.pool.get().await?.client()).await?;
+    let user = User::get_by_id(&client, user.id).await?;
+    let mut context = generate_dashboard_context_for(&user, &client).await?;
+
     context.insert("csrf".to_string(), to_json(csrf));
     context.insert("section".to_string(), to_json(Section::Reports));
     context.insert("partial".to_string(), to_json("dashboard"));
+
     let response_format = get_response_format(&headers)?;
 
     match response_format {
@@ -64,7 +66,7 @@ pub async fn index(
 
 pub async fn generate_dashboard_context_for(
     user: &User,
-    client: &Client,
+    client: &impl GenericClient,
 ) -> Result<HandlebarsContext> {
     let mut handlebars_context = HandlebarsContext::new();
 

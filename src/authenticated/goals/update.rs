@@ -27,6 +27,7 @@ pub async fn action(
     Extension(context): Extension<HandlebarsContext>,
     Form(form): Form<GoalForm>,
 ) -> AppResponse {
+    let client = shared_state.pool.get_client().await?;
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
 
@@ -71,7 +72,7 @@ pub async fn action(
         }
     }
 
-    let mut goal = Goal::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
+    let mut goal = Goal::get_one(&client, id, user.id).await?;
 
     let new_recurrence = Recurrence::from_str(&form.recurrence).unwrap();
 
@@ -95,7 +96,7 @@ pub async fn action(
     goal.target_date = NaiveDateTime::new(form.target_date, NaiveTime::MIN).and_utc();
     goal.accumulated_amount = Decimal::ZERO;
 
-    goal.update(shared_state.pool.get().await?.client()).await?;
+    goal.update(&client).await?;
 
     match get_response_format(&headers)? {
         responses::ResponseFormat::Html | responses::ResponseFormat::Turbo => {

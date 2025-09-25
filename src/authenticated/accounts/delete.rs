@@ -58,12 +58,12 @@ pub async fn action(
     Extension(user): Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
-    let account = Account::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
-    account
-        .delete(shared_state.pool.get().await?.client())
-        .await?;
-    let response_format = get_response_format(&headers)?;
+    let client = shared_state.pool.get_client().await?;
+    let account = Account::get_one(&client, id, user.id).await?;
 
+    account.delete(&client).await?;
+
+    let response_format = get_response_format(&headers)?;
     match response_format {
         ResponseFormat::Html => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
         ResponseFormat::Json => Ok(generate_response(

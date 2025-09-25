@@ -76,7 +76,7 @@ pub async fn action(
         debt: form.debt.unwrap_or(false),
         user_id: user.id,
     };
-    let client = shared_state.pool.get_client().await?;
+    let client = &shared_state.pool.get_client().await?;
     account.create(client).await?;
 
     Ok(Redirect::to("/accounts").into_response())

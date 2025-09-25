@@ -18,7 +18,6 @@ use chrono::Utc;
 use handlebars::to_json;
 use postgres_types::Json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
-use tokio_postgres::GenericClient;
 use tracing::error;
 
 pub async fn action(
@@ -27,7 +26,8 @@ pub async fn action(
     Extension(mut context): Extension<HandlebarsContext>,
     form: Form<PreferencesForm>,
 ) -> AppResponse {
-    let mut user = User::get_by_id(shared_state.pool.get().await?.client(), user.id).await?;
+    let client = shared_state.pool.get_client().await?;
+    let mut user = User::get_by_id(&client, user.id).await?;
 
     let mut preferences = match user.preferences {
         Some(preferences) => preferences.0.clone(),
@@ -74,13 +74,15 @@ pub async fn action(
     };
 
     user.preferences = Some(Json(preferences.clone()));
-    user.update(shared_state.pool.get().await?.client()).await?;
+
+    user.update(&client).await?;
 
     let goal_header = preferences.goal_header.clone();
     let mut accumulations: Vec<Decimal> = Vec::new();
     let mut days_remaining: Vec<i64> = Vec::new();
     let mut per_days: Vec<Decimal> = Vec::new();
-    let goals = Goal::get_all(shared_state.pool.get().await?.client(), user.id).await?;
+
+    let goals = Goal::get_all(&client, user.id).await?;
 
     context.insert("goal_header".to_string(), to_json(goal_header));
 
@@ -106,7 +108,7 @@ pub async fn action(
     let goals_html = goals_html?;
 
     let dashboard_context =
-        generate_dashboard_context_for(&user, shared_state.pool.get().await?.client()).await?;
+        generate_dashboard_context_for(&user, &shared_state.pool.get_client().await?).await?;
 
     let dashboard_content = shared_state
         .handlebars

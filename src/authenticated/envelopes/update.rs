@@ -15,7 +15,6 @@ use axum::{
 };
 use handlebars::to_json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
-use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -65,16 +64,13 @@ pub async fn action(
             }
         }
     }
-
-    let mut envelope =
-        Envelope::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
+    let client = shared_state.pool.get_client().await?;
+    let mut envelope = Envelope::get_one(&client, id, user.id).await?;
 
     envelope.name = form.name.clone();
     envelope.amount =
         Decimal::from_f64(form.amount).ok_or_else(|| anyhow!("could not parse decimal"))?;
-    envelope
-        .update(shared_state.pool.get().await?.client())
-        .await?;
+    envelope.update(&client).await?;
 
     match get_response_format(&headers)? {
         responses::ResponseFormat::Html | responses::ResponseFormat::Turbo => {
@@ -93,12 +89,12 @@ mod tests {
     use crate::{models::envelope::Envelope, test_utils::state_for_tests};
     use axum::http::{Method, Request, StatusCode};
     use rust_decimal::Decimal;
-    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_update_envelope() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
         let envelope = Envelope {
             id: None,
@@ -107,10 +103,7 @@ mod tests {
             amount: Decimal::new(1, 0),
         };
 
-        let envelope = envelope
-            .create(shared_state.pool.get().await.unwrap().client())
-            .await
-            .unwrap();
+        let envelope = envelope.create(&client).await.unwrap();
 
         let request = Request::builder()
             .method(Method::POST)
@@ -135,13 +128,9 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(response.headers().get("location").unwrap(), "/envelopes");
 
-        let envelope = Envelope::get_one(
-            shared_state.pool.get().await.unwrap().client(),
-            envelope.id.unwrap(),
-            user_id,
-        )
-        .await
-        .unwrap();
+        let envelope = Envelope::get_one(&client, envelope.id.unwrap(), user_id)
+            .await
+            .unwrap();
 
         assert_eq!(envelope.name, "Updated Envelope");
         assert_eq!(envelope.amount, Decimal::new(200, 0));

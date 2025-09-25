@@ -114,9 +114,9 @@ mod tests {
     use chrono::{Days, Duration, TimeZone, Timelike, Utc};
     use postgres_types::Json;
     use rust_database_common::DatabasePool;
+    use rust_database_common::GenericClient;
     use rust_decimal::Decimal;
     use std::ops::Sub;
-    use tokio_postgres::GenericClient;
 
     struct MockTimeProvider;
     impl Times for MockTimeProvider {
@@ -137,7 +137,7 @@ mod tests {
         let time = MockTimeProvider {};
 
         let client = &database_pool.get_client().await.unwrap();
-        let user = user_for_tests(&client, None).await.unwrap();
+        let user = user_for_tests(client, None).await.unwrap();
 
         let goal = Goal {
             id: None,
@@ -172,9 +172,8 @@ mod tests {
     async fn test_accelerate_goal() {
         let (user, pool, time, goal) = setup().await;
 
-        let mut manager = pool.get().await.unwrap();
-        let transaction = manager.transaction().await.unwrap();
-        let client = transaction.client();
+        let mut client = pool.get_client().await.unwrap();
+        let transaction = client.transaction().await.unwrap();
 
         let account = Account {
             user_id: user.id,
@@ -184,22 +183,22 @@ mod tests {
             debt: false,
         };
 
-        account.create(client).await.unwrap();
+        account.create(&transaction).await.unwrap();
 
         let mut goal = goal.clone();
         goal.target_date = time.now().checked_add_days(Days::new(3)).unwrap();
 
-        goal.update(client).await.unwrap();
+        goal.update(&transaction).await.unwrap();
 
         let mut user = user.clone();
         let mut preferences = Preferences::default();
         preferences.monthly_income = Some(Decimal::new(3100, 0));
         user.preferences = Some(Json(preferences));
-        let user = user.update(client).await.unwrap();
+        let user = user.update(&transaction).await.unwrap();
 
-        private_convert_goals(client, &time).await.unwrap();
+        private_convert_goals(&transaction, &time).await.unwrap();
 
-        let goal: Goal = client
+        let goal: Goal = transaction
             .query_one(
                 "SELECT * FROM goals WHERE user_id = $1 LIMIT 1",
                 &[&user.id],
@@ -217,13 +216,12 @@ mod tests {
     async fn test_accumulate_goal() {
         let (user, pool, time, _) = setup().await;
 
-        let mut manager = pool.get().await.unwrap();
-        let transaction = manager.transaction().await.unwrap();
-        let client = transaction.client();
+        let mut client = pool.get_client().await.unwrap();
+        let transaction = client.transaction().await.unwrap();
 
-        private_convert_goals(client, &time).await.unwrap();
+        private_convert_goals(&transaction, &time).await.unwrap();
 
-        let goal: Goal = client
+        let goal: Goal = transaction
             .query_one(
                 "SELECT * FROM goals WHERE user_id = $1 LIMIT 1",
                 &[&user.id],
@@ -241,13 +239,12 @@ mod tests {
     async fn test_convert_goal_to_envelope() {
         let (user, pool, time, _) = setup().await;
 
-        let mut manager = pool.get().await.unwrap();
-        let transaction = manager.transaction().await.unwrap();
-        let client = transaction.client();
+        let mut client = pool.get_client().await.unwrap();
+        let transaction = client.transaction().await.unwrap();
 
-        private_convert_goals(client, &time).await.unwrap();
+        private_convert_goals(&transaction, &time).await.unwrap();
 
-        let envelope = client
+        let envelope = transaction
             .query_one(
                 "SELECT * FROM envelopes WHERE user_id = $1 LIMIT 1",
                 &[&user.id],
@@ -259,7 +256,7 @@ mod tests {
 
         assert_eq!(envelope.amount, Decimal::new(70, 0));
 
-        let goal: Goal = client
+        let goal: Goal = transaction
             .query_one(
                 "SELECT * FROM goals WHERE user_id = $1 LIMIT 1",
                 &[&user.id],

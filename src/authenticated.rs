@@ -12,7 +12,6 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
 };
 use std::env;
-use tokio_postgres::GenericClient;
 
 pub mod accounts;
 mod dashboard;

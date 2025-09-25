@@ -373,7 +373,6 @@ mod tests {
     use crate::{test_utils::state_for_tests, utilities::dates::Times};
     use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike, Utc};
     use rust_decimal::Decimal;
-    use tokio_postgres::GenericClient;
 
     struct MockTimeProvider;
     impl Times for MockTimeProvider {
@@ -389,8 +388,7 @@ mod tests {
     async fn test_accumulate_from_over_accumulated() {
         let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let time_provider = &MockTimeProvider {};
         let goal = Goal {
             id: None,
@@ -406,8 +404,8 @@ mod tests {
             .and_utc(),
             start_date: None,
         };
-        let goal = goal.create(client).await.unwrap();
-        let goal = goal.accumulate(client, time_provider).await.unwrap();
+        let goal = goal.create(&client).await.unwrap();
+        let goal = goal.accumulate(&client, time_provider).await.unwrap();
 
         assert_eq!(goal.accumulated_amount, Decimal::new(90, 0))
     }
@@ -416,8 +414,7 @@ mod tests {
     async fn test_accumulate_from_over_target() {
         let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let time_provider = &MockTimeProvider {};
         let goal = Goal {
             id: None,
@@ -433,8 +430,8 @@ mod tests {
             .and_utc(),
             start_date: None,
         };
-        let goal = goal.create(client).await.unwrap();
-        let goal = goal.accumulate(client, time_provider).await.unwrap();
+        let goal = goal.create(&client).await.unwrap();
+        let goal = goal.accumulate(&client, time_provider).await.unwrap();
 
         assert_eq!(goal.accumulated_amount, Decimal::new(100, 0))
     }
@@ -443,8 +440,7 @@ mod tests {
     async fn test_accumulate_from_zero() {
         let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let time_provider = &MockTimeProvider {};
         let goal = Goal {
             id: None,
@@ -460,9 +456,9 @@ mod tests {
             .and_utc(),
             start_date: None,
         };
-        let goal = goal.create(client).await.unwrap();
+        let goal = goal.create(&client).await.unwrap();
 
-        let goal = goal.accumulate(client, time_provider).await.unwrap();
+        let goal = goal.accumulate(&client, time_provider).await.unwrap();
         assert!(goal.accumulated_amount - Decimal::new(9766, 2) < Decimal::new(3, 1))
     }
 }

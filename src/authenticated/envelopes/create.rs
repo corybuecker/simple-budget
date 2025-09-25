@@ -14,7 +14,6 @@ use axum::{
 use handlebars::to_json;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
-use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -23,6 +22,7 @@ pub async fn action(
     Extension(context): Extension<HandlebarsContext>,
     Form(form): Form<EnvelopeForm>,
 ) -> AppResponse {
+    let client = shared_state.pool.get_client().await?;
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
 
@@ -74,9 +74,7 @@ pub async fn action(
         user_id: user.id,
     };
 
-    envelope
-        .create(shared_state.pool.get().await?.client())
-        .await?;
+    envelope.create(&client).await?;
 
     Ok(Redirect::to("/envelopes").into_response())
 }
@@ -89,22 +87,21 @@ mod tests {
     use axum::body::{Body, to_bytes};
     use axum::http::{Request, StatusCode};
     use axum::routing::post;
+    use rust_database_common::GenericClient;
     use std::str::from_utf8;
-    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_create_envelope_success() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let client = &shared_state.pool.get().await.unwrap();
-        let client = client.client();
 
         let app = Router::new()
             .route("/envelopes/create", post(action))
-            .with_state(shared_state)
+            .with_state(shared_state.clone())
             .layer(user_extension)
             .layer(context_extension);
+        let client = &shared_state.pool.get_client().await.unwrap();
 
         let form_data = "name=test_create_envelope_success&amount=300.00";
         let request = Request::builder()

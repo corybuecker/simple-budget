@@ -17,7 +17,6 @@ use chrono::{NaiveDateTime, NaiveTime, Utc};
 use handlebars::to_json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::str::FromStr;
-use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -87,8 +86,8 @@ pub async fn action(
         recurrence,
         start_date,
     };
-
-    goal.create(shared_state.pool.get().await?.client()).await?;
+    let client = shared_state.pool.get_client().await?;
+    goal.create(&client).await?;
 
     Ok(Redirect::to("/goals").into_response())
 }
@@ -102,16 +101,15 @@ mod tests {
     use axum::http::{Request, StatusCode};
     use axum::routing::post;
     use chrono::{Duration, Utc};
+    use rust_database_common::GenericClient;
     use std::ops::Add;
     use std::str::from_utf8;
-    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_create_goal_success() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
 
         let app = Router::new()
@@ -207,8 +205,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_goal_with_explicit_start_date_never_recurrence() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
 
         let app = Router::new()

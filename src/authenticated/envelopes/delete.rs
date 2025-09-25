@@ -12,7 +12,6 @@ use axum::{
     response::IntoResponse,
 };
 use handlebars::to_json;
-use tokio_postgres::GenericClient;
 
 pub async fn modal(
     shared_state: State<SharedState>,
@@ -21,7 +20,8 @@ pub async fn modal(
     Extension(user): Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
-    let envelope = Envelope::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
+    let client = shared_state.pool.get_client().await?;
+    let envelope = Envelope::get_one(&client, id, user.id).await?;
     let response_format = get_response_format(&headers)?;
 
     match response_format {
@@ -58,10 +58,9 @@ pub async fn action(
     Extension(user): Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
-    let envelope = Envelope::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
-    envelope
-        .delete(shared_state.pool.get().await?.client())
-        .await?;
+    let client = shared_state.pool.get_client().await?;
+    let envelope = Envelope::get_one(&client, id, user.id).await?;
+    envelope.delete(&client).await?;
     let response_format = get_response_format(&headers)?;
 
     match response_format {
@@ -96,12 +95,13 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use rust_decimal::Decimal;
-    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_delete_modal() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
+
         let envelope = Envelope {
             id: None,
             user_id: user_extension.0.id,
@@ -109,10 +109,7 @@ mod tests {
             amount: Decimal::new(100, 0),
         };
 
-        let envelope = envelope
-            .create(shared_state.pool.get().await.unwrap().client())
-            .await
-            .unwrap();
+        let envelope = envelope.create(&client).await.unwrap();
 
         let app = Router::new()
             .route("/envelopes/{id}/delete", axum::routing::get(modal))
@@ -135,6 +132,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_action() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
         let envelope = Envelope {
             id: None,
@@ -143,10 +141,7 @@ mod tests {
             amount: Decimal::new(100, 0),
         };
 
-        let envelope = envelope
-            .create(shared_state.pool.get().await.unwrap().client())
-            .await
-            .unwrap();
+        let envelope = envelope.create(&client).await.unwrap();
 
         let app = Router::new()
             .route("/envelopes/{id}", axum::routing::delete(action))
@@ -165,12 +160,7 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
 
-        let deleted_envelope = Envelope::get_one(
-            shared_state.pool.get().await.unwrap().client(),
-            envelope.id.unwrap(),
-            user_id,
-        )
-        .await;
+        let deleted_envelope = Envelope::get_one(&client, envelope.id.unwrap(), user_id).await;
         assert!(deleted_envelope.is_err());
     }
 }

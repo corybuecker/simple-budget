@@ -15,7 +15,6 @@ use axum::{
 };
 use handlebars::to_json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
-use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -25,6 +24,7 @@ pub async fn action(
     Extension(context): Extension<HandlebarsContext>,
     Form(form): Form<AccountForm>,
 ) -> AppResponse {
+    let client = shared_state.pool.get_client().await?;
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
     let response_format = responses::get_response_format(&headers)?;
@@ -67,16 +67,12 @@ pub async fn action(
         }
     }
 
-    let mut account =
-        Account::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
+    let mut account = Account::get_one(&client, id, user.id).await?;
     account.name = form.name.clone();
     account.amount =
         Decimal::from_f64(form.amount).ok_or_else(|| anyhow!("could not parse decimal"))?;
     account.debt = form.debt.unwrap_or(false);
-    account
-        .update(shared_state.pool.get().await?.client())
-        .await?;
-
+    account.update(&client).await?;
     match get_response_format(&headers)? {
         responses::ResponseFormat::Html | responses::ResponseFormat::Turbo => {
             Ok(Redirect::to("/accounts").into_response())
@@ -94,7 +90,6 @@ mod tests {
     use crate::{models::account::Account, test_utils::state_for_tests};
     use axum::http::{Method, Request, StatusCode};
     use rust_decimal::Decimal;
-    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -110,10 +105,9 @@ mod tests {
             debt: false,
         };
 
-        let account = account
-            .create(shared_state.pool.get().await.unwrap().client())
-            .await
-            .unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
+
+        let account = account.create(&client).await.unwrap();
 
         let request = Request::builder()
             .method(Method::POST)
@@ -138,13 +132,9 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(response.headers().get("location").unwrap(), "/accounts");
 
-        let account = Account::get_one(
-            shared_state.pool.get().await.unwrap().client(),
-            account.id.unwrap(),
-            user_id,
-        )
-        .await
-        .unwrap();
+        let account = Account::get_one(&client, account.id.unwrap(), user_id)
+            .await
+            .unwrap();
 
         assert_eq!(account.name, "Updated Account");
         assert_eq!(account.amount, Decimal::new(200, 0));

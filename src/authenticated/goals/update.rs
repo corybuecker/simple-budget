@@ -17,7 +17,6 @@ use chrono::{NaiveDateTime, NaiveTime};
 use handlebars::to_json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::str::FromStr;
-use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -112,6 +111,7 @@ pub async fn action(
 
 #[cfg(test)]
 mod tests {
+    use rust_database_common::GenericClient;
     #[tokio::test]
     async fn test_update_goal_recurrence_monthly_to_never_sets_start_date() {
         use crate::models::goal::{Goal, Recurrence};
@@ -119,8 +119,7 @@ mod tests {
         use rust_decimal::Decimal;
         let (shared_state, user_extension, context_extension) =
             crate::test_utils::state_for_tests().await.unwrap();
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
 
         // Create a monthly goal
@@ -134,7 +133,7 @@ mod tests {
             recurrence: Recurrence::Monthly,
             start_date: None,
         };
-        let created = goal.create(client).await.unwrap();
+        let created = goal.create(&client).await.unwrap();
         goal.id = created.id;
 
         let request = Request::builder()
@@ -184,7 +183,6 @@ mod tests {
     use axum::http::{Method, Request, StatusCode};
     use chrono::Utc;
     use rust_decimal::Decimal;
-    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -202,17 +200,12 @@ mod tests {
             recurrence: Recurrence::Weekly,
             start_date: None,
         };
+        let client = shared_state.pool.get_client().await.unwrap();
 
-        let mut goal = goal
-            .create(shared_state.pool.get().await.unwrap().client())
-            .await
-            .unwrap();
+        let mut goal = goal.create(&client).await.unwrap();
 
         goal.accumulated_amount = Decimal::new(100, 0);
-        let goal = goal
-            .update(shared_state.pool.get().await.unwrap().client())
-            .await
-            .unwrap();
+        let goal = goal.update(&client).await.unwrap();
 
         let request = Request::builder()
             .method(Method::POST)
@@ -235,18 +228,15 @@ mod tests {
             .layer(context_extension);
 
         let response = app.oneshot(request).await.unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
 
         // Assert the response
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(response.headers().get("location").unwrap(), "/goals");
 
-        let goal = Goal::get_one(
-            shared_state.pool.get().await.unwrap().client(),
-            goal.id.unwrap(),
-            user_id,
-        )
-        .await
-        .unwrap();
+        let goal = Goal::get_one(&client, goal.id.unwrap(), user_id)
+            .await
+            .unwrap();
 
         assert_eq!(goal.name, "Updated Goal");
         assert_eq!(goal.target, Decimal::new(2000, 0));

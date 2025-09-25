@@ -1,5 +1,6 @@
 use crate::{
     HandlebarsContext,
+    authenticated::UserExtension,
     errors::AppError,
     models::user::Preferences,
     utilities::handlebars::{DigestAssetHandlebarsHelper, walk_directory},
@@ -7,7 +8,6 @@ use crate::{
 #[cfg(test)]
 use crate::{SharedState, database_pool, models::user::User};
 use anyhow::{Result, anyhow};
-use authenticated::UserExtension;
 use axum::Extension;
 use axum_extra::extract::cookie::Key;
 use chrono::Utc;
@@ -25,9 +25,9 @@ pub async fn state_for_tests() -> Result<(
     ))
     .await?;
 
-    let user_extension = user_extension_for_tests(pool.get_client().await?)
-        .await
-        .unwrap();
+    let client = pool.get_client().await?;
+
+    let user_extension = user_extension_for_tests(&client).await.unwrap();
     let mut handlebars = Handlebars::new();
     handlebars.set_dev_mode(true);
     handlebars.register_helper(
@@ -47,7 +47,10 @@ pub async fn state_for_tests() -> Result<(
             .register_template_file(&name, template.to_str().unwrap())
             .unwrap();
     }
-
+    let pool = database_pool(Some(
+        "postgres://simple_budget@localhost:5432/simple_budget_test",
+    ))
+    .await?;
     let shared_state = SharedState {
         key: Key::generate(),
         pool,

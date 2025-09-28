@@ -2,9 +2,9 @@ use crate::{errors::AppError, utilities::dates::Times};
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Days, Months, TimeDelta, Utc};
 use postgres_types::{FromSql, ToSql};
+use rust_database_common::GenericClient;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use serde::Serialize;
-use tokio_postgres::Client;
 
 #[derive(Debug, Clone, Serialize, FromSql, ToSql, PartialEq)]
 pub enum Recurrence {
@@ -79,7 +79,7 @@ impl TryInto<Goal> for tokio_postgres::Row {
 }
 
 impl Goal {
-    pub async fn create(&self, client: &Client) -> Result<Self, AppError> {
+    pub async fn create(&self, client: &impl GenericClient) -> Result<Self, AppError> {
         let row = client
             .query_one(
                 "INSERT INTO goals (
@@ -109,7 +109,7 @@ impl Goal {
         Ok(new_account)
     }
 
-    pub async fn update(&self, client: &Client) -> Result<Self, AppError> {
+    pub async fn update(&self, client: &impl GenericClient) -> Result<Self, AppError> {
         client
             .execute(
                 "UPDATE goals SET
@@ -143,7 +143,7 @@ impl Goal {
         Ok(goal)
     }
 
-    pub async fn delete(&self, client: &Client) -> Result<(), AppError> {
+    pub async fn delete(&self, client: &impl GenericClient) -> Result<(), AppError> {
         client
             .execute(
                 "DELETE FROM goals WHERE user_id = $1 and id = $2",
@@ -153,7 +153,11 @@ impl Goal {
         Ok(())
     }
 
-    pub async fn get_one(client: &Client, id: i32, user_id: i32) -> Result<Self, AppError> {
+    pub async fn get_one(
+        client: &impl GenericClient,
+        id: i32,
+        user_id: i32,
+    ) -> Result<Self, AppError> {
         let row = client
             .query_one(
                 "SELECT goals.* FROM goals
@@ -167,7 +171,7 @@ impl Goal {
         row.try_into()
     }
 
-    pub async fn get_all(client: &Client, user_id: i32) -> Result<Vec<Self>, AppError> {
+    pub async fn get_all(client: &impl GenericClient, user_id: i32) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
                 "SELECT goals.* FROM goals INNER
@@ -185,7 +189,7 @@ impl Goal {
         Ok(goals)
     }
 
-    pub async fn get_all_unscoped(client: &Client) -> Result<Vec<Self>, AppError> {
+    pub async fn get_all_unscoped(client: &impl GenericClient) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
                 "SELECT goals.* FROM goals ORDER BY target_date ASC FOR UPDATE",
@@ -202,7 +206,7 @@ impl Goal {
     }
 
     pub async fn get_expired(
-        client: &Client,
+        client: &impl GenericClient,
         cutoff: DateTime<Utc>,
     ) -> Result<Vec<Self>, AppError> {
         let rows = client
@@ -276,7 +280,11 @@ impl Goal {
         Ok(self.target / total_time_in_days)
     }
 
-    pub async fn accelerate(&self, client: &Client, amount: Decimal) -> Result<Self, AppError> {
+    pub async fn accelerate(
+        &self,
+        client: &impl GenericClient,
+        amount: Decimal,
+    ) -> Result<Self, AppError> {
         let mut goal = self.clone();
         goal.accumulated_amount += amount;
 
@@ -289,7 +297,7 @@ impl Goal {
 
     pub async fn accumulate(
         &self,
-        client: &Client,
+        client: &impl GenericClient,
         time_provider: &impl Times,
     ) -> Result<Self, AppError> {
         let accumulated_now = self.accumulated_now(time_provider)?;
@@ -365,7 +373,6 @@ mod tests {
     use crate::{test_utils::state_for_tests, utilities::dates::Times};
     use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike, Utc};
     use rust_decimal::Decimal;
-    use tokio_postgres::GenericClient;
 
     struct MockTimeProvider;
     impl Times for MockTimeProvider {
@@ -381,8 +388,7 @@ mod tests {
     async fn test_accumulate_from_over_accumulated() {
         let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let time_provider = &MockTimeProvider {};
         let goal = Goal {
             id: None,
@@ -398,8 +404,8 @@ mod tests {
             .and_utc(),
             start_date: None,
         };
-        let goal = goal.create(client).await.unwrap();
-        let goal = goal.accumulate(client, time_provider).await.unwrap();
+        let goal = goal.create(&client).await.unwrap();
+        let goal = goal.accumulate(&client, time_provider).await.unwrap();
 
         assert_eq!(goal.accumulated_amount, Decimal::new(90, 0))
     }
@@ -408,8 +414,7 @@ mod tests {
     async fn test_accumulate_from_over_target() {
         let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let time_provider = &MockTimeProvider {};
         let goal = Goal {
             id: None,
@@ -425,8 +430,8 @@ mod tests {
             .and_utc(),
             start_date: None,
         };
-        let goal = goal.create(client).await.unwrap();
-        let goal = goal.accumulate(client, time_provider).await.unwrap();
+        let goal = goal.create(&client).await.unwrap();
+        let goal = goal.accumulate(&client, time_provider).await.unwrap();
 
         assert_eq!(goal.accumulated_amount, Decimal::new(100, 0))
     }
@@ -435,8 +440,7 @@ mod tests {
     async fn test_accumulate_from_zero() {
         let (shared_state, user_extension, _context_extension) = state_for_tests().await.unwrap();
         let user_id = user_extension.0.id;
-        let client = shared_state.pool.get().await.unwrap();
-        let client = client.client();
+        let client = shared_state.pool.get_client().await.unwrap();
         let time_provider = &MockTimeProvider {};
         let goal = Goal {
             id: None,
@@ -452,9 +456,9 @@ mod tests {
             .and_utc(),
             start_date: None,
         };
-        let goal = goal.create(client).await.unwrap();
+        let goal = goal.create(&client).await.unwrap();
 
-        let goal = goal.accumulate(client, time_provider).await.unwrap();
+        let goal = goal.accumulate(&client, time_provider).await.unwrap();
         assert!(goal.accumulated_amount - Decimal::new(9766, 2) < Decimal::new(3, 1))
     }
 }

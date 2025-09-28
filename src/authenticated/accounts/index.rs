@@ -11,7 +11,6 @@ use axum::{
     http::{HeaderMap, StatusCode},
 };
 use handlebars::to_json;
-use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -19,8 +18,9 @@ pub async fn action(
     user: Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
+    let client = shared_state.pool.get_client().await?;
     let mut context = context.clone();
-    let accounts = Account::get_all(shared_state.pool.get().await?.client(), user.id).await?;
+    let accounts = Account::get_all(&client, user.id).await?;
     let response_format = get_response_format(&headers)?;
 
     match response_format {

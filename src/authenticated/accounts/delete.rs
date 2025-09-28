@@ -12,7 +12,6 @@ use axum::{
     response::IntoResponse,
 };
 use handlebars::to_json;
-use tokio_postgres::GenericClient;
 
 pub async fn modal(
     shared_state: State<SharedState>,
@@ -21,7 +20,8 @@ pub async fn modal(
     Extension(user): Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
-    let account = Account::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
+    let client = shared_state.pool.get_client().await?;
+    let account = Account::get_one(&client, id, user.id).await?;
     let response_format = get_response_format(&headers)?;
 
     match response_format {
@@ -58,12 +58,12 @@ pub async fn action(
     Extension(user): Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
-    let account = Account::get_one(shared_state.pool.get().await?.client(), id, user.id).await?;
-    account
-        .delete(shared_state.pool.get().await?.client())
-        .await?;
-    let response_format = get_response_format(&headers)?;
+    let client = shared_state.pool.get_client().await?;
+    let account = Account::get_one(&client, id, user.id).await?;
 
+    account.delete(&client).await?;
+
+    let response_format = get_response_format(&headers)?;
     match response_format {
         ResponseFormat::Html => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
         ResponseFormat::Json => Ok(generate_response(
@@ -95,7 +95,6 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use rust_decimal::Decimal;
-    use tokio_postgres::GenericClient;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -108,11 +107,8 @@ mod tests {
             amount: Decimal::new(100, 0),
             debt: false,
         };
-
-        let account = account
-            .create(shared_state.pool.get().await.unwrap().client())
-            .await
-            .unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
+        let account = account.create(&client).await.unwrap();
 
         let app = Router::new()
             .route("/accounts/{id}/delete", axum::routing::get(modal))
@@ -134,6 +130,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_action() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
         let account = Account {
             id: None,
@@ -143,10 +140,7 @@ mod tests {
             debt: false,
         };
 
-        let account = account
-            .create(shared_state.pool.get().await.unwrap().client())
-            .await
-            .unwrap();
+        let account = account.create(&client).await.unwrap();
 
         let app = Router::new()
             .route("/accounts/{id}", axum::routing::delete(action))
@@ -165,12 +159,7 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
 
-        let deleted_account = Account::get_one(
-            shared_state.pool.get().await.unwrap().client(),
-            account.id.unwrap(),
-            user_id,
-        )
-        .await;
+        let deleted_account = Account::get_one(&client, account.id.unwrap(), user_id).await;
         assert!(deleted_account.is_err());
     }
 }

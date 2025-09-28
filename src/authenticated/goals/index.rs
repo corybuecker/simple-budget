@@ -16,7 +16,6 @@ use axum::{
 use chrono::Utc;
 use handlebars::to_json;
 use rust_decimal::Decimal;
-use tokio_postgres::GenericClient;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -24,14 +23,13 @@ pub async fn action(
     user: Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
+    let client = shared_state.pool.get_client().await?;
     let mut context = context.clone();
     let mut accumulations: Vec<Decimal> = Vec::new();
     let mut days_remaining: Vec<i64> = Vec::new();
     let mut per_days: Vec<Decimal> = Vec::new();
 
-    let user = User::get_by_id(shared_state.pool.get().await?.client(), user.id)
-        .await
-        .unwrap();
+    let user = User::get_by_id(&client, user.id).await.unwrap();
 
     let goal_header = match user.preferences {
         Some(preferences) => preferences.0.goal_header,
@@ -45,9 +43,7 @@ pub async fn action(
         to_json(goal_header_for_context.or(Some(GoalHeader::Accumulated))),
     );
 
-    let goals = Goal::get_all(shared_state.pool.get().await?.client(), user.id)
-        .await
-        .unwrap();
+    let goals = Goal::get_all(&client, user.id).await.unwrap();
 
     for goal in &goals {
         accumulations.push(goal.accumulated_amount);

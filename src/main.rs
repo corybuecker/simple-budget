@@ -5,10 +5,11 @@ mod jobs;
 mod models;
 mod utilities;
 
-use crate::utilities::handlebars::{
-    DigestAssetHandlebarsHelper, EqHandlebarsHelper, RenderAssetHandlebarsHelper, walk_directory,
+use crate::{
+    errors::AppError,
+    utilities::handlebars::{DigestAssetHandlebarsHelper, EqHandlebarsHelper, walk_directory},
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use axum::{
     Router,
     extract::{FromRef, Request},
@@ -22,7 +23,6 @@ use chrono::Utc;
 use errors::AppResponse;
 use handlebars::Handlebars;
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
-use rand::Rng;
 use rust_database_common::DatabasePool;
 use rust_web_common::telemetry::TelemetryBuilder;
 use serde::Serialize;
@@ -36,6 +36,7 @@ use tokio::{
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::debug;
 use utilities::dates::TimeProvider;
+use uuid::Uuid;
 
 #[derive(Serialize, Clone)]
 pub enum Section {
@@ -79,9 +80,10 @@ fn start_background_jobs() -> tokio::task::JoinHandle<()> {
 }
 
 async fn inject_context(mut request: Request, next: Next) -> Response {
-    let handlebars_context = HandlebarsContext::new();
+    let nonce = Uuid::new_v4().to_string();
+    let mut handlebars_context = HandlebarsContext::new();
+    handlebars_context.insert("nonce".to_string(), nonce.into());
     request.extensions_mut().insert(handlebars_context);
-
     next.run(request).await
 }
 
@@ -102,18 +104,37 @@ async fn cache_assets(request: Request, next: Next) -> Response {
     response
 }
 
+async fn secure_headers(request: Request, next: Next) -> Result<Response, AppError> {
+    let nonce = {
+        let context = request
+            .extensions()
+            .get::<HandlebarsContext>()
+            .ok_or(AppError::Unknown(anyhow!("missing nonce value")))?;
+        context
+            .get("nonce")
+            .ok_or(anyhow!("bad nonce value"))?
+            .as_str()
+            .ok_or(anyhow!("nonce is not a string"))?
+            .to_string()
+    };
+
+    let mut response = next.run(request).await;
+
+    response.headers_mut().insert(
+    "Content-Security-Policy",
+    HeaderValue::from_str(&format!(
+        "default-src 'none'; script-src 'nonce-{}' https://ga.jspm.io; style-src 'nonce-{}' 'sha256-WAyOw4V+FqDc35lQPyRADLBWbuNK8ahvYEaQIYF1+Ps='; img-src 'self'; connect-src 'self'",
+        nonce, nonce
+    )).unwrap());
+
+    Ok(response)
+}
+
 #[tokio::main]
 async fn main() {
     // Reads endpoints and log level from environment variables
     let mut telemetry = TelemetryBuilder::new("simple-budget".to_string());
     telemetry.init().expect("could not initialize subscriber");
-
-    let mut rng = rand::rng();
-    let nonce: [u8; 16] = rng.random();
-    let nonce = nonce
-        .iter()
-        .map(|b| format!("{:02x}", b))
-        .collect::<String>();
 
     let cache_key = Utc::now().timestamp_millis().to_string();
     let mut handlebars = Handlebars::new();
@@ -125,13 +146,7 @@ async fn main() {
             key: cache_key.clone(),
         }),
     );
-    handlebars.register_helper(
-        "render_asset",
-        Box::new(RenderAssetHandlebarsHelper {
-            nonce,
-            cache_key: cache_key.clone(),
-        }),
-    );
+
     handlebars.register_helper("eq", Box::new(EqHandlebarsHelper {}));
 
     for template in walk_directory("./templates").unwrap() {
@@ -161,6 +176,7 @@ async fn main() {
         .merge(authenticated::authenticated_router(shared_state.clone()))
         .merge(Router::new().route("/healthcheck", get(healthcheck)))
         .with_state(shared_state)
+        .layer(from_fn(secure_headers))
         .layer(from_fn(inject_context))
         .merge(
             Router::new()
@@ -204,3 +220,60 @@ pub async fn database_pool(database_url: Option<&str>) -> Result<DatabasePool> {
 
 #[cfg(test)]
 mod test_utils;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{
+        body::Body,
+        http::{Request, StatusCode},
+    };
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn test_csp_header_applied() {
+        let app = Router::new()
+            .route("/test", get(|| async { "test response" }))
+            .layer(from_fn(secure_headers))
+            .layer(from_fn(inject_context));
+
+        let response = app
+            .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let csp_header = response.headers().get("Content-Security-Policy");
+        assert!(csp_header.is_some());
+
+        let csp_value = csp_header.unwrap().to_str().unwrap();
+        assert!(csp_value.contains("default-src 'none'"));
+        assert!(csp_value.contains("script-src 'nonce-"));
+        assert!(csp_value.contains("style-src 'nonce-"));
+        assert!(csp_value.contains("img-src 'self'"));
+        assert!(csp_value.contains("connect-src 'self'"));
+    }
+
+    #[tokio::test]
+    async fn test_nonce_injection() {
+        let app = Router::new()
+            .route(
+                "/test",
+                get(|request: Request<Body>| async move {
+                    let context = request.extensions().get::<HandlebarsContext>().unwrap();
+                    let nonce = context.get("nonce").unwrap().as_str().unwrap();
+                    assert!(!nonce.is_empty());
+                    "ok"
+                }),
+            )
+            .layer(from_fn(inject_context));
+
+        let response = app
+            .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+}

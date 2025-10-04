@@ -24,11 +24,12 @@ pub async fn index(
     shared_state: State<SharedState>,
     headers: HeaderMap,
     user: Extension<UserExtension>,
+    Extension(mut context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
     let csrf = user.csrf.clone();
     let user = User::get_by_id(&client, user.id).await?;
-    let mut context = generate_dashboard_context_for(&user, &client).await?;
+    generate_dashboard_context_for(&mut context, &user, &client).await?;
 
     context.insert("csrf".to_string(), to_json(csrf));
     context.insert("section".to_string(), to_json(Section::Reports));
@@ -65,11 +66,10 @@ pub async fn index(
 }
 
 pub async fn generate_dashboard_context_for(
+    context: &mut HandlebarsContext,
     user: &User,
     client: &impl GenericClient,
-) -> Result<HandlebarsContext> {
-    let mut handlebars_context = HandlebarsContext::new();
-
+) -> Result<()> {
     let preferences = match &user.preferences {
         Some(preferences) => &preferences.0,
         None => &Preferences {
@@ -130,27 +130,27 @@ pub async fn generate_dashboard_context_for(
 
     let per_diem_diff_monthly = per_diem - monthly_income_per_day;
 
-    handlebars_context.insert(
+    context.insert(
         "tomorrow_remaining_total".to_string(),
         to_json(tomorrow_remaining_total),
     );
-    handlebars_context.insert(
+    context.insert(
         "goals_accumulated_per_day".to_string(),
         to_json(goals_accumulated),
     );
-    handlebars_context.insert("remaining_days".to_string(), to_json(remaining_days));
-    handlebars_context.insert(
+    context.insert("remaining_days".to_string(), to_json(remaining_days));
+    context.insert(
         "remaining_minutes".to_string(),
         to_json(duration_until_tomorrow.num_minutes()),
     );
 
-    handlebars_context.insert("remaining_total".to_string(), to_json(remaining_total));
-    handlebars_context.insert("forecast_offset".to_string(), to_json(forecast_offset));
-    handlebars_context.insert("per_diem".to_string(), to_json(per_diem));
-    handlebars_context.insert(
+    context.insert("remaining_total".to_string(), to_json(remaining_total));
+    context.insert("forecast_offset".to_string(), to_json(forecast_offset));
+    context.insert("per_diem".to_string(), to_json(per_diem));
+    context.insert(
         "per_diem_diff_monthly".to_string(),
         to_json(per_diem_diff_monthly),
     );
 
-    Ok(handlebars_context)
+    Ok(())
 }

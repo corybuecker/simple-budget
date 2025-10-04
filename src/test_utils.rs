@@ -5,9 +5,7 @@ use crate::{
     authenticated::UserExtension,
     errors::AppError,
     models::user::Preferences,
-    utilities::handlebars::{
-        DigestAssetHandlebarsHelper, RenderAssetHandlebarsHelper, walk_directory,
-    },
+    utilities::handlebars::{DigestAssetHandlebarsHelper, walk_directory},
 };
 #[cfg(test)]
 use crate::{SharedState, database_pool, models::user::User};
@@ -39,13 +37,7 @@ pub async fn state_for_tests() -> Result<(
             key: String::from_str("test")?,
         }),
     );
-    handlebars.register_helper(
-        "render_asset",
-        Box::new(RenderAssetHandlebarsHelper {
-            nonce: String::from_str("test")?,
-            cache_key: String::from_str("test")?,
-        }),
-    );
+
     for template in walk_directory("./templates").unwrap() {
         let name = template
             .to_str()

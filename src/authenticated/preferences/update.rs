@@ -106,13 +106,11 @@ pub async fn action(
     }
 
     let goals_html = goals_html?;
+    let mut context = HandlebarsContext::new();
+    generate_dashboard_context_for(&mut context, &user, &shared_state.pool.get_client().await?)
+        .await?;
 
-    let dashboard_context =
-        generate_dashboard_context_for(&user, &shared_state.pool.get_client().await?).await?;
-
-    let dashboard_content = shared_state
-        .handlebars
-        .render("_dashboard", &dashboard_context)?;
+    let dashboard_content = shared_state.handlebars.render("_dashboard", &context)?;
 
     context.insert("goals_update".to_string(), to_json(goals_html));
     context.insert("dashboard_update".to_string(), to_json(dashboard_content));

@@ -3,19 +3,10 @@ use handlebars::{
     Context, Handlebars, Helper, HelperDef, HelperResult, Output, RenderContext, RenderErrorReason,
     Renderable,
 };
-use std::{
-    collections::VecDeque,
-    fs::read_dir,
-    path::{Path, PathBuf},
-};
+use std::{collections::VecDeque, fs::read_dir, path::PathBuf};
 
 pub struct DigestAssetHandlebarsHelper {
     pub key: String,
-}
-
-pub struct RenderAssetHandlebarsHelper {
-    pub nonce: String,
-    pub cache_key: String,
 }
 
 impl HelperDef for DigestAssetHandlebarsHelper {
@@ -40,50 +31,6 @@ impl HelperDef for DigestAssetHandlebarsHelper {
 
         out.write(&path)?;
         Ok(())
-    }
-}
-
-impl HelperDef for RenderAssetHandlebarsHelper {
-    fn call<'reg: 'rc, 'rc>(
-        &self,
-        h: &Helper<'rc>,
-        _r: &'reg Handlebars<'reg>,
-        _ctx: &'rc Context,
-        _rc: &mut RenderContext<'reg, 'rc>,
-        out: &mut dyn Output,
-    ) -> HelperResult {
-        let value = h
-            .param(0)
-            .map(|v| v.value())
-            .ok_or(RenderErrorReason::ParamNotFoundForIndex("digest_asset", 0))?;
-
-        let value_string = value.to_string().replace("\"", "");
-        let file = Path::new(&value_string);
-        let extension = file
-            .extension()
-            .ok_or(RenderErrorReason::ParamNotFoundForIndex("digest_asset", 0))?;
-        let extension = extension.to_string_lossy();
-
-        let mut path = "/assets/".to_string();
-        path.push_str(&file.to_string_lossy().replace("\"", ""));
-
-        match extension.as_ref() {
-            "css" => {
-                out.write(&format!(
-                    "<link nonce=\"{}\" rel=\"stylesheet\" href=\"{}?v={}\">",
-                    &self.nonce, &path, &self.cache_key
-                ))?;
-                Ok(())
-            }
-            "js" => {
-                out.write(&format!(
-                    "<script type=\"module\" data-turbo-eval=\"false\" nonce=\"{}\" src=\"{}?v={}\"></script>",
-                    &self.nonce, &path, &self.cache_key
-                ))?;
-                Ok(())
-            }
-            _ => Err(RenderErrorReason::InvalidParamType("unsupported file extension").into()),
-        }
     }
 }
 

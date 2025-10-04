@@ -6,7 +6,7 @@ mod models;
 mod utilities;
 
 use crate::utilities::handlebars::{
-    DigestAssetHandlebarsHelper, EqHandlebarsHelper, walk_directory,
+    DigestAssetHandlebarsHelper, EqHandlebarsHelper, RenderAssetHandlebarsHelper, walk_directory,
 };
 use anyhow::Result;
 use axum::{
@@ -22,6 +22,7 @@ use chrono::Utc;
 use errors::AppResponse;
 use handlebars::Handlebars;
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
+use rand::Rng;
 use rust_database_common::DatabasePool;
 use rust_web_common::telemetry::TelemetryBuilder;
 use serde::Serialize;
@@ -107,13 +108,28 @@ async fn main() {
     let mut telemetry = TelemetryBuilder::new("simple-budget".to_string());
     telemetry.init().expect("could not initialize subscriber");
 
+    let mut rng = rand::rng();
+    let nonce: [u8; 16] = rng.random();
+    let nonce = nonce
+        .iter()
+        .map(|b| format!("{:02x}", b))
+        .collect::<String>();
+
+    let cache_key = Utc::now().timestamp_millis().to_string();
     let mut handlebars = Handlebars::new();
     handlebars.set_dev_mode(true);
     handlebars.set_strict_mode(true);
     handlebars.register_helper(
         "digest_asset",
         Box::new(DigestAssetHandlebarsHelper {
-            key: Utc::now().timestamp_millis().to_string(),
+            key: cache_key.clone(),
+        }),
+    );
+    handlebars.register_helper(
+        "render_asset",
+        Box::new(RenderAssetHandlebarsHelper {
+            nonce,
+            cache_key: cache_key.clone(),
         }),
     );
     handlebars.register_helper("eq", Box::new(EqHandlebarsHelper {}));

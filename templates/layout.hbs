@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
     <head>
         <title>{{#if section}}{{section}} · {{/if}}Simple Budget</title>
@@ -29,7 +30,7 @@
         <!-- ES Module Shims import maps polyfills -->
         <script async src="https://ga.jspm.io/npm:es-module-shims@2.6.2/dist/es-module-shims.js" integrity="sha384-Sy58vVwkveOO72W4SqZ3BXZ6oXXIcY185I0U90aPs9PDd6Gx/vbwnnYP3InrO5em" crossorigin="anonymous"></script>
 
-        <link rel="stylesheet" href="{{ digest_asset "app.css" }}">
+        {{ render_asset "app.css" }}
         <link rel="icon" href="{{ digest_asset "favicon.png" }}">
         <link rel="mask-icon" href="{{ digest_asset "favicon.png" }}" color="#000000">
         <link rel="apple-touch-icon" href="{{ digest_asset "favicon.png" }}">
@@ -138,20 +139,7 @@
                 </div>
             </nav>
         </div>
-        <script type="module" data-turbo-eval="false">
-            import * as Turbo from "@hotwired/turbo"
-            import { Application, Controller } from "@hotwired/stimulus"
-
-            import FormatterController from "{{ digest_asset "controllers/formatter_controller.js" }}"
-            import ModalController from "{{ digest_asset "controllers/modal_controller.js" }}"
-            import CurrencyInputController from "{{ digest_asset "controllers/currency_input_controller.js" }}"
-
-            window.Stimulus = Application.start()
-
-            Stimulus.register("modal", ModalController)
-            Stimulus.register("formatter", FormatterController)
-            Stimulus.register("currency-input", CurrencyInputController)
-        </script>
+        {{ render_asset "app.js" }}
         <turbo-frame
             data-controller="modal"
             class="absolute w-full top-0"

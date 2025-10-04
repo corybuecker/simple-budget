@@ -1,16 +1,19 @@
+use std::str::FromStr;
+
 use crate::{
     HandlebarsContext,
     authenticated::UserExtension,
     errors::AppError,
     models::user::Preferences,
-    utilities::handlebars::{DigestAssetHandlebarsHelper, walk_directory},
+    utilities::handlebars::{
+        DigestAssetHandlebarsHelper, RenderAssetHandlebarsHelper, walk_directory,
+    },
 };
 #[cfg(test)]
 use crate::{SharedState, database_pool, models::user::User};
 use anyhow::{Result, anyhow};
 use axum::Extension;
 use axum_extra::extract::cookie::Key;
-use chrono::Utc;
 use handlebars::Handlebars;
 use postgres_types::Json;
 use rust_database_common::GenericClient;
@@ -33,10 +36,16 @@ pub async fn state_for_tests() -> Result<(
     handlebars.register_helper(
         "digest_asset",
         Box::new(DigestAssetHandlebarsHelper {
-            key: Utc::now().timestamp_millis().to_string(),
+            key: String::from_str("test")?,
         }),
     );
-
+    handlebars.register_helper(
+        "render_asset",
+        Box::new(RenderAssetHandlebarsHelper {
+            nonce: String::from_str("test")?,
+            cache_key: String::from_str("test")?,
+        }),
+    );
     for template in walk_directory("./templates").unwrap() {
         let name = template
             .to_str()

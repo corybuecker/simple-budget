@@ -167,6 +167,21 @@ mod tests {
         test_accelerate_goal().await;
         test_accumulate_goal().await;
         test_convert_goal_to_envelope().await;
+
+        let mut database_pool = database_pool(Some(
+            "postgres://simple_budget@localhost:5432/simple_budget_test",
+        ))
+        .await
+        .unwrap();
+
+        database_pool.connect().await.unwrap();
+        database_pool
+            .get_client()
+            .await
+            .unwrap()
+            .execute("TRUNCATE TABLE goals", &[])
+            .await
+            .unwrap();
     }
 
     async fn test_accelerate_goal() {

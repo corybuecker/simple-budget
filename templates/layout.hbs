@@ -10,27 +10,19 @@
 
         {{#if csrf}}<meta name="csrf-token" content="{{ csrf }}" />{{/if}}
 
-        <!--
-          Import map generated with JSPM Generator
-          Edit here: https://generator.jspm.io/#Y2NlYGBiTs4vqkwqTU3OTi1icMjILynPLEpN0S8uycwtzSktdjDWM9IzQpIoKS1Kynew0DPQMzQGALxq1kVBAA
-        -->
-        <script type="importmap">
+        <script type="importmap" nonce="{{ nonce }}">
         {
           "imports": {
             "@hotwired/stimulus": "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js",
-            "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.13/dist/turbo.es2017-esm.js"
+            "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.18/dist/turbo.es2017-esm.js"
           },
           "integrity": {
             "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js": "sha384-NStGXzUH4pFNGrLRkzXYz7zzDn8S6MvFPwfKSuYf6TlX25BrNVP4oCN2S04XUuOI",
-            "https://ga.jspm.io/npm:@hotwired/turbo@8.0.13/dist/turbo.es2017-esm.js": "sha384-Ar5BI7e7pT8hROa/8lS1X1ANGto4Pa7UJb06l16NbEqGKD/CCab3ZTrtWi18TVam"
+            "https://ga.jspm.io/npm:@hotwired/turbo@8.0.18/dist/turbo.es2017-esm.js": "sha384-KXOC6zDFkyLy63JuWqkAh1YEUeZ7qc2yvevmEmbx7L0VSjRxR9vRK0zG+4P5qM8s"
           }
         }
         </script>
-
-        <!-- ES Module Shims import maps polyfills -->
-        <script async src="https://ga.jspm.io/npm:es-module-shims@2.6.2/dist/es-module-shims.js" integrity="sha384-Sy58vVwkveOO72W4SqZ3BXZ6oXXIcY185I0U90aPs9PDd6Gx/vbwnnYP3InrO5em" crossorigin="anonymous"></script>
-
-        {{ render_asset "app.css" }}
+        <link rel="stylesheet" href="{{ digest_asset "app.css" }}" nonce="{{ nonce }}">
         <link rel="icon" href="{{ digest_asset "favicon.png" }}">
         <link rel="mask-icon" href="{{ digest_asset "favicon.png" }}" color="#000000">
         <link rel="apple-touch-icon" href="{{ digest_asset "favicon.png" }}">
@@ -54,8 +46,7 @@
                 {{> (lookup this "partial")}}
             </main>
             <nav
-                class="@sm:block @lg:hidden px-2 pt-[1rem]"
-                style="padding-bottom: calc(env(safe-area-inset-bottom, 0) + 1rem)"
+                class="@sm:block @lg:hidden px-2 pt-[1rem] pb-[calc(env(safe-area-inset-bottom,0)+1rem)]"
             >
                 <div class="flex px-2 justify-between content-center">
                     <a class="flex flex-col items-center" href="/">
@@ -139,7 +130,7 @@
                 </div>
             </nav>
         </div>
-        {{ render_asset "app.js" }}
+        <script type="module" src="{{ digest_asset "app.js" }}" data-turbo-eval="false" nonce="{{ nonce }}"></script>
         <turbo-frame
             data-controller="modal"
             class="absolute w-full top-0"

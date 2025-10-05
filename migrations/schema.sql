@@ -2,8 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.6 (Debian 17.6-1.pgdg13+1)
--- Dumped by pg_dump version 17.6 (Homebrew)
+\restrict 8lERY7a7uN5ETGp0OYHLH0oqZx1BLa6mvp3AT8J4kbSrC2txUmlhHpMDIaiAzVC
+
+-- Dumped from database version 18.0 (Debian 18.0-1.pgdg13+3)
+-- Dumped by pg_dump version 18.0 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -299,3 +301,6 @@ ALTER TABLE ONLY public.sessions
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict 8lERY7a7uN5ETGp0OYHLH0oqZx1BLa6mvp3AT8J4kbSrC2txUmlhHpMDIaiAzVC
+

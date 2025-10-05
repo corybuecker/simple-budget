@@ -192,7 +192,7 @@ impl Goal {
     pub async fn get_all_unscoped(client: &impl GenericClient) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
-                "SELECT goals.* FROM goals ORDER BY target_date ASC FOR UPDATE",
+                "SELECT goals.* FROM goals ORDER BY DATE(target_date) ASC, target ASC FOR UPDATE",
                 &[],
             )
             .await?;

@@ -29,7 +29,7 @@ pub struct Payload {
     id_token: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct Claims {
     sub: String,
     email: String,

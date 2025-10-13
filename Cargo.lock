@@ -1606,7 +1606,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51e219e79014df21a225b1860a479e2dcd7cbd9130f4defd4bd0e191ea31d67d"
 dependencies = [
- "base64 0.21.7",
+ "base64 0.22.1",
  "chrono",
  "getrandom 0.2.16",
  "http",
@@ -2462,7 +2462,7 @@ dependencies = [
 [[package]]
 name = "rust-database-common"
 version = "0.1.0"
-source = "git+https://github.com/corybuecker/rust-database-common?branch=main#afd266592f6ac87dabbc1b23463950505debc38d"
+source = "git+https://github.com/corybuecker/rust-database-common?branch=main#e6d33d60595d4041c9b4f16104d471426d87be9c"
 dependencies = [
  "deadpool-postgres",
  "thiserror 2.0.17 (git+https://github.com/dtolnay/thiserror?tag=2.0.17)",
@@ -2472,7 +2472,7 @@ dependencies = [
 [[package]]
 name = "rust-web-common"
 version = "0.1.0"
-source = "git+https://github.com/corybuecker/rust-web-common?branch=main#2703f60cebca37c0b5e18e059b7b2bedfc9b4254"
+source = "git+https://github.com/corybuecker/rust-web-common?branch=main#fd0d51e79e8f17861b2b911c274bef181ab1a6bf"
 dependencies = [
  "handlebars",
  "opentelemetry",
@@ -2487,9 +2487,9 @@ dependencies = [
 
 [[package]]
 name = "rust_decimal"
-version = "1.38.0"
+version = "1.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8975fc98059f365204d635119cf9c5a60ae67b841ed49b5422a9a7e56cdfac0"
+checksum = "35affe401787a9bd846712274d97654355d21b2a2c092a3139aabe31e9022282"
 dependencies = [
  "arrayvec",
  "borsh",

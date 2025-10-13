@@ -18,7 +18,7 @@ postgres-types = { version = "0.2.9", features = ["derive"] }
 rand = { version = "0.9.2" }
 rust-database-common = { git = "https://github.com/corybuecker/rust-database-common", branch = "main" }
 rust-web-common = { git = "https://github.com/corybuecker/rust-web-common", branch = "main" }
-rust_decimal = { version = "1.38.0", features = ["db-tokio-postgres"] }
+rust_decimal = { version = "1.39.0", features = ["db-tokio-postgres"] }
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = { version = "1.0.145" }
 tokio = { version = "1.47.1", features = ["full"] }

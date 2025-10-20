@@ -3,21 +3,6 @@
 version = 4
 
 [[package]]
-name = "addr2line"
-version = "0.24.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfbe277e56a376000877090da837660b4427aad530e3028d44e0bffe4f89a1c1"
-dependencies = [
- "gimli",
-]
-
-[[package]]
-name = "adler2"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
-
-[[package]]
 name = "ahash"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -180,21 +165,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.104",
-]
-
-[[package]]
-name = "backtrace"
-version = "0.3.75"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6806a6321ec58106fea15becdad98371e28d92ccbc7c8f1b3b6dd724fe8f1002"
-dependencies = [
- "addr2line",
- "cfg-if",
- "libc",
- "miniz_oxide",
- "object",
- "rustc-demangle",
- "windows-targets",
 ]
 
 [[package]]
@@ -529,7 +499,7 @@ dependencies = [
  "deadpool",
  "getrandom 0.2.16",
  "tokio",
- "tokio-postgres 0.7.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-postgres 0.7.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]
 
@@ -889,12 +859,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gimli"
-version = "0.31.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
-
-[[package]]
 name = "group"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1080,7 +1044,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2 0.6.0",
+ "socket2 0.5.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -1246,17 +1210,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "io-uring"
-version = "0.7.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d93587f37623a1a17d94ef2bc9ada592f5465fe7732084ab7beefabe5c77c0c4"
-dependencies = [
- "bitflags",
- "cfg-if",
- "libc",
-]
-
-[[package]]
 name = "ipnet"
 version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1326,9 +1279,9 @@ dependencies = [
 
 [[package]]
 name = "jsonwebtoken"
-version = "10.0.0"
+version = "10.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1417155a38e99d7704ddb3ea7445fe57fdbd5d756d727740a9ed8b9ebaed6e1"
+checksum = "3d119c6924272d16f0ab9ce41f7aa0bfef9340c00b0bb7ca3dd3b263d4a9150b"
 dependencies = [
  "base64 0.22.1",
  "ed25519-dalek",
@@ -1441,15 +1394,6 @@ checksum = "f7c44f8e672c00fe5308fa235f821cb4198414e1c77935c1ab6948d3fd78550e"
 dependencies = [
  "mime",
  "unicase",
-]
-
-[[package]]
-name = "miniz_oxide"
-version = "0.8.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
-dependencies = [
- "adler2",
 ]
 
 [[package]]
@@ -1606,7 +1550,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51e219e79014df21a225b1860a479e2dcd7cbd9130f4defd4bd0e191ea31d67d"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.21.7",
  "chrono",
  "getrandom 0.2.16",
  "http",
@@ -1618,15 +1562,6 @@ dependencies = [
  "sha2",
  "thiserror 1.0.69",
  "url",
-]
-
-[[package]]
-name = "object"
-version = "0.36.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62948e14d923ea95ea2c7c86c71013138b66525b86bdc08d2dcc262bdb497b87"
-dependencies = [
- "memchr",
 ]
 
 [[package]]
@@ -1992,7 +1927,7 @@ dependencies = [
 [[package]]
 name = "postgres-protocol"
 version = "0.6.9"
-source = "git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.14#53a929e68cd1a43407eed26174f74892fe6d5bca"
+source = "git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.15#47374383727e80fb5d3eec966d9bd2f6f907c48d"
 dependencies = [
  "base64 0.22.1",
  "byteorder",
@@ -2024,13 +1959,13 @@ dependencies = [
 
 [[package]]
 name = "postgres-types"
-version = "0.2.10"
-source = "git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.14#53a929e68cd1a43407eed26174f74892fe6d5bca"
+version = "0.2.11"
+source = "git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.15#47374383727e80fb5d3eec966d9bd2f6f907c48d"
 dependencies = [
  "bytes",
  "chrono",
  "fallible-iterator",
- "postgres-protocol 0.6.9 (git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.14)",
+ "postgres-protocol 0.6.9 (git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.15)",
  "serde_core",
  "serde_json",
  "uuid",
@@ -2182,7 +2117,7 @@ dependencies = [
  "once_cell",
  "socket2 0.5.10",
  "tracing",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2462,11 +2397,11 @@ dependencies = [
 [[package]]
 name = "rust-database-common"
 version = "0.1.0"
-source = "git+https://github.com/corybuecker/rust-database-common?branch=main#e6d33d60595d4041c9b4f16104d471426d87be9c"
+source = "git+https://github.com/corybuecker/rust-database-common?branch=main#329804762ac93d7c2ab4b09e3b917629789f0a06"
 dependencies = [
  "deadpool-postgres",
  "thiserror 2.0.17 (git+https://github.com/dtolnay/thiserror?tag=2.0.17)",
- "tokio-postgres 0.7.14 (git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.14)",
+ "tokio-postgres 0.7.15 (git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.15)",
 ]
 
 [[package]]
@@ -2495,18 +2430,12 @@ dependencies = [
  "borsh",
  "bytes",
  "num-traits",
- "postgres-types 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "postgres-types 0.2.10",
  "rand 0.8.5",
  "rkyv",
  "serde",
  "serde_json",
 ]
-
-[[package]]
-name = "rustc-demangle"
-version = "0.1.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56f7d92ca342cea22a06f2121d944b4fd82af56988c270852495420f961d4ace"
 
 [[package]]
 name = "rustc-hash"
@@ -2840,7 +2769,7 @@ dependencies = [
  "jsonschema",
  "jsonwebtoken",
  "openidconnect",
- "postgres-types 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "postgres-types 0.2.10",
  "rand 0.9.2",
  "rust-database-common",
  "rust-web-common",
@@ -2848,7 +2777,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
- "tokio-postgres 0.7.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-postgres 0.7.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower",
  "tower-http",
  "tower-layer",
@@ -3125,29 +3054,26 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.47.1"
+version = "1.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89e49afdadebb872d3145a5638b59eb0691ea23e46ca484037cfab3b76b95038"
+checksum = "ff360e02eab121e0bc37a2d3b4d4dc622e6eda3a8e5253d5435ecf5bd4c68408"
 dependencies = [
- "backtrace",
  "bytes",
- "io-uring",
  "libc",
  "mio",
  "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
- "slab",
  "socket2 0.6.0",
  "tokio-macros",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
 name = "tokio-macros"
-version = "2.5.0"
+version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e06d43f1345a3bcd39f6a56dbb7dcab2ba47e68e8ac134855e7e2bdbaf8cab8"
+checksum = "af407857209536a95c8e56f8231ef2c2e2aff839b22e07a1ffcbc617e9db9fa5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3156,9 +3082,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-postgres"
-version = "0.7.14"
+version = "0.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a156efe7fff213168257853e1dfde202eed5f487522cbbbf7d219941d753d853"
+checksum = "2b40d66d9b2cfe04b628173409368e58247e8eddbbd3b0e6c6ba1d09f20f6c9e"
 dependencies = [
  "async-trait",
  "byteorder",
@@ -3172,7 +3098,7 @@ dependencies = [
  "phf 0.13.1",
  "pin-project-lite",
  "postgres-protocol 0.6.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "postgres-types 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "postgres-types 0.2.10",
  "rand 0.9.2",
  "socket2 0.6.0",
  "tokio",
@@ -3182,8 +3108,8 @@ dependencies = [
 
 [[package]]
 name = "tokio-postgres"
-version = "0.7.14"
-source = "git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.14#53a929e68cd1a43407eed26174f74892fe6d5bca"
+version = "0.7.15"
+source = "git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.15#47374383727e80fb5d3eec966d9bd2f6f907c48d"
 dependencies = [
  "async-trait",
  "byteorder",
@@ -3196,8 +3122,8 @@ dependencies = [
  "percent-encoding",
  "phf 0.13.1",
  "pin-project-lite",
- "postgres-protocol 0.6.9 (git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.14)",
- "postgres-types 0.2.10 (git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.14)",
+ "postgres-protocol 0.6.9 (git+https://github.com/rust-postgres/rust-postgres?tag=tokio-postgres-v0.7.15)",
+ "postgres-types 0.2.11",
  "rand 0.9.2",
  "socket2 0.6.0",
  "tokio",
@@ -3732,7 +3658,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3816,6 +3742,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e38bc4d79ed67fd075bcc251a1c39b32a1776bbe92e5bef1f0bf1f8c531853b"
 dependencies = [
  "windows-targets",
+]
+
+[[package]]
+name = "windows-sys"
+version = "0.61.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f109e41dd4a3c848907eb83d5a42ea98b3769495597450cf6d153507b166f0f"
+dependencies = [
+ "windows-link 0.2.0",
 ]
 
 [[package]]

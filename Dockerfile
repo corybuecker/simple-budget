@@ -1,4 +1,4 @@
-FROM node@sha256:7a78e83b764befdf57c544b4770f688e5b4e2a8eefcf96481ab3c32e6ec5d986 AS frontend
+FROM node@sha256:e524a871ad29ac5fa38b840667a6590f42bc14eb052047815faa0ba421c52b93 AS frontend
 RUN mkdir -p /app/static
 COPY input.css /app
 COPY templates /app/templates
@@ -7,7 +7,7 @@ WORKDIR /app
 RUN npm install tailwindcss @tailwindcss/cli
 RUN npx tailwindcss -i input.css -o static/app.css
 
-FROM rust@sha256:52e36cdd822b813542e13e06a816953234ecad01ebae2d0d7ec4a084c7cda6bd AS builder
+FROM rust@sha256:c0601cfa53ef38705af64f72b6b1f2b8afcd8f76de9aa621a8b45b4fa124694c AS builder
 RUN mkdir -p /app/src
 WORKDIR /app
 COPY Cargo.toml Cargo.lock /app/

@@ -2,7 +2,7 @@ name: "CodeQL"
 
 permissions:
   security-events: write
-  
+
 on:
   push:
     branches:
@@ -11,17 +11,17 @@ on:
     branches:
       - main
   schedule:
-    - cron: '23 17 * * 1'
+    - cron: "23 17 * * 1"
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
-    - uses: github/codeql-action/init@16df4fbc19aea13d921737861d6c622bf3cefe23
-      with:
-        languages: rust
-        build-mode: none
-    - uses: github/codeql-action/analyze@16df4fbc19aea13d921737861d6c622bf3cefe23
-      with:
-        category: "/language:rust"
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - uses: github/codeql-action/init@16df4fbc19aea13d921737861d6c622bf3cefe23
+        with:
+          languages: rust
+          build-mode: none
+      - uses: github/codeql-action/analyze@16df4fbc19aea13d921737861d6c622bf3cefe23
+        with:
+          category: "/language:rust"

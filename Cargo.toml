@@ -5,8 +5,8 @@ edition = "2024"
 
 [dependencies]
 anyhow = { version = "1.0.100" }
-axum = { version = "0.8.6", features = ["ws", "macros"] }
-axum-extra = { version = "0.12.1", features = ["cookie-signed", "query"] }
+axum = { version = "0.8.7", features = ["ws", "macros"] }
+axum-extra = { version = "0.12.2", features = ["cookie-signed", "query"] }
 chrono = { version = "0.4.42" }
 chrono-tz = { version = "0.10.3" }
 futures-util = { version = "0.3.31" }

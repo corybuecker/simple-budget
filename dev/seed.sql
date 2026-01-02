@@ -1,0 +1,1 @@
+CREATE DATABASE simple_budget_test TEMPLATE simple_budget;

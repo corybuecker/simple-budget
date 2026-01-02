@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+images:
+  - name: simple-budget
+    newName: ghcr.io/corybuecker/simple-budget
+    digest: sha256:001591ee676c0a9a318d79bcb0b9fd0f7673f831bb49020e6d4f04f89551ef3e
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+
+secretGenerator:
+  - name: simple-budget
+    namespace: simple-budget
+    envs:
+      - .env

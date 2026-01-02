@@ -1,0 +1,7 @@
+{{#each goals}}
+<turbo-stream action="replace" target="goal_{{id}}">
+    <template>
+        {{> goals/_goal accumulations=../accumulations per_days=../per_days goal_header=../goal_header days_remaining=../days_remaining index=@index}}
+    </template>
+</turbo-stream>
+{{/each}}

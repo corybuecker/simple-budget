@@ -4,7 +4,7 @@ kind: Kustomization
 images:
   - name: simple-budget
     newName: projects.corybuecker.com/corybuecker/simple-budget
-    digest: sha256:9ea3e457796b21ef83862c586628d334377c71a0b27f03deaca1e8ed6be83f3d
+    digest: sha256:2300fad48080dd115e52273962cc33f28a64d8e93427f2ec1c59947e50c13c90
 
 resources:
   - namespace.yaml

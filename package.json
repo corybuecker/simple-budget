@@ -1,0 +1,10 @@
+{
+  "packageManager": "pnpm@10.27.0",
+  "scripts": {
+    "compile": "npx @tailwindcss/cli -i input.css -o static/app.css"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "tailwindcss": "^4.1.18"
+  }
+}

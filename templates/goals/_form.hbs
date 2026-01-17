@@ -45,15 +45,17 @@
                     <div class="relative">
                         <span class="absolute left-4 top-3 text-gray-500 font-medium">$</span>
                         <input
-                            data-currency-input-target="input"
-                            name="target"
-                            pattern="\d*"
-                            required
-                            type="number"
-                            data-action="currency-input#change"
-                            value="{{target}}"
                             class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 placeholder-gray-400"
+                            data-action="currency-input#change"
+                            data-currency-input-target="input"
+                            inputmode="decimal"
+                            min="0"
+                            name="target"
                             placeholder="0.00"
+                            required
+                            step="0.01"
+                            type="number"
+                            value="{{target}}"
                         />
                     </div>
                     <div data-currency-input-target="output" class="mt-1 text-sm text-gray-600"></div>

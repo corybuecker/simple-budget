@@ -27,8 +27,8 @@ spec:
                 name: simple-budget
           resources:
             limits:
-              memory: 512M
-              cpu: 150m
+              memory: 128Mi
+              cpu: 200m
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

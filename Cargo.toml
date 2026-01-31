@@ -11,10 +11,10 @@ chrono = { version = "0.4.43" }
 chrono-tz = { version = "0.10.3" }
 futures-util = { version = "0.3.31" }
 handlebars = "6.4.0"
-jsonschema = { version = "0.40.0" }
-jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
+jsonschema = { version = "0.40.2" }
+jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 openidconnect = { version = "4.0.1", features = ["reqwest"] }
-postgres-types = { version = "0.2.11", features = ["derive"] }
+postgres-types = { version = "0.2.12", features = ["derive"] }
 rand = { version = "0.9.2" }
 rust-database-common = { git = "https://github.com/corybuecker/rust-database-common", branch = "main" }
 rust-web-common = { git = "https://github.com/corybuecker/rust-web-common", branch = "main" }
@@ -28,4 +28,4 @@ tower-http = { version = "0.6.8", features = ["fs", "trace"] }
 tower-layer = { version = "0.3.3" }
 tracing = { version = "0.1.43" }
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
-uuid = { version = "1.19.0", features = ["v4"] }
+uuid = { version = "1.20.0", features = ["v4"] }

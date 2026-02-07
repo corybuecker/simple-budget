@@ -4,14 +4,14 @@ version = "2.3.0-dev"
 edition = "2024"
 
 [dependencies]
-anyhow = { version = "1.0.100" }
+anyhow = { version = "1.0.101" }
 axum = { version = "0.8.8", features = ["ws", "macros"] }
 axum-extra = { version = "0.12.5", features = ["cookie-signed", "query"] }
 chrono = { version = "0.4.43" }
 chrono-tz = { version = "0.10.3" }
 futures-util = { version = "0.3.31" }
 handlebars = "6.4.0"
-jsonschema = { version = "0.40.2" }
+jsonschema = { version = "0.41.0" }
 jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 openidconnect = { version = "4.0.1", features = ["reqwest"] }
 postgres-types = { version = "0.2.12", features = ["derive"] }

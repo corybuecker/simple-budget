@@ -15,7 +15,7 @@ jsonschema = { version = "0.41.0" }
 jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 openidconnect = { version = "4.0.1", features = ["reqwest"] }
 postgres-types = { version = "0.2.12", features = ["derive"] }
-rand = { version = "0.9.2" }
+rand = { version = "0.10.0" }
 rust-database-common = { git = "https://github.com/corybuecker/rust-database-common", branch = "main" }
 rust-web-common = { git = "https://github.com/corybuecker/rust-web-common", branch = "main" }
 rust_decimal = { version = "1.40.0", features = ["db-tokio-postgres"] }

@@ -277,6 +277,10 @@ impl Goal {
         let total_time_in_days = Decimal::from_i64(self.total_time()?.num_days())
             .ok_or(anyhow!("could not convert decimal"))?;
 
+        if total_time_in_days == Decimal::ZERO {
+            return Ok(Decimal::ZERO);
+        }
+
         Ok(self.target / total_time_in_days)
     }
 
@@ -382,6 +386,26 @@ mod tests {
                 .with_nanosecond(0)
                 .unwrap()
         }
+    }
+
+    #[test]
+    fn test_accumulated_per_day_zero_total_time() {
+        let target_date =
+            NaiveDateTime::new(NaiveDate::from_str("2024-01-01").unwrap(), NaiveTime::MIN)
+                .and_utc();
+
+        let goal = Goal {
+            id: None,
+            accumulated_amount: Decimal::ZERO,
+            name: "test".to_string(),
+            recurrence: Recurrence::Never,
+            target: Decimal::new(100, 0),
+            user_id: 1,
+            target_date,
+            start_date: Some(target_date),
+        };
+
+        assert_eq!(goal.accumulated_per_day().unwrap(), Decimal::ZERO);
     }
 
     #[tokio::test]

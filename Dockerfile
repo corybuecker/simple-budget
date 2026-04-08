@@ -1,4 +1,4 @@
-FROM node@sha256:f0dfc4847f46d231e44948ded37521492439fd4ac19a6ef2597b9c79fe7a03a0 AS frontend
+FROM node:lts-trixie@sha256:e4ceb04a1f1dd4823a1ab6ef8d2182c09d6299b507c70f20bd0eb9921a78354d AS frontend
 RUN mkdir -p /app/static
 COPY input.css /app
 COPY templates /app/templates
@@ -7,7 +7,7 @@ WORKDIR /app
 RUN npm install tailwindcss @tailwindcss/cli
 RUN npx tailwindcss -i input.css -o static/app.css
 
-FROM rust@sha256:72724f1a416c449b405a2b7ed6bac56058163e6dfb1b5ccb40839882141dd237 AS builder
+FROM rust:1.94.1-trixie@sha256:e8e2bb5ff27ad3b369a4f667392464e6ec399cfe81c1230ae78edb1036b9bd74 AS builder
 RUN mkdir -p /app/src
 WORKDIR /app
 COPY Cargo.toml Cargo.lock /app/
@@ -17,7 +17,7 @@ COPY src /app/src
 RUN touch /app/src/main.rs
 RUN cargo build --release
 
-FROM debian@sha256:55a15a112b42be10bfc8092fcc40b6748dc236f7ef46a358d9392b339e9d60e8
+FROM debian:trixie-slim@sha256:4ffb3a1511099754cddc70eb1b12e50ffdb67619aa0ab6c13fcd800a78ef7c7a
 COPY --from=builder /app/target/release/simple-budget /app/simple-budget
 WORKDIR /app
 RUN chmod 700 /app/simple-budget

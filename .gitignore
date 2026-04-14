@@ -16,3 +16,5 @@ target/
 k8s/patch.yaml
 
 /node_modules
+
+/.pnpm-store

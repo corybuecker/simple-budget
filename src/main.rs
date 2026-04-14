@@ -233,8 +233,8 @@ pub async fn secure_database_pool(database_url: Option<&str>) -> Result<Database
     };
 
     let ca_certificate = env::var("DATABASE_CA_CERT")?;
-    let ca_certicificate = general_purpose::STANDARD.decode(&ca_certificate)?;
-    let ca_certificate = String::from_utf8(ca_certicificate)?;
+    let ca_certificate = general_purpose::STANDARD.decode(&ca_certificate)?;
+    let ca_certificate = String::from_utf8(ca_certificate)?;
 
     let mut pool =
         DatabasePool::new(database_url.to_string()).with_required_ssl_mode(ca_certificate);

@@ -130,7 +130,7 @@ mod tests {
 
     async fn setup() -> (User, DatabasePool, MockTimeProvider, Goal) {
         let database_pool = database_pool(Some(
-            "postgres://simple_budget@localhost:5432/simple_budget_test",
+            "postgres://simple_budget@localhost:5432/simple_budget",
         ))
         .await
         .unwrap();
@@ -169,7 +169,7 @@ mod tests {
         test_convert_goal_to_envelope().await;
 
         let mut database_pool = database_pool(Some(
-            "postgres://simple_budget@localhost:5432/simple_budget_test",
+            "postgres://simple_budget@localhost:5432/simple_budget",
         ))
         .await
         .unwrap();

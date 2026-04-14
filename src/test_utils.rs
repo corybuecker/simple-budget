@@ -22,7 +22,7 @@ pub async fn state_for_tests() -> Result<(
     Extension<HandlebarsContext>,
 )> {
     let pool = database_pool(Some(
-        "postgres://simple_budget@localhost:5432/simple_budget_test",
+        "postgresql://simple_budget@localhost:5432/simple_budget",
     ))
     .await?;
 
@@ -49,7 +49,7 @@ pub async fn state_for_tests() -> Result<(
             .unwrap();
     }
     let pool = database_pool(Some(
-        "postgres://simple_budget@localhost:5432/simple_budget_test",
+        "postgresql://simple_budget@localhost:5432/simple_budget",
     ))
     .await?;
     let shared_state = SharedState {

@@ -1,0 +1,7 @@
+.env
+.github
+.devcontainer
+dev
+migrations
+target
+node_modules

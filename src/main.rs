@@ -19,6 +19,7 @@ use axum::{
     routing::get,
 };
 use axum_extra::extract::cookie::Key;
+use base64::{Engine, engine::general_purpose};
 use chrono::Utc;
 use errors::AppResponse;
 use handlebars::Handlebars;
@@ -163,7 +164,13 @@ async fn main() {
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
 
-    let pool = database_pool(None).await.unwrap();
+    let pool = database_pool(None).await;
+    let pool = match pool {
+        Ok(pool) => pool,
+        Err(err) => {
+            panic!("failed to connect to database: {:#?}", err);
+        }
+    };
 
     let shared_state = SharedState {
         key,
@@ -213,7 +220,12 @@ pub async fn database_pool(database_url: Option<&str>) -> Result<DatabasePool> {
         None => &env::var("DATABASE_URL")?,
     };
 
-    let mut pool = DatabasePool::new(database_url.to_string());
+    let ca_certificate = env::var("DATABASE_CA_CERT")?;
+    let ca_certicificate = general_purpose::STANDARD.decode(&ca_certificate)?;
+    let ca_certificate = String::from_utf8(ca_certicificate)?;
+
+    let mut pool =
+        DatabasePool::new(database_url.to_string()).with_required_ssl_mode(ca_certificate);
     pool.connect().await?;
     Ok(pool)
 }

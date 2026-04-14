@@ -66,7 +66,7 @@ impl FromRef<SharedState> for Key {
 fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     spawn(async {
         let mut interval = interval(Duration::from_millis(60000));
-        let database_pool = database_pool(None).await.unwrap();
+        let database_pool = secure_database_pool(None).await.unwrap();
         let time = TimeProvider {};
 
         loop {
@@ -164,7 +164,7 @@ async fn main() {
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
 
-    let pool = database_pool(None).await;
+    let pool = secure_database_pool(None).await;
     let pool = match pool {
         Ok(pool) => pool,
         Err(err) => {
@@ -215,6 +215,18 @@ async fn main() {
 }
 
 pub async fn database_pool(database_url: Option<&str>) -> Result<DatabasePool> {
+    let database_url = match database_url {
+        Some(url) => url,
+        None => &env::var("DATABASE_URL")?,
+    };
+
+    let mut pool =
+        DatabasePool::new(database_url.to_string());
+    pool.connect().await?;
+    Ok(pool)
+}
+
+pub async fn secure_database_pool(database_url: Option<&str>) -> Result<DatabasePool> {
     let database_url = match database_url {
         Some(url) => url,
         None => &env::var("DATABASE_URL")?,

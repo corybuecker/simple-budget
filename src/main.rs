@@ -220,7 +220,7 @@ pub async fn database_pool(database_url: Option<&str>) -> Result<DatabasePool> {
         None => &env::var("DATABASE_URL")?,
     };
 
-    let secure = env::var("DATABASE_CA_CERT").is_ok_and(|s| s.len() > 0);
+    let secure = env::var("DATABASE_CA_CERT").is_ok_and(|s| !s.is_empty());
 
     match secure {
         true => {

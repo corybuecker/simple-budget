@@ -66,7 +66,8 @@ impl FromRef<SharedState> for Key {
 fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     spawn(async {
         let mut interval = interval(Duration::from_millis(60000));
-        let database_pool = secure_database_pool(None).await.unwrap();
+        let database_pool = database_pool(None).await.unwrap();
+
         let time = TimeProvider {};
 
         loop {
@@ -164,8 +165,7 @@ async fn main() {
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
 
-    let pool = secure_database_pool(None).await;
-    let pool = match pool {
+    let pool = match database_pool(None).await {
         Ok(pool) => pool,
         Err(err) => {
             panic!("failed to connect to database: {:#?}", err);
@@ -220,10 +220,25 @@ pub async fn database_pool(database_url: Option<&str>) -> Result<DatabasePool> {
         None => &env::var("DATABASE_URL")?,
     };
 
-    let mut pool =
-        DatabasePool::new(database_url.to_string());
-    pool.connect().await?;
-    Ok(pool)
+    let secure = env::var("DATABASE_CA_CERT").is_ok_and(|s| !s.is_empty());
+
+    match secure {
+        true => {
+            let ca_certificate = env::var("DATABASE_CA_CERT")?;
+            let ca_certificate = general_purpose::STANDARD.decode(&ca_certificate)?;
+            let ca_certificate = String::from_utf8(ca_certificate)?;
+
+            let mut pool =
+                DatabasePool::new(database_url.to_string()).with_required_ssl_mode(ca_certificate);
+            pool.connect().await?;
+            Ok(pool)
+        }
+        false => {
+            let mut pool = DatabasePool::new(database_url.to_string());
+            pool.connect().await?;
+            Ok(pool)
+        }
+    }
 }
 
 pub async fn secure_database_pool(database_url: Option<&str>) -> Result<DatabasePool> {

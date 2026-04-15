@@ -7,6 +7,7 @@ edition = "2024"
 anyhow = { version = "1.0.102" }
 axum = { version = "0.8.8", features = ["ws", "macros"] }
 axum-extra = { version = "0.12.5", features = ["cookie-signed", "query"] }
+base64 = "0.22.1"
 chrono = { version = "0.4.43" }
 chrono-tz = { version = "0.10.3" }
 futures-util = { version = "0.3.32" }
@@ -15,10 +16,10 @@ jsonschema = { version = "0.45.0" }
 jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 openidconnect = { version = "4.0.1", features = ["reqwest"] }
 postgres-types = { version = "0.2.12", features = ["derive"] }
-rand = { version = "0.10.0" }
+rand = { version = "0.10.1" }
+rust_decimal = { version = "1.41.0", features = ["db-tokio-postgres"] }
 rust-database-common = { git = "https://github.com/corybuecker/rust-database-common", tag = "v2.0.0" }
-rust-web-common = { git = "https://github.com/corybuecker/rust-web-common", branch = "main" }
-rust_decimal = { version = "1.40.0", features = ["db-tokio-postgres"] }
+rust-web-common = { git = "https://github.com/corybuecker/rust-web-common", tag = "v1.0.0" }
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = { version = "1.0.149" }
 tokio = { version = "1.49.0", features = ["full"] }
@@ -29,4 +30,3 @@ tower-layer = { version = "0.3.3" }
 tracing = { version = "0.1.43" }
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 uuid = { version = "1.23.0", features = ["v4"] }
-base64 = "0.22.1"

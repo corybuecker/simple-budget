@@ -1,0 +1,18 @@
+services:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/base:trixie
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/simple-budget
+    network_mode: service:postgresql
+  postgresql:
+    image: postgres:17
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: simple_budget
+    volumes:
+      - ../migrations/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro

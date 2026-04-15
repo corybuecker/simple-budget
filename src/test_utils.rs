@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{env, str::FromStr};
 
 use crate::{
     HandlebarsContext,
@@ -21,10 +21,7 @@ pub async fn state_for_tests() -> Result<(
     Extension<UserExtension>,
     Extension<HandlebarsContext>,
 )> {
-    let pool = database_pool(Some(
-        "postgresql://simple_budget@localhost:5432/simple_budget",
-    ))
-    .await?;
+    let pool = database_pool(Some(&env::var("TEST_DATABASE_URL")?)).await?;
 
     let client = pool.get_client().await?;
 
@@ -48,10 +45,9 @@ pub async fn state_for_tests() -> Result<(
             .register_template_file(&name, template.to_str().unwrap())
             .unwrap();
     }
-    let pool = database_pool(Some(
-        "postgresql://simple_budget@localhost:5432/simple_budget",
-    ))
-    .await?;
+
+    let pool = database_pool(Some(&env::var("TEST_DATABASE_URL")?)).await?;
+
     let shared_state = SharedState {
         key: Key::generate(),
         pool,

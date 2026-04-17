@@ -14,7 +14,6 @@ use axum_extra::extract::{
 };
 use handlebars::to_json;
 use openidconnect::{CsrfToken, Nonce, Scope, core::CoreAuthenticationFlow};
-use std::env;
 
 pub async fn login(
     state: State<SharedState>,
@@ -41,13 +40,12 @@ pub async fn redirect(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response
         .add_scope(Scope::new("openid".to_string()))
         .url();
 
-    let secure = env::var("SECURE").unwrap_or("false".to_string()) == "true";
     let cookie = Cookie::build(("nonce", nonce.secret().clone()))
         .expires(None)
         .http_only(true)
         .path("/authentication")
         .same_site(SameSite::Lax)
-        .secure(secure)
+        .secure(true)
         .build();
 
     Ok((

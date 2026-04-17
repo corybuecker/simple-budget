@@ -11,7 +11,6 @@ use axum_extra::extract::{
     SignedCookieJar,
     cookie::{Cookie, SameSite},
 };
-use std::env;
 
 pub mod accounts;
 mod dashboard;
@@ -54,15 +53,13 @@ async fn authenticated(
     mut request: Request,
     next: Next,
 ) -> Result<(SignedCookieJar, Response), StatusCode> {
-    let secure = env::var("SECURE").unwrap_or("false".to_string()) == "true";
-
     let Some(session_id) = jar.get("session_id") else {
         let redirect_cookie = Cookie::build(("redirect_to", request.uri().path().to_owned()))
             .expires(None)
             .http_only(true)
             .path("/authentication")
             .same_site(SameSite::Lax)
-            .secure(secure)
+            .secure(true)
             .build();
 
         return Ok((
@@ -86,7 +83,7 @@ async fn authenticated(
             .http_only(true)
             .path("/")
             .same_site(SameSite::Strict)
-            .secure(secure)
+            .secure(true)
             .build();
 
         Ok((jar.add(cookie), next.run(request).await))
@@ -96,7 +93,7 @@ async fn authenticated(
             .http_only(true)
             .path("/authentication")
             .same_site(SameSite::Lax)
-            .secure(secure)
+            .secure(true)
             .build();
 
         Ok((

@@ -47,7 +47,6 @@ Simple Budget is a full-stack web application that helps you manage your persona
 
    ```bash
    export DATABASE_URL="postgresql://simple_budget@localhost:5432/simple_budget"
-   export SECURE="false"
    export GOOGLE_CALLBACK_URL="http://localhost:8000/authentication/callback"
    export GOOGLE_CLIENT_ID="<must be provided>"
    export GOOGLE_CLIENT_SECRET="<must be provided>"
@@ -142,7 +141,6 @@ Required environment variables:
 
 - `DATABASE_URL`: PostgreSQL connection string
 - `SECRET_KEY`: Session signing key (generate securely for production)
-- `SECURE`: Set to "true" in production for HTTPS cookies
 - `GOOGLE_CALLBACK_URL`: Definition TBA
 - `GOOGLE_CLIENT_ID`: Definition TBA
 - `GOOGLE_CLIENT_SECRET`: Definition TBA

@@ -94,8 +94,9 @@ pub async fn action(
 
     context.insert("goals".to_string(), to_json(goals));
     context.insert("accumulations".to_string(), to_json(accumulations));
-    context.insert("days_remainings".to_string(), to_json(days_remaining));
+    context.insert("days_remaining".to_string(), to_json(days_remaining));
     context.insert("per_days".to_string(), to_json(per_days));
+
 
     let goals_html = shared_state
         .handlebars

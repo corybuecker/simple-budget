@@ -20,7 +20,6 @@ use rand::{
 };
 use rust_database_common::GenericClient;
 use serde::Deserialize;
-use std::env;
 use tracing::error;
 use uuid::Uuid;
 
@@ -51,7 +50,6 @@ pub async fn callback(
     let subject = claims.subject().to_string();
     let email = claims.email().ok_or(anyhow!("could not get email"))?;
     let email = email.to_string();
-    let secure = env::var("SECURE").unwrap_or("false".to_string()) == "true";
 
     let id = create_session(&shared_state.pool.get_client().await?, &subject, &email).await?;
     let cookie = Cookie::build(("session_id", id.to_string()))
@@ -59,7 +57,7 @@ pub async fn callback(
         .http_only(true)
         .path("/")
         .same_site(SameSite::Lax)
-        .secure(secure)
+        .secure(true)
         .build();
 
     Ok((jar.add(cookie), Redirect::to(redirect).into_response()))

@@ -64,14 +64,12 @@ pub async fn token(
     )
     .await?;
 
-    let secure = env::var("SECURE").unwrap_or("false".to_string());
-
     let cookie = Cookie::build(("session_id", id.to_string()))
         .expires(None)
         .http_only(true)
         .path("/")
         .same_site(axum_extra::extract::cookie::SameSite::Lax)
-        .secure(secure == *"true")
+        .secure(true)
         .build();
 
     Ok((jar.add(cookie), Html::from("OK")).into_response())

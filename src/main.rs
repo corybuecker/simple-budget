@@ -134,8 +134,7 @@ async fn secure_headers(request: Request, next: Next) -> Result<Response, AppErr
 
 #[tokio::main]
 async fn main() {
-    // Reads endpoints and log level from environment variables
-    let mut telemetry = TelemetryBuilder::new("simple-budget".to_string());
+    let mut telemetry = TelemetryBuilder::new("simple-budget".to_string()).with_json_log_format();
     telemetry.init().expect("could not initialize subscriber");
 
     let cache_key = Utc::now().timestamp_millis().to_string();

@@ -8,7 +8,7 @@ use crate::{
     utilities::handlebars::{DigestAssetHandlebarsHelper, walk_directory},
 };
 #[cfg(test)]
-use crate::{SharedState, database_pool, models::user::User};
+use crate::{SharedState, db::database_pool, models::user::User};
 use anyhow::{Result, anyhow};
 use axum::Extension;
 use axum_extra::extract::cookie::Key;

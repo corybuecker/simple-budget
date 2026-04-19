@@ -97,7 +97,6 @@ pub async fn action(
     context.insert("days_remaining".to_string(), to_json(days_remaining));
     context.insert("per_days".to_string(), to_json(per_days));
 
-
     let goals_html = shared_state
         .handlebars
         .render("preferences/goals", &context);

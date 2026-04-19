@@ -1,11 +1,6 @@
 use crate::{HandlebarsContext, errors::AppError};
 use anyhow::anyhow;
-use axum::{
-    extract::Request,
-    http::HeaderValue,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, http::HeaderValue, middleware::Next, response::Response};
 use uuid::Uuid;
 
 pub async fn inject_context(mut request: Request, next: Next) -> Response {

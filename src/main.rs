@@ -7,13 +7,11 @@ mod middleware;
 mod models;
 mod utilities;
 
-use crate::utilities::handlebars::{DigestAssetHandlebarsHelper, EqHandlebarsHelper, walk_directory};
+use crate::utilities::handlebars::{
+    DigestAssetHandlebarsHelper, EqHandlebarsHelper, walk_directory,
+};
 use axum::{
-    Router,
-    extract::FromRef,
-    http::StatusCode,
-    middleware::from_fn,
-    response::IntoResponse,
+    Router, extract::FromRef, http::StatusCode, middleware::from_fn, response::IntoResponse,
     routing::get,
 };
 use axum_extra::extract::cookie::Key;
@@ -76,7 +74,6 @@ fn start_background_jobs() -> tokio::task::JoinHandle<()> {
         }
     })
 }
-
 
 async fn healthcheck() -> AppResponse {
     Ok(StatusCode::OK.into_response())

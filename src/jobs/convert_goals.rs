@@ -103,7 +103,7 @@ async fn private_convert_goals(
 
 #[cfg(test)]
 mod tests {
-    use crate::database_pool;
+    use crate::db::database_pool;
     use crate::jobs::convert_goals::private_convert_goals;
     use crate::models::account::Account;
     use crate::models::envelope::Envelope;

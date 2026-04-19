@@ -1,25 +1,22 @@
 mod authenticated;
 mod authentication;
+mod db;
 mod errors;
 mod jobs;
+mod middleware;
 mod models;
 mod utilities;
 
-use crate::{
-    errors::AppError,
-    utilities::handlebars::{DigestAssetHandlebarsHelper, EqHandlebarsHelper, walk_directory},
-};
-use anyhow::{Result, anyhow};
+use crate::utilities::handlebars::{DigestAssetHandlebarsHelper, EqHandlebarsHelper, walk_directory};
 use axum::{
     Router,
-    extract::{FromRef, Request},
-    http::{HeaderValue, StatusCode},
-    middleware::{Next, from_fn},
-    response::{IntoResponse, Response},
+    extract::FromRef,
+    http::StatusCode,
+    middleware::from_fn,
+    response::IntoResponse,
     routing::get,
 };
 use axum_extra::extract::cookie::Key;
-use base64::{Engine, engine::general_purpose};
 use chrono::Utc;
 use errors::AppResponse;
 use handlebars::Handlebars;
@@ -37,7 +34,6 @@ use tokio::{
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::debug;
 use utilities::dates::TimeProvider;
-use uuid::Uuid;
 
 #[derive(Serialize, Clone)]
 pub enum Section {
@@ -66,7 +62,7 @@ impl FromRef<SharedState> for Key {
 fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     spawn(async {
         let mut interval = interval(Duration::from_millis(60000));
-        let database_pool = database_pool(None).await.unwrap();
+        let database_pool = db::database_pool(None).await.unwrap();
 
         let time = TimeProvider {};
 
@@ -81,55 +77,9 @@ fn start_background_jobs() -> tokio::task::JoinHandle<()> {
     })
 }
 
-async fn inject_context(mut request: Request, next: Next) -> Response {
-    let nonce = Uuid::new_v4().to_string();
-    let mut handlebars_context = HandlebarsContext::new();
-    handlebars_context.insert("nonce".to_string(), nonce.into());
-    request.extensions_mut().insert(handlebars_context);
-    next.run(request).await
-}
 
 async fn healthcheck() -> AppResponse {
     Ok(StatusCode::OK.into_response())
-}
-
-async fn cache_assets(request: Request, next: Next) -> Response {
-    let mut response = next.run(request).await;
-
-    if response.status().is_success() {
-        response.headers_mut().insert(
-            "Cache-Control",
-            HeaderValue::from_static("public, max-age=31536000"),
-        );
-    }
-
-    response
-}
-
-async fn secure_headers(request: Request, next: Next) -> Result<Response, AppError> {
-    let nonce = {
-        let context = request
-            .extensions()
-            .get::<HandlebarsContext>()
-            .ok_or(AppError::Unknown(anyhow!("missing nonce value")))?;
-        context
-            .get("nonce")
-            .ok_or(anyhow!("bad nonce value"))?
-            .as_str()
-            .ok_or(anyhow!("nonce is not a string"))?
-            .to_string()
-    };
-
-    let mut response = next.run(request).await;
-
-    response.headers_mut().insert(
-    "Content-Security-Policy",
-    HeaderValue::from_str(&format!(
-        "default-src 'none'; script-src 'nonce-{}' https://ga.jspm.io; style-src 'nonce-{}' 'sha256-WAyOw4V+FqDc35lQPyRADLBWbuNK8ahvYEaQIYF1+Ps='; img-src 'self'; connect-src 'self'",
-        nonce, nonce
-    )).unwrap());
-
-    Ok(response)
 }
 
 #[tokio::main]
@@ -164,7 +114,7 @@ async fn main() {
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
 
-    let pool = match database_pool(None).await {
+    let pool = match db::database_pool(None).await {
         Ok(pool) => pool,
         Err(err) => {
             panic!("failed to connect to database: {:#?}", err);
@@ -182,12 +132,12 @@ async fn main() {
         .merge(authenticated::authenticated_router(shared_state.clone()))
         .merge(Router::new().route("/healthcheck", get(healthcheck)))
         .with_state(shared_state)
-        .layer(from_fn(secure_headers))
-        .layer(from_fn(inject_context))
+        .layer(from_fn(middleware::secure_headers))
+        .layer(from_fn(middleware::inject_context))
         .merge(
             Router::new()
                 .nest_service("/assets", ServeDir::new("static"))
-                .layer(from_fn(cache_assets)),
+                .layer(from_fn(middleware::cache_assets)),
         )
         .layer(TraceLayer::new_for_http());
 
@@ -213,105 +163,5 @@ async fn main() {
     }
 }
 
-pub async fn database_pool(database_url: Option<&str>) -> Result<DatabasePool> {
-    let database_url = match database_url {
-        Some(url) => url,
-        None => &env::var("DATABASE_URL")?,
-    };
-
-    let secure = env::var("DATABASE_CA_CERT").is_ok_and(|s| !s.is_empty());
-
-    match secure {
-        true => {
-            let ca_certificate = env::var("DATABASE_CA_CERT")?;
-            let ca_certificate = general_purpose::STANDARD.decode(&ca_certificate)?;
-            let ca_certificate = String::from_utf8(ca_certificate)?;
-
-            let mut pool =
-                DatabasePool::new(database_url.to_string()).with_required_ssl_mode(ca_certificate);
-            pool.connect().await?;
-            Ok(pool)
-        }
-        false => {
-            let mut pool = DatabasePool::new(database_url.to_string());
-            pool.connect().await?;
-            Ok(pool)
-        }
-    }
-}
-
-pub async fn secure_database_pool(database_url: Option<&str>) -> Result<DatabasePool> {
-    let database_url = match database_url {
-        Some(url) => url,
-        None => &env::var("DATABASE_URL")?,
-    };
-
-    let ca_certificate = env::var("DATABASE_CA_CERT")?;
-    let ca_certificate = general_purpose::STANDARD.decode(&ca_certificate)?;
-    let ca_certificate = String::from_utf8(ca_certificate)?;
-
-    let mut pool =
-        DatabasePool::new(database_url.to_string()).with_required_ssl_mode(ca_certificate);
-    pool.connect().await?;
-    Ok(pool)
-}
-
 #[cfg(test)]
 mod test_utils;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use axum::{
-        body::Body,
-        http::{Request, StatusCode},
-    };
-    use tower::ServiceExt;
-
-    #[tokio::test]
-    async fn test_csp_header_applied() {
-        let app = Router::new()
-            .route("/test", get(|| async { "test response" }))
-            .layer(from_fn(secure_headers))
-            .layer(from_fn(inject_context));
-
-        let response = app
-            .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let csp_header = response.headers().get("Content-Security-Policy");
-        assert!(csp_header.is_some());
-
-        let csp_value = csp_header.unwrap().to_str().unwrap();
-        assert!(csp_value.contains("default-src 'none'"));
-        assert!(csp_value.contains("script-src 'nonce-"));
-        assert!(csp_value.contains("style-src 'nonce-"));
-        assert!(csp_value.contains("img-src 'self'"));
-        assert!(csp_value.contains("connect-src 'self'"));
-    }
-
-    #[tokio::test]
-    async fn test_nonce_injection() {
-        let app = Router::new()
-            .route(
-                "/test",
-                get(|request: Request<Body>| async move {
-                    let context = request.extensions().get::<HandlebarsContext>().unwrap();
-                    let nonce = context.get("nonce").unwrap().as_str().unwrap();
-                    assert!(!nonce.is_empty());
-                    "ok"
-                }),
-            )
-            .layer(from_fn(inject_context));
-
-        let response = app
-            .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-    }
-}

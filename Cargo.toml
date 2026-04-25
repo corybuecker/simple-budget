@@ -22,7 +22,7 @@ rust-database-common = { git = "https://github.com/corybuecker/rust-database-com
 rust-web-common = { git = "https://github.com/corybuecker/rust-web-common", tag = "v2.0.0" }
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = { version = "1.0.149" }
-tokio = { version = "1.49.0", features = ["full"] }
+tokio = { version = "1.51.1", features = ["full"] }
 tokio-postgres = { version = "0.7.16", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-1"] }
 tower = { version = "0.5.3", features = ["util"] }
 tower-http = { version = "0.6.8", features = ["fs", "trace"] }

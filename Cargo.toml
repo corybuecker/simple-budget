@@ -15,7 +15,7 @@ handlebars = "6.4.0"
 jsonschema = { version = "0.45.0" }
 jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 openidconnect = { version = "4.0.1", features = ["reqwest"] }
-postgres-types = { version = "0.2.12", features = ["derive"] }
+postgres-types = { version = "0.2.13", features = ["derive"] }
 rand = { version = "0.10.1" }
 rust_decimal = { version = "1.41.0", features = ["db-tokio-postgres"] }
 rust-database-common = { git = "https://github.com/corybuecker/rust-database-common", tag = "v2.0.0" }

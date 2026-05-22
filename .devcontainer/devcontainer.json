@@ -11,5 +11,12 @@
 			"version": "24.14.0",
 			"pnpmVersion": "10.33.0"
 		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"anthropic.claude-code"
+			]
+		}
 	}
 }

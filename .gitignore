@@ -11,10 +11,8 @@ target/
 
 .env
 
-/static/app.css
-/k8s/output
-k8s/patch.yaml
+/static
+!/static/*.png
 
 /node_modules
-
 /.pnpm-store

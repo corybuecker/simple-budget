@@ -1,10 +1,14 @@
 {
   "packageManager": "pnpm@10.27.0",
-  "scripts": {
-    "compile": "npx @tailwindcss/cli -i input.css -o static/app.css"
-  },
+  "scripts": {},
   "dependencies": {
-    "@tailwindcss/cli": "4.2.2",
-    "tailwindcss": "4.2.2"
+    "@hotwired/stimulus": "3.2.2",
+    "@hotwired/turbo": "8.0.23",
+    "@tailwindcss/vite": "4.3.0",
+    "tailwindcss": "4.3.0",
+    "vite": "8.0.13"
+  },
+  "devDependencies": {
+    "@types/node": "^25.8.0"
   }
 }

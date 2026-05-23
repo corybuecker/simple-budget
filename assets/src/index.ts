@@ -1,3 +1,4 @@
+import "../input.css";
 import "@hotwired/turbo";
 import { Application } from "@hotwired/stimulus";
 

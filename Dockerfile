@@ -26,7 +26,6 @@ COPY --from=builder /app/target/release/simple-budget /app/simple-budget
 WORKDIR /app
 RUN chmod 700 /app/simple-budget
 COPY templates /app/templates
-COPY static /app/static
 COPY --from=frontend /app/static/index.mjs /app/static/index.mjs
 COPY --from=frontend /app/static/index.css /app/static/index.css
 RUN chown -R 1000:1000 /app/simple-budget

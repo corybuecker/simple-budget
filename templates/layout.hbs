@@ -10,19 +10,8 @@
 
         {{#if csrf}}<meta name="csrf-token" content="{{ csrf }}" />{{/if}}
 
-        <script type="importmap" nonce="{{ nonce }}">
-        {
-            "imports": {
-                "@hotwired/stimulus": "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js",
-                "@hotwired/turbo": "https://ga.jspm.io/npm:@hotwired/turbo@8.0.23/dist/turbo.es2017-esm.js"
-            },
-            "integrity": {
-                "https://ga.jspm.io/npm:@hotwired/stimulus@3.2.2/dist/stimulus.js": "sha384-NStGXzUH4pFNGrLRkzXYz7zzDn8S6MvFPwfKSuYf6TlX25BrNVP4oCN2S04XUuOI",
-                "https://ga.jspm.io/npm:@hotwired/turbo@8.0.23/dist/turbo.es2017-esm.js": "sha384-+xSpMRL6/ETsidXRIA+ZQwwpPD6XspHtaGecagXTBZBGUfkFZOjn1D4ubXlmfcyX"
-            }
-        }
-        </script>
-        <link rel="stylesheet" href="{{ digest_asset "app.css" }}" nonce="{{ nonce }}">
+        <link rel="stylesheet" href="{{ digest_asset "index.css" }}" nonce="{{ nonce }}">
+
         <link rel="icon" type="image/png" sizes="32x32" href="{{ digest_asset "simple-budget-icon-32.png" }}">
         <link rel="mask-icon" href="{{ digest_asset "simple-budget-icon-32.png" }}" color="#000000">
         <link rel="apple-touch-icon" sizes="180x180" href="{{ digest_asset "simple-budget-icon-180.png" }}">
@@ -130,7 +119,7 @@
                 </div>
             </nav>
         </div>
-        <script type="module" src="{{ digest_asset "app.js" }}" data-turbo-eval="false" nonce="{{ nonce }}"></script>
+        <script type="module" src="{{ digest_asset "index.mjs" }}" data-turbo-eval="false" nonce="{{ nonce }}"></script>
         <turbo-frame
             data-controller="modal"
             class="absolute w-full top-0"

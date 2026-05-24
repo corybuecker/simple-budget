@@ -7,7 +7,7 @@ COPY pnpm-lock.yaml /app/pnpm-lock.yaml
 COPY pnpm-workspace.yaml /app/pnpm-workspace.yaml
 COPY vite.config.ts /app/vite.config.ts
 WORKDIR /app
-RUN npm install -g pnpm@10.33.4
+RUN npm install -g pnpm@11.2.2
 RUN pnpm install --frozen-lockfile
 RUN pnpm build
 

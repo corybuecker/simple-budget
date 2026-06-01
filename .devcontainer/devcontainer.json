@@ -4,7 +4,7 @@
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	"features": {
 		"ghcr.io/devcontainers/features/rust:1.5.0": {
-			"version": "1.95.0",
+			"version": "1.96.0",
 			"profile": "default"
 		},
 		"ghcr.io/devcontainers/features/node:1.7.1": {

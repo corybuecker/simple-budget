@@ -30,7 +30,7 @@ pub async fn secure_headers(request: Request, next: Next) -> Result<Response, Ap
     response.headers_mut().insert(
         "Content-Security-Policy",
         HeaderValue::from_str(&format!(
-            "default-src 'none'; script-src 'nonce-{}' https://ga.jspm.io; style-src 'nonce-{}' 'sha256-WAyOw4V+FqDc35lQPyRADLBWbuNK8ahvYEaQIYF1+Ps='; img-src 'self'; connect-src 'self'",
+            "default-src 'none'; script-src 'nonce-{}'; style-src 'nonce-{}'; img-src 'self'; connect-src 'self'",
             nonce, nonce
         )).unwrap());
 

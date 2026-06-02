@@ -6,8 +6,14 @@ import FormatterController from "./controllers/formatter_controller.js";
 import ModalController from "./controllers/modal_controller.js";
 import CurrencyInputController from "./controllers/currency_input_controller.js";
 
+declare global {
+  interface Window {
+    Stimulus: Application;
+  }
+}
+
 window.Stimulus = Application.start();
 
-Stimulus.register("modal", ModalController);
-Stimulus.register("formatter", FormatterController);
-Stimulus.register("currency-input", CurrencyInputController);
+window.Stimulus.register("modal", ModalController);
+window.Stimulus.register("formatter", FormatterController);
+window.Stimulus.register("currency-input", CurrencyInputController);

@@ -1,0 +1,5 @@
+nameReference:
+  - kind: Service
+    fieldSpecs:
+      - kind: HealthCheckPolicy
+        path: spec/targetRef/name

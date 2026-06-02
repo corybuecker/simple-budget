@@ -1,4 +1,4 @@
-FROM node:lts-trixie@sha256:e4ceb04a1f1dd4823a1ab6ef8d2182c09d6299b507c70f20bd0eb9921a78354d AS frontend
+FROM node:lts-trixie@sha256:f072159a6b98a624e09f2c4815fe473217fc019a97524fd593059c8a4ad5a05d AS frontend
 RUN mkdir -p /app/static
 COPY assets /app/assets
 COPY templates /app/templates
@@ -11,7 +11,7 @@ RUN npm install -g pnpm@11.2.2
 RUN pnpm install --frozen-lockfile
 RUN pnpm build
 
-FROM rust:1.95.0-trixie@sha256:0861191076afc8e2dfcf0bec6ad6c2dec8494b3a1e9249729e1989690afed5ec AS builder
+FROM rust:1.96.0-trixie@sha256:fb328f0f58becb23ba1719940a2c94ece8b0b48afa837d05b79ef64bc1e18f6e AS builder
 RUN mkdir -p /app/src
 WORKDIR /app
 COPY Cargo.toml Cargo.lock /app/

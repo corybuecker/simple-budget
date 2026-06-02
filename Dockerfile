@@ -1,4 +1,4 @@
-FROM node:lts-trixie@sha256:e4ceb04a1f1dd4823a1ab6ef8d2182c09d6299b507c70f20bd0eb9921a78354d AS frontend
+FROM node:lts-trixie@sha256:f072159a6b98a624e09f2c4815fe473217fc019a97524fd593059c8a4ad5a05d AS frontend
 RUN mkdir -p /app/static
 COPY assets /app/assets
 COPY templates /app/templates
@@ -7,11 +7,11 @@ COPY pnpm-lock.yaml /app/pnpm-lock.yaml
 COPY pnpm-workspace.yaml /app/pnpm-workspace.yaml
 COPY vite.config.ts /app/vite.config.ts
 WORKDIR /app
-RUN npm install -g pnpm@10.33.4
+RUN npm install -g pnpm@11.2.2
 RUN pnpm install --frozen-lockfile
 RUN pnpm build
 
-FROM rust:1.94.1-trixie@sha256:e8e2bb5ff27ad3b369a4f667392464e6ec399cfe81c1230ae78edb1036b9bd74 AS builder
+FROM rust:1.96.0-trixie@sha256:fb328f0f58becb23ba1719940a2c94ece8b0b48afa837d05b79ef64bc1e18f6e AS builder
 RUN mkdir -p /app/src
 WORKDIR /app
 COPY Cargo.toml Cargo.lock /app/
@@ -21,12 +21,11 @@ COPY src /app/src
 RUN touch /app/src/main.rs
 RUN cargo build --release
 
-FROM debian:trixie-slim@sha256:4ffb3a1511099754cddc70eb1b12e50ffdb67619aa0ab6c13fcd800a78ef7c7a
+FROM debian:trixie-slim@sha256:b6e2a152f22a40ff69d92cb397223c906017e1391a73c952b588e51af8883bf8
 COPY --from=builder /app/target/release/simple-budget /app/simple-budget
 WORKDIR /app
 RUN chmod 700 /app/simple-budget
 COPY templates /app/templates
-COPY static /app/static
 COPY --from=frontend /app/static/index.mjs /app/static/index.mjs
 COPY --from=frontend /app/static/index.css /app/static/index.css
 RUN chown -R 1000:1000 /app/simple-budget

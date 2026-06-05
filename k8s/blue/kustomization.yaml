@@ -16,4 +16,4 @@ labels:
 images:
   - name: simple-budget
     newName: ghcr.io/corybuecker/simple-budget
-    digest: sha256:e1c954817f8f70f4d2e6679b1c7ed228d80e756eca71511dcf842e4e40b4434a
+    digest: sha256:b16965f753a866982502bd81cab00b85f47b5212d5aaed4d61c35eb8948813cf

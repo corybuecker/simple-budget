@@ -8,6 +8,8 @@ resources:
   - configmap.yaml
   - networkpolicies.yaml
   - httproute.yaml
+  - serviceaccount.yaml
+  - secretproviderclass.yaml
 
 configMapGenerator:
   - name: simple-budget-hostname
@@ -15,11 +17,9 @@ configMapGenerator:
       - hostname.env
     options:
       disableNameSuffixHash: true
-
-secretGenerator:
-  - name: simple-budget-secrets
+  - name: simple-budget-resource-name
     envs:
-      - secrets.env
+      - resource-name.env
     options:
       disableNameSuffixHash: true
 
@@ -34,11 +34,16 @@ replacements:
           name: simple-budget
         fieldPaths:
           - spec.hostnames.0
+  - source:
+      kind: ConfigMap
+      name: simple-budget-resource-name
+      fieldPath: data.RESOURCE_NAME
+    targets:
       - select:
-          kind: ConfigMap
-          name: simple-budget-config
+          kind: SecretProviderClass
+          name: simple-budget
         fieldPaths:
-          - data.GOOGLE_CALLBACK_URL
+          - spec.parameters.secrets
         options:
-          delimiter: "/"
-          index: 2
+          delimiter: '"'
+          index: 1

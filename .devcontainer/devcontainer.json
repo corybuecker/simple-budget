@@ -2,6 +2,7 @@
 	"dockerComposeFile": "docker-compose.yml",
 	"service": "devcontainer",
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	"postCreateCommand": "/workspaces/${localWorkspaceFolderBasename}/.devcontainer/postCreate.sh",
 	"features": {
 		"ghcr.io/devcontainers/features/rust:1.5.0": {
 			"version": "1.96.0",

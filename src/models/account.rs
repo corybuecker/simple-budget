@@ -4,11 +4,12 @@ use rust_database_common::GenericClient;
 use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde::Serialize;
+use uuid::Uuid;
 
 #[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct Account {
-    pub id: Option<i32>,
-    pub user_id: i32,
+    pub id: Option<Uuid>,
+    pub user_id: Uuid,
     pub name: String,
     pub amount: Decimal,
     pub debt: bool,
@@ -69,8 +70,8 @@ impl Account {
 
     pub async fn get_one(
         client: &impl GenericClient,
-        id: i32,
-        user_id: i32,
+        id: Uuid,
+        user_id: Uuid,
     ) -> Result<Self, AppError> {
         let row = client
             .query_one(
@@ -85,7 +86,10 @@ impl Account {
         row.try_into()
     }
 
-    pub async fn get_all(client: &impl GenericClient, user_id: i32) -> Result<Vec<Self>, AppError> {
+    pub async fn get_all(
+        client: &impl GenericClient,
+        user_id: Uuid,
+    ) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
                 "SELECT accounts.* FROM accounts INNER

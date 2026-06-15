@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict 45pBQKAiOb4hcavl7KzwDt34BarOMa7OKDSYBZ0rHg5oxQctXWhkVy3s8oqrott
+\restrict pKm1Tt7TSwuNDxIBixP2xaKDCoJoncdfB1mOhrPCuUWYTztIDI22KIyIUy65bXQ
 
 -- Dumped from database version 18.4 (Debian 18.4-1.pgdg13+1)
--- Dumped by pg_dump version 18.4 (Homebrew)
+-- Dumped by pg_dump version 18.4 (Debian 18.4-1.pgdg13+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -42,32 +42,12 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE public.accounts (
-    id integer NOT NULL,
-    user_id integer NOT NULL,
     name text NOT NULL,
     amount numeric NOT NULL,
-    debt boolean NOT NULL
+    debt boolean NOT NULL,
+    id uuid DEFAULT gen_random_uuid() CONSTRAINT accounts__id_not_null NOT NULL,
+    user_id uuid CONSTRAINT accounts__user_id_not_null NOT NULL
 );
-
-
---
--- Name: accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.accounts_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.accounts_id_seq OWNED BY public.accounts.id;
 
 
 --
@@ -75,31 +55,11 @@ ALTER SEQUENCE public.accounts_id_seq OWNED BY public.accounts.id;
 --
 
 CREATE TABLE public.envelopes (
-    id integer NOT NULL,
-    user_id integer NOT NULL,
     name text NOT NULL,
-    amount numeric NOT NULL
+    amount numeric NOT NULL,
+    id uuid DEFAULT gen_random_uuid() CONSTRAINT envelopes__id_not_null NOT NULL,
+    user_id uuid CONSTRAINT envelopes__user_id_not_null NOT NULL
 );
-
-
---
--- Name: envelopes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.envelopes_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: envelopes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.envelopes_id_seq OWNED BY public.envelopes.id;
 
 
 --
@@ -107,35 +67,15 @@ ALTER SEQUENCE public.envelopes_id_seq OWNED BY public.envelopes.id;
 --
 
 CREATE TABLE public.goals (
-    id integer NOT NULL,
-    user_id integer NOT NULL,
     name text NOT NULL,
     target numeric NOT NULL,
     target_date timestamp with time zone NOT NULL,
     recurrence public."Recurrence" NOT NULL,
     accumulated_amount numeric NOT NULL,
-    start_date timestamp with time zone
+    start_date timestamp with time zone,
+    id uuid DEFAULT gen_random_uuid() CONSTRAINT goals__id_not_null NOT NULL,
+    user_id uuid CONSTRAINT goals__user_id_not_null NOT NULL
 );
-
-
---
--- Name: goals_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.goals_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: goals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.goals_id_seq OWNED BY public.goals.id;
 
 
 --
@@ -144,9 +84,9 @@ ALTER SEQUENCE public.goals_id_seq OWNED BY public.goals.id;
 
 CREATE TABLE public.sessions (
     id uuid NOT NULL,
-    user_id integer NOT NULL,
     expiration timestamp with time zone NOT NULL,
-    csrf text NOT NULL
+    csrf text NOT NULL,
+    user_id uuid CONSTRAINT sessions__user_id_not_null NOT NULL
 );
 
 
@@ -155,59 +95,11 @@ CREATE TABLE public.sessions (
 --
 
 CREATE TABLE public.users (
-    id integer NOT NULL,
     subject text NOT NULL,
     email text NOT NULL,
-    preferences jsonb
+    preferences jsonb,
+    id uuid DEFAULT gen_random_uuid() CONSTRAINT users__id_not_null NOT NULL
 );
-
-
---
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.users_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
-
-
---
--- Name: accounts id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.accounts ALTER COLUMN id SET DEFAULT nextval('public.accounts_id_seq'::regclass);
-
-
---
--- Name: envelopes id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.envelopes ALTER COLUMN id SET DEFAULT nextval('public.envelopes_id_seq'::regclass);
-
-
---
--- Name: goals id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.goals ALTER COLUMN id SET DEFAULT nextval('public.goals_id_seq'::regclass);
-
-
---
--- Name: users id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
@@ -302,5 +194,5 @@ ALTER TABLE ONLY public.sessions
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 45pBQKAiOb4hcavl7KzwDt34BarOMa7OKDSYBZ0rHg5oxQctXWhkVy3s8oqrott
+\unrestrict pKm1Tt7TSwuNDxIBixP2xaKDCoJoncdfB1mOhrPCuUWYTztIDI22KIyIUy65bXQ
 

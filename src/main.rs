@@ -42,6 +42,7 @@ pub enum Section {
     Preferences,
 }
 
+
 pub type HandlebarsContext = BTreeMap<String, serde_json::Value>;
 
 #[derive(Clone, Debug)]

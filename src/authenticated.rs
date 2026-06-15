@@ -11,6 +11,7 @@ use axum_extra::extract::{
     SignedCookieJar,
     cookie::{Cookie, SameSite},
 };
+use uuid::Uuid;
 
 pub mod accounts;
 mod dashboard;
@@ -20,7 +21,7 @@ mod preferences;
 
 #[derive(Debug, Clone)]
 pub struct UserExtension {
-    pub id: i32,
+    pub id: Uuid,
     pub csrf: String,
 }
 

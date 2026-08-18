@@ -6,7 +6,3 @@ namespace: simple-budget
 resources:
   - deployment.yaml
   - service.yaml
-  - healthcheckpolicy.yaml
-
-configurations:
-  - namereference.yaml

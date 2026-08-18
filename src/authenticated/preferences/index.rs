@@ -30,12 +30,13 @@ pub async fn action(
         "monthly_income".to_string(),
         to_json(preferences.monthly_income),
     );
-    context.insert("partial".to_string(), to_json("preferences/index"));
 
     match response_format {
         ResponseFormat::Turbo | ResponseFormat::Html => Ok(generate_response(
             &ResponseFormat::Html,
-            shared_state.handlebars.render("layout", &context)?,
+            shared_state
+                .handlebars
+                .render("preferences/modal", &context)?,
             StatusCode::OK,
         )),
         ResponseFormat::Json => Ok(generate_response(

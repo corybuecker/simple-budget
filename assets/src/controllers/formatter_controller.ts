@@ -11,9 +11,12 @@ export default class FormatterController extends Controller {
     currencyPrecision: Number
   }
 
+  currencyValueChanged() {
+    this.format()
+  }
 
-  connect() {
-    if(this.hasCurrencyValue) {
+  private format() {
+    if (this.hasCurrencyValue) {
       this.element.textContent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: this.hasCurrencyPrecisionValue ? this.currencyPrecisionValue : 0 }).format(this.currencyValue)
     }
   }

@@ -6,44 +6,11 @@ namespace: simple-budget
 resources:
   - namespace.yaml
   - configmap.yaml
-  - networkpolicies.yaml
-  - httproute.yaml
-  - serviceaccount.yaml
-  - secretproviderclass.yaml
+  # - networkpolicies.yaml
+  # - httproute.yaml
+  # - gateway.yaml
 
-configMapGenerator:
-  - name: simple-budget-hostname
-    envs:
-      - hostname.env
-    options:
-      disableNameSuffixHash: true
-  - name: simple-budget-resource-name
-    envs:
-      - resource-name.env
-    options:
-      disableNameSuffixHash: true
-
-replacements:
-  - source:
-      kind: ConfigMap
-      name: simple-budget-hostname
-      fieldPath: data.HOSTNAME
-    targets:
-      - select:
-          kind: HTTPRoute
-          name: simple-budget
-        fieldPaths:
-          - spec.hostnames.0
-  - source:
-      kind: ConfigMap
-      name: simple-budget-resource-name
-      fieldPath: data.RESOURCE_NAME
-    targets:
-      - select:
-          kind: SecretProviderClass
-          name: simple-budget
-        fieldPaths:
-          - spec.parameters.secrets
-        options:
-          delimiter: '"'
-          index: 1
+secretGenerator:
+- name: simple-budget
+  envs:
+  - secrets.env

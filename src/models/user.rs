@@ -50,7 +50,7 @@ impl Preferences {
 #[derive(Debug)]
 pub struct Session {
     pub id: Option<Uuid>,
-    pub user_id: i32,
+    pub user_id: Uuid,
     pub expiration: DateTime<Utc>,
     pub csrf: String,
 }
@@ -101,7 +101,7 @@ impl Session {
 
 #[derive(Clone, Debug)]
 pub struct User {
-    pub id: i32,
+    pub id: Uuid,
     pub email: String,
     pub subject: String,
     pub preferences: Option<Json<Preferences>>,
@@ -190,7 +190,7 @@ impl User {
             )
             .await?;
 
-        let id: i32 = id.get("id");
+        let id: Uuid = id.try_get("id")?;
 
         Self::get_by_id(client, id).await
     }
@@ -203,7 +203,7 @@ impl User {
             )
             .await?;
 
-        let id: i32 = id.get("id");
+        let id: Uuid = id.try_get("id")?;
 
         Self::get_by_id(client, id).await
     }
@@ -218,7 +218,7 @@ impl User {
             .try_into()
     }
 
-    pub async fn get_by_id(client: &impl GenericClient, id: i32) -> Result<Self, AppError> {
+    pub async fn get_by_id(client: &impl GenericClient, id: Uuid) -> Result<Self, AppError> {
         client
             .query_one("SELECT * FROM users WHERE id = $1", &[&id])
             .await?

@@ -3,5 +3,4 @@ kind: ConfigMap
 metadata:
   name: simple-budget-config
 data:
-  RUST_LOG: "info,simple_budget=info"
-  GOOGLE_CALLBACK_URL: "https://REPLACE_ME_HOSTNAME/authentication/callback"
+  LOG_LEVEL: "info"

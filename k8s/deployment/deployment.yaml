@@ -16,8 +16,6 @@ spec:
         app: simple-budget
     spec:
       automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/arch: arm64
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -34,16 +32,14 @@ spec:
               containerPort: 8000
               protocol: TCP
           envFrom:
-            - configMapRef:
-                name: simple-budget-config
-            - secretRef:
-                name: simple-budget-secrets
+          - secretRef:
+              name: simple-budget
           resources:
             requests:
-              cpu: 100m
+              cpu: 125m
               memory: 256Mi
             limits:
-              cpu: 100m
+              cpu: 125m
               memory: 256Mi
           startupProbe:
             httpGet:

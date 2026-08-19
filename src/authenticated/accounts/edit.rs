@@ -12,10 +12,11 @@ use axum::{
     response::IntoResponse,
 };
 use handlebars::to_json;
+use uuid::Uuid;
 
 pub async fn action(
     shared_state: State<SharedState>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
     headers: HeaderMap,
     user: Extension<UserExtension>,
     Extension(context): Extension<HandlebarsContext>,

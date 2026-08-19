@@ -15,11 +15,12 @@ use axum::{
 };
 use handlebars::to_json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
+use uuid::Uuid;
 
 pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
     headers: HeaderMap,
     Extension(context): Extension<HandlebarsContext>,
     Form(form): Form<EnvelopeForm>,

@@ -5,6 +5,7 @@ use postgres_types::{FromSql, ToSql};
 use rust_database_common::GenericClient;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use serde::Serialize;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, FromSql, ToSql, PartialEq)]
 pub enum Recurrence {
@@ -35,8 +36,8 @@ impl std::str::FromStr for Recurrence {
 }
 #[derive(Serialize, Debug, Clone)]
 pub struct Goal {
-    pub id: Option<i32>,
-    pub user_id: i32,
+    pub id: Option<Uuid>,
+    pub user_id: Uuid,
     pub name: String,
     pub recurrence: Recurrence,
     pub target_date: DateTime<Utc>,
@@ -155,8 +156,8 @@ impl Goal {
 
     pub async fn get_one(
         client: &impl GenericClient,
-        id: i32,
-        user_id: i32,
+        id: Uuid,
+        user_id: Uuid,
     ) -> Result<Self, AppError> {
         let row = client
             .query_one(
@@ -171,7 +172,10 @@ impl Goal {
         row.try_into()
     }
 
-    pub async fn get_all(client: &impl GenericClient, user_id: i32) -> Result<Vec<Self>, AppError> {
+    pub async fn get_all(
+        client: &impl GenericClient,
+        user_id: Uuid,
+    ) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
                 "SELECT goals.* FROM goals INNER
@@ -377,6 +381,7 @@ mod tests {
     use crate::{test_utils::state_for_tests, utilities::dates::Times};
     use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike, Utc};
     use rust_decimal::Decimal;
+    use uuid::Uuid;
 
     struct MockTimeProvider;
     impl Times for MockTimeProvider {
@@ -400,7 +405,7 @@ mod tests {
             name: "test".to_string(),
             recurrence: Recurrence::Never,
             target: Decimal::new(100, 0),
-            user_id: 1,
+            user_id: Uuid::new_v4(),
             target_date,
             start_date: Some(target_date),
         };

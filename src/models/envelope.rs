@@ -3,11 +3,12 @@ use anyhow::Result;
 use rust_database_common::GenericClient;
 use rust_decimal::Decimal;
 use serde::Serialize;
+use uuid::Uuid;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct Envelope {
-    pub id: Option<i32>,
-    pub user_id: i32,
+    pub id: Option<Uuid>,
+    pub user_id: Uuid,
     pub name: String,
     pub amount: Decimal,
 }
@@ -36,8 +37,8 @@ impl TryInto<Envelope> for tokio_postgres::Row {
 impl Envelope {
     pub async fn get_one(
         client: &impl GenericClient,
-        id: i32,
-        user_id: i32,
+        id: Uuid,
+        user_id: Uuid,
     ) -> Result<Self, AppError> {
         client
             .query_one(
@@ -51,7 +52,10 @@ impl Envelope {
             .try_into()
     }
 
-    pub async fn get_all(client: &impl GenericClient, user_id: i32) -> Result<Vec<Self>, AppError> {
+    pub async fn get_all(
+        client: &impl GenericClient,
+        user_id: Uuid,
+    ) -> Result<Vec<Self>, AppError> {
         let rows = client
             .query(
                 "SELECT envelopes.* FROM envelopes INNER

@@ -30,7 +30,7 @@ use tokio::{
     time::interval,
 };
 use tower_http::{services::ServeDir, trace::TraceLayer};
-use tracing::debug;
+use tracing::{Level, debug};
 use utilities::dates::TimeProvider;
 
 #[derive(Serialize, Clone)]
@@ -81,7 +81,9 @@ async fn healthcheck() -> AppResponse {
 
 #[tokio::main]
 async fn main() {
-    let mut telemetry = TelemetryBuilder::new("simple-budget".to_string()).with_json_log_format();
+    let mut telemetry = TelemetryBuilder::new("simple-budget".to_string())
+        .with_json_log_format()
+        .with_targets(vec![(String::from("tower_http"), Level::DEBUG)]);
     telemetry.init().expect("could not initialize subscriber");
 
     let cache_key = Utc::now().timestamp_millis().to_string();

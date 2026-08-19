@@ -40,7 +40,7 @@ pub async fn callback(
     let redirect_cookie = jar.get("redirect_to");
     let redirect = match &redirect_cookie {
         Some(cookie) => cookie.value(),
-        None => "/",
+        None => "http://localhost:5173",
     };
 
     // let jar = jar.remove(Cookie::from("redirect_to"));

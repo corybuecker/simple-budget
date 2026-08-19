@@ -3,10 +3,7 @@ use crate::{
     HandlebarsContext, SharedState,
     authenticated::{UserExtension, dashboard::generate_dashboard_context_for},
     errors::AppResponse,
-    models::{
-        goal::Goal,
-        user::{Preferences, User},
-    },
+    models::user::{Preferences, User},
 };
 use anyhow::anyhow;
 use axum::{
@@ -14,11 +11,8 @@ use axum::{
     extract::State,
     response::{Html, IntoResponse},
 };
-use chrono::Utc;
-use handlebars::to_json;
 use postgres_types::Json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
-use tracing::error;
 
 pub async fn action(
     shared_state: State<SharedState>,
@@ -74,46 +68,10 @@ pub async fn action(
     };
 
     user.preferences = Some(Json(preferences.clone()));
-
     user.update(&client).await?;
 
-    let goal_header = preferences.goal_header.clone();
-    let mut accumulations: Vec<Decimal> = Vec::new();
-    let mut days_remaining: Vec<i64> = Vec::new();
-    let mut per_days: Vec<Decimal> = Vec::new();
+    generate_dashboard_context_for(&mut context, &user, &client).await?;
 
-    let goals = Goal::get_all(&client, user.id).await?;
-
-    context.insert("goal_header".to_string(), to_json(goal_header));
-
-    for goal in &goals {
-        accumulations.push(goal.accumulated_amount);
-        per_days.push(goal.accumulated_per_day()?);
-        days_remaining.push((goal.target_date - Utc::now()).num_days());
-    }
-
-    context.insert("goals".to_string(), to_json(goals));
-    context.insert("accumulations".to_string(), to_json(accumulations));
-    context.insert("days_remaining".to_string(), to_json(days_remaining));
-    context.insert("per_days".to_string(), to_json(per_days));
-
-    let goals_html = shared_state
-        .handlebars
-        .render("preferences/goals", &context);
-
-    if goals_html.is_err() {
-        error!("{:?}", goals_html);
-    }
-
-    let goals_html = goals_html?;
-    let mut context = HandlebarsContext::new();
-    generate_dashboard_context_for(&mut context, &user, &shared_state.pool.get_client().await?)
-        .await?;
-
-    let dashboard_content = shared_state.handlebars.render("_dashboard", &context)?;
-
-    context.insert("goals_update".to_string(), to_json(goals_html));
-    context.insert("dashboard_update".to_string(), to_json(dashboard_content));
     let html = shared_state
         .handlebars
         .render("preferences/update", &context)?;

@@ -12,18 +12,18 @@ chrono = { version = "0.4.43" }
 chrono-tz = { version = "0.10.3" }
 futures-util = { version = "0.3.32" }
 handlebars = "6.4.0"
-jsonschema = { version = "0.46.5" }
+jsonschema = { version = "0.45.0" }
 jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 openidconnect = { version = "4.0.1", features = ["reqwest"] }
 postgres-types = { version = "0.2.12", features = ["derive"] }
 rand = { version = "0.10.1" }
-rust_decimal = { version = "1.42.0", features = ["db-tokio-postgres"] }
-rust-database-common = { git = "https://github.com/corybuecker/rust-database-common", tag = "v2.0.2" }
-rust-web-common = { git = "https://github.com/corybuecker/rust-web-common", tag = "v2.0.0" }
+rust_decimal = { version = "1.41.0", features = ["db-tokio-postgres"] }
+rust-database-common = { git = "https://projects.corybuecker.dev/corybuecker/rust-database-common", tag = "v2.0.2" }
+rust-web-common = { git = "https://projects.corybuecker.dev/corybuecker/rust-web-common", tag = "v2.0.1" }
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = { version = "1.0.149" }
 tokio = { version = "1.52.3", features = ["full"] }
-tokio-postgres = { version = "0.7.16", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-1"] }
+tokio-postgres = { version = "0.7.18", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-1"] }
 tower = { version = "0.5.3", features = ["util"] }
 tower-http = { version = "0.6.8", features = ["fs", "trace"] }
 tower-layer = { version = "0.3.3" }

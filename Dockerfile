@@ -1,4 +1,4 @@
-FROM node:lts-trixie@sha256:f072159a6b98a624e09f2c4815fe473217fc019a97524fd593059c8a4ad5a05d AS frontend
+FROM node:lts-trixie@sha256:41e183430cb891114093422e05a10f249c6bbfcf51c7a57d620cada287bf0bd2 AS frontend
 RUN mkdir -p /app/static
 COPY assets /app/assets
 COPY templates /app/templates

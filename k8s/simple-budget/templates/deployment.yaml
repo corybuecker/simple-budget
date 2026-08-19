@@ -1,0 +1,111 @@
+{{- $root := . -}}
+{{- range $slot := .Values.deployments }}
+{{- if $slot.enabled }}
+{{- $ctx := dict "root" $root "slot" $slot }}
+{{- /* Roll the pods when chart-managed config or secrets change, which the
+       kustomize generators used to handle via their name hash. */}}
+{{- $checksums := dict }}
+{{- if $root.Values.secret.create }}
+{{- $_ := set $checksums "checksum/secret" (include (print $root.Template.BasePath "/secret.yaml") $root | sha256sum) }}
+{{- end }}
+{{- if and $root.Values.config.create $root.Values.config.mount }}
+{{- $_ := set $checksums "checksum/config" (include (print $root.Template.BasePath "/configmap.yaml") $root | sha256sum) }}
+{{- end }}
+{{- $annotations := merge (dict) $checksums (default (dict) $root.Values.podAnnotations) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "simple-budget.slotName" $ctx }}
+  labels:
+    {{- include "simple-budget.labels" $root | nindent 4 }}
+    version: {{ $slot.name }}
+spec:
+  {{- /* Not `default 1`: that would rewrite a deliberate replicaCount of 0. */}}
+  replicas: {{ if kindIs "invalid" $slot.replicaCount }}1{{ else }}{{ $slot.replicaCount }}{{ end }}
+  revisionHistoryLimit: {{ $root.Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "simple-budget.slotSelectorLabels" $ctx | nindent 6 }}
+  template:
+    metadata:
+      {{- with $annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "simple-budget.labels" $root | nindent 8 }}
+        version: {{ $slot.name }}
+        {{- with $root.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with $root.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $root.Values.serviceAccount.create }}
+      serviceAccountName: {{ include "simple-budget.serviceAccountName" $root }}
+      {{- end }}
+      automountServiceAccountToken: {{ $root.Values.serviceAccount.automount }}
+      {{- with $root.Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $root.Chart.Name }}
+          image: {{ include "simple-budget.image" $ctx | quote }}
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $root.Values.containerPort }}
+              protocol: TCP
+          envFrom:
+            {{- if and $root.Values.config.create $root.Values.config.mount }}
+            - configMapRef:
+                name: {{ include "simple-budget.configMapName" $root }}
+            {{- end }}
+            - secretRef:
+                name: {{ include "simple-budget.secretName" $root }}
+          {{- with $root.Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $root.Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $root.Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $root.Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $root.Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $root.Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with $root.Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

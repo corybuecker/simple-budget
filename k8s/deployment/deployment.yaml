@@ -15,10 +15,7 @@ spec:
       labels:
         app: simple-budget
     spec:
-      serviceAccountName: application
-      automountServiceAccountToken: true
-      nodeSelector:
-        kubernetes.io/arch: arm64
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -34,19 +31,15 @@ spec:
             - name: http
               containerPort: 8000
               protocol: TCP
-          volumeMounts:
-            - mountPath: /var/secrets
-              name: secrets
-          command:
-            - /bin/sh
-            - -c
-            - . /var/secrets/.env && /app/simple-budget
+          envFrom:
+          - secretRef:
+              name: simple-budget
           resources:
             requests:
-              cpu: 100m
+              cpu: 125m
               memory: 256Mi
             limits:
-              cpu: 100m
+              cpu: 125m
               memory: 256Mi
           startupProbe:
             httpGet:
@@ -64,10 +57,3 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-      volumes:
-        - name: secrets
-          csi:
-            driver: secrets-store-gke.csi.k8s.io
-            readOnly: true
-            volumeAttributes:
-              secretProviderClass: simple-budget

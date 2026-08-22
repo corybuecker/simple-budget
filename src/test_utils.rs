@@ -7,6 +7,7 @@ use crate::{
     models::user::Preferences,
     utilities::handlebars::{DigestAssetHandlebarsHelper, walk_directory},
 };
+
 #[cfg(test)]
 use crate::{SharedState, db::database_pool, models::user::User};
 use anyhow::{Result, anyhow};

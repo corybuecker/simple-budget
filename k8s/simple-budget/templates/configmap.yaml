@@ -1,0 +1,12 @@
+{{- if .Values.config.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "simple-budget.configMapName" . }}
+  labels:
+    {{- include "simple-budget.labels" . | nindent 4 }}
+{{- with .Values.config.data }}
+data:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}

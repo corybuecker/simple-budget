@@ -1,0 +1,173 @@
+# Default values for simple-budget.
+
+nameOverride: ""
+fullnameOverride: ""
+
+# The chart renders the Namespace itself so the Pod Security Admission labels
+# stay under version control. Install with `-n simple-budget` and WITHOUT
+# `--create-namespace`, otherwise Helm and kubectl race to own the same object.
+namespace:
+  create: true
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+
+image:
+  repository: ghcr.io/corybuecker/simple-budget
+  # Pin by digest. When set, `tag` is ignored.
+  digest: sha256:473c1502fd208545a90513cca98e37018f362f24a4fd4c4191ead6008fcc709d
+  # Used only when `digest` is empty. Falls back to .Chart.AppVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# Blue/green slots. Each enabled entry renders its own Deployment and Service,
+# named <fullname>-<name>, and contributes a weighted backendRef to the
+# HTTPRoute. Traffic is decided entirely by `weight`.
+#
+# To cut over: point the idle slot at the new digest via its `image` override,
+# verify, then swap the weights.
+deployments:
+  - name: blue
+    enabled: true
+    weight: 100
+    replicaCount: 1
+    # Per-slot image override. Any key omitted falls back to the top-level
+    # `image`, so `{}` means both slots run the same digest.
+    image: {}
+  - name: green
+    enabled: true
+    weight: 0
+    replicaCount: 1
+    image: {}
+
+revisionHistoryLimit: 3
+
+service:
+  type: ClusterIP
+  port: 80
+
+# Port the application listens on inside the container.
+containerPort: 8000
+
+# Environment is loaded wholesale from a Secret via envFrom. By default the
+# chart expects a Secret that already exists in the namespace; this replaces the
+# kustomize secretGenerator, which read the gitignored k8s/base/secrets.env.
+secret:
+  # Let Helm manage the Secret from `data` below. Keep false unless you supply
+  # the values from a file kept out of version control (`-f secrets.yaml`).
+  create: false
+  # Name of the Secret to load. Defaults to the chart fullname when empty.
+  existingSecret: ""
+  # Only used when `create` is true. Written as stringData.
+  data: {}
+
+# Non-secret configuration.
+#
+# NOTE: this ConfigMap is created but not referenced by the Deployment, which
+# matches the current kustomize behaviour. Set `config.mount` to true to load it
+# into the pod environment via envFrom.
+config:
+  create: true
+  mount: false
+  data:
+    LOG_LEVEL: "info"
+
+serviceAccount:
+  # The app never calls the Kubernetes API, so it runs as the namespace default
+  # service account with the token unmounted.
+  create: false
+  automount: false
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 125m
+    memory: 256Mi
+  limits:
+    cpu: 125m
+    memory: 256Mi
+
+startupProbe:
+  httpGet:
+    path: /healthcheck
+    port: http
+readinessProbe:
+  httpGet:
+    path: /healthcheck
+    port: http
+livenessProbe:
+  httpGet:
+    path: /healthcheck
+    port: http
+
+# Gateway API Gateway fronted by Traefik.
+gateway:
+  enabled: true
+  className: traefik
+  annotations: {}
+  listeners:
+    - name: budget-corybuecker-dev
+      hostname: budget.corybuecker.dev
+      port: 8000
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+
+httpRoute:
+  enabled: true
+  annotations: {}
+  hostnames:
+    - budget.corybuecker.dev
+  # Defaults to the Gateway rendered by this chart. Override to attach the route
+  # to a gateway owned by another release or namespace.
+  parentRefs: []
+  # Optional match/filter config for the single weighted rule. Leave empty to
+  # route all traffic for the hostnames above.
+  matches: []
+  filters: []
+
+# On/off switches only. The rules themselves are fixed and live in
+# templates/networkpolicies.yaml, since they describe this app's actual
+# connectivity rather than anything an installer should be tuning.
+networkPolicies:
+  # Master switch for all four policies below.
+  enabled: true
+  # Deny all ingress and egress for every pod in the namespace.
+  defaultDenyAll: true
+  # Allow DNS to kube-dns in kube-system.
+  dnsEgress: true
+  # Allow egress to any destination on 443 (outbound APIs) and 5432 (Postgres).
+  externalEgress: true
+  # Allow ingress from Traefik pods in kube-system to the app's container port.
+  gatewayIngress: true
+
+volumes: []
+volumeMounts: []
+nodeSelector: {}
+tolerations: []
+affinity: {}

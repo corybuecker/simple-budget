@@ -1,0 +1,98 @@
+{{- if .Values.networkPolicies.enabled }}
+{{- $fullName := include "simple-budget.fullname" . }}
+{{- if .Values.networkPolicies.defaultDenyAll }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullName }}-default-deny-all
+  labels:
+    {{- include "simple-budget.labels" . | nindent 4 }}
+spec:
+  # Empty podSelector: applies to every pod in the namespace. The policies below
+  # re-open only what the app needs.
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+{{- end }}
+{{- if .Values.networkPolicies.dnsEgress }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullName }}-allow-dns-egress
+  labels:
+    {{- include "simple-budget.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "simple-budget.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}
+{{- if .Values.networkPolicies.externalEgress }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullName }}-allow-app-external-egress
+  labels:
+    {{- include "simple-budget.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "simple-budget.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    # No `to` peers means any destination, restricted to the ports below:
+    # HTTPS for outbound APIs and 5432 for Postgres.
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 5432
+{{- end }}
+{{- if .Values.networkPolicies.gatewayIngress }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullName }}-allow-gateway-ingress
+  labels:
+    {{- include "simple-budget.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "simple-budget.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    # Traefik runs in kube-system. Both selectors sit in a single `from` entry so
+    # they are ANDed: only Traefik pods get in, not all of kube-system.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: {{ .Values.containerPort }}
+{{- end }}
+{{- end }}

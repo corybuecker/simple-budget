@@ -1,0 +1,43 @@
+{{- if .Values.httpRoute.enabled -}}
+{{- $root := . -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "simple-budget.fullname" . }}
+  labels:
+    {{- include "simple-budget.labels" . | nindent 4 }}
+  {{- with .Values.httpRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- if .Values.httpRoute.parentRefs }}
+    {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
+    {{- else }}
+    - kind: Gateway
+      name: {{ include "simple-budget.fullname" . }}
+      namespace: {{ .Release.Namespace }}
+    {{- end }}
+  {{- with .Values.httpRoute.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - backendRefs:
+        {{- range $slot := .Values.deployments }}
+        {{- if $slot.enabled }}
+        - name: {{ include "simple-budget.slotName" (dict "root" $root "slot" $slot) }}
+          port: {{ $root.Values.service.port }}
+          weight: {{ $slot.weight | default 0 }}
+        {{- end }}
+        {{- end }}
+      {{- with .Values.httpRoute.matches }}
+      matches:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.httpRoute.filters }}
+      filters:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

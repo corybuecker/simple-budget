@@ -1,0 +1,11 @@
+apiVersion: v2
+name: simple-budget
+description: Blue/green deployment of simple-budget behind a Traefik Gateway API gateway
+type: application
+
+# Chart version. Bump on every change to the templates or default values.
+version: 0.1.0
+
+# Version of simple-budget itself. The container image is pinned by digest in
+# values.yaml, so this is informational only.
+appVersion: "2.3.0-dev"

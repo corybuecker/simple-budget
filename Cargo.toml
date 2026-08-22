@@ -7,12 +7,12 @@ edition = "2024"
 anyhow = { version = "1.0.102" }
 axum = { version = "0.8.9", features = ["ws", "macros"] }
 axum-extra = { version = "0.12.5", features = ["cookie-signed", "query"] }
-base64 = "0.22.1"
+base64 = "0.23.1"
 chrono = { version = "0.4.43" }
 chrono-tz = { version = "0.10.3" }
 futures-util = { version = "0.3.32" }
 handlebars = "6.4.0"
-jsonschema = { version = "0.45.0" }
+jsonschema = { version = "0.49.6" }
 jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
 openidconnect = { version = "4.0.1", features = ["reqwest"] }
 postgres-types = { version = "0.2.12", features = ["derive"] }

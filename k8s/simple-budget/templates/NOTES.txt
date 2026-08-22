@@ -1,0 +1,34 @@
+simple-budget {{ .Chart.Version }} released as {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+
+Traffic split:
+{{- range $slot := .Values.deployments }}
+{{- if $slot.enabled }}
+  {{ printf "%-6s" $slot.name }} weight {{ $slot.weight }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.httpRoute.enabled }}
+{{- with .Values.httpRoute.hostnames }}
+
+Reachable at:
+{{- range . }}
+  https://{{ . }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+Watch the rollout:
+  kubectl rollout status -n {{ .Release.Namespace }} deployment/{{ include "simple-budget.fullname" . }}-{{ (first .Values.deployments).name }}
+
+To shift traffic between slots, set the weights and upgrade, e.g. cutting over to green:
+  helm upgrade {{ .Release.Name }} <chart> -n {{ .Release.Namespace }} \
+    --set deployments[0].weight=0 --set deployments[1].weight=100
+
+{{- if not .Values.secret.create }}
+
+Reminder: this release expects the Secret {{ include "simple-budget.secretName" . }} to already
+exist in {{ .Release.Namespace }}. The pods will not start until it does. Create it from your
+local env file with:
+  kubectl create secret generic {{ include "simple-budget.secretName" . }} \
+    -n {{ .Release.Namespace }} --from-env-file=<path-to-secrets.env>
+{{- end }}

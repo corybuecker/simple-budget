@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: simple-budget-config
-data:
-  LOG_LEVEL: "info"

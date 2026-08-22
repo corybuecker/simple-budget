@@ -21,7 +21,7 @@ COPY src /app/src
 RUN touch /app/src/main.rs
 RUN cargo build --release
 
-FROM debian:trixie-slim@sha256:b6e2a152f22a40ff69d92cb397223c906017e1391a73c952b588e51af8883bf8
+FROM debian:trixie-slim@sha256:3a39a0592364683e6bab97937b72cad5a8fa6dcbbee90edb3bb48c7f8e94f258
 COPY --from=builder /app/target/release/simple-budget /app/simple-budget
 WORKDIR /app
 RUN chmod 700 /app/simple-budget

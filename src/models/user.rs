@@ -80,7 +80,7 @@ impl Session {
     pub async fn get_by_id(client: &impl GenericClient, id: &str) -> Result<Self> {
         let id = Uuid::parse_str(id)?;
         client
-            .query_one("SELECT * FROM sessions WHERE id = $1", &[&id])
+            .query_one("SELECT * FROM sessions WHERE id = $1 AND expiration > NOW()", &[&id])
             .await?
             .try_into()
     }
@@ -237,5 +237,40 @@ impl User {
             Some(Json(preferences)) => preferences.monthly_income(),
             None => Ok(Decimal::ZERO),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Session, User};
+    use crate::test_utils::state_for_tests;
+    use chrono::{Days, Utc};
+
+    #[tokio::test]
+    async fn poc_expired_session_does_not_authenticates() {
+        let (shared_state, _, _) = state_for_tests().await.unwrap();
+        let client = shared_state.pool.get_client().await.unwrap();
+
+        // A legitimate user.
+        let subject = uuid::Uuid::new_v4().to_string();
+        let user = User::create(&client, subject.clone(), subject).await.unwrap();
+
+        // A session that expired 2 days ago.
+        let expiration = Utc::now().checked_sub_days(Days::new(2)).unwrap();
+        let mut session = Session {
+            id: None,
+            user_id: user.id,
+            expiration,
+            csrf: "poc".to_string(),
+        };
+        session.create(&client).await.unwrap();
+        let session_id = session.id.unwrap().to_string();
+
+        let result = Session::get_by_id(&client, &session_id).await;
+
+        assert!(
+            result.is_err(),
+            "expected expired session to be rejected, but auth still succeeded"
+        );
     }
 }

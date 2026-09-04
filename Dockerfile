@@ -11,7 +11,7 @@ RUN npm install -g pnpm@11.11.0
 RUN pnpm install --frozen-lockfile
 RUN pnpm build
 
-FROM rust:1.97.0-trixie@sha256:b92b8c8574f8f3b207fcb0912fb3e2de4041580b5934d90312d53938c9a038a9 AS builder
+FROM rust:1.98.0-trixie@sha256:620dbcd124499c59e2406d3741574b5c5838cf9eb9656f0c3a03948f79b02959 AS builder
 RUN mkdir -p /app/src
 WORKDIR /app
 COPY Cargo.toml Cargo.lock /app/

@@ -4,7 +4,7 @@ use crate::{
     errors::AppResponse,
     models::{
         goal::{Goal, Recurrence},
-        user::{GoalHeader, User},
+        user::{User, preferences::GoalHeader},
     },
     utilities::responses::{self, ResponseFormat, generate_response},
 };
@@ -89,7 +89,7 @@ pub async fn action(
 mod tests {
     use super::*;
     use crate::models::goal::{Goal, Recurrence};
-    use crate::models::user::{GoalHeader, Preferences};
+    use crate::models::user::preferences::Preferences;
     use crate::test_utils::state_for_tests;
     use axum::Router;
     use axum::body::Body;
@@ -224,12 +224,7 @@ mod tests {
         let user_id = user_extension.0.id;
 
         // Update user preferences
-        let preferences = Preferences {
-            goal_header: Some(GoalHeader::PerDay),
-            timezone: None,
-            forecast_offset: None,
-            monthly_income: None,
-        };
+        let preferences = Preferences::default();
 
         client
             .execute(

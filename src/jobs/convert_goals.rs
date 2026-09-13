@@ -1,6 +1,10 @@
 use crate::{
     errors::AppError,
-    models::{envelope::Envelope, goal::Goal, user::User},
+    models::{
+        envelope::Envelope,
+        goal::{Goal, Recurrence},
+        user::User,
+    },
     utilities::dates::{TimeUtilities, Times},
 };
 use anyhow::{Result, anyhow};
@@ -91,10 +95,22 @@ async fn private_convert_goals(
             Decimal::ZERO,
             remaining_spendable_per_second - spendable_per_second,
         );
-        let acceleration_amount =
+        let mut acceleration_amount =
             acceleration_amount_per_second * remaining_length_of_month_in_seconds;
 
+        if let Ok(false) = user.accelerate_goals() {
+            acceleration_amount = Decimal::ZERO;
+        }
+
+        if let Ok(true) = user.accelerate_goals()
+            && let Ok(false) = user.accelerate_non_monthly()
+            && goal.recurrence != Recurrence::Monthly
+        {
+            acceleration_amount = Decimal::ZERO;
+        }
+
         info!("🚧 acceleration_amount -> {:#?}", acceleration_amount);
+
         goal.accelerate(client, acceleration_amount).await?;
     }
 
@@ -108,7 +124,7 @@ mod tests {
     use crate::models::account::Account;
     use crate::models::envelope::Envelope;
     use crate::models::goal::{Goal, Recurrence};
-    use crate::models::user::{Preferences, User};
+    use crate::models::user::{User, preferences::Preferences};
     use crate::test_utils::user_for_tests;
     use crate::utilities::dates::Times;
     use chrono::{Days, Duration, TimeZone, Timelike, Utc};
@@ -167,6 +183,10 @@ mod tests {
         test_accelerate_goal().await;
         test_accumulate_goal().await;
         test_convert_goal_to_envelope().await;
+        test_acceleration_disabled_by_default_preference().await;
+        test_acceleration_applies_to_monthly_goal_when_enabled().await;
+        test_acceleration_skips_non_monthly_goal_when_disallowed().await;
+        test_acceleration_applies_to_non_monthly_goal_when_allowed().await;
 
         let mut database_pool = database_pool(Some(&env::var("TEST_DATABASE_URL").unwrap()))
             .await
@@ -282,5 +302,101 @@ mod tests {
         assert!(goal.target_date > time.now());
 
         transaction.rollback().await.unwrap();
+    }
+
+    async fn accumulated_amount_for(
+        pool: &DatabasePool,
+        time: &MockTimeProvider,
+        user: &User,
+        goal: &Goal,
+        recurrence: Recurrence,
+    ) -> Decimal {
+        let mut client = pool.get_client().await.unwrap();
+        let transaction = client.transaction().await.unwrap();
+
+        let account = Account {
+            user_id: user.id,
+            id: None,
+            name: "test".to_string(),
+            amount: Decimal::new(100, 0),
+            debt: false,
+        };
+
+        account.create(&transaction).await.unwrap();
+
+        let mut goal = goal.clone();
+        goal.target_date = time.now().checked_add_days(Days::new(3)).unwrap();
+        goal.recurrence = recurrence;
+        goal.update(&transaction).await.unwrap();
+
+        private_convert_goals(&transaction, time).await.unwrap();
+
+        let goal: Goal = transaction
+            .query_one(
+                "SELECT * FROM goals WHERE user_id = $1 LIMIT 1",
+                &[&user.id],
+            )
+            .await
+            .unwrap()
+            .try_into()
+            .unwrap();
+
+        transaction.rollback().await.unwrap();
+
+        goal.accumulated_amount
+    }
+
+    async fn test_acceleration_disabled_by_default_preference() {
+        let (user, pool, time, goal) = setup().await;
+        let accumulated_amount =
+            accumulated_amount_for(&pool, &time, &user, &goal, Recurrence::Monthly).await;
+        assert!(accumulated_amount - Decimal::new(6322, 2) < Decimal::new(1, 2));
+        assert!(accumulated_amount - Decimal::new(6322, 2) >= Decimal::ZERO);
+    }
+
+    async fn test_acceleration_applies_to_monthly_goal_when_enabled() {
+        let (mut user, pool, time, goal) = setup().await;
+        let mut preferences = Preferences::default();
+        preferences.accelerate_goals = Some(true);
+        user.preferences = Some(Json(preferences));
+        user.update(&pool.get_client().await.unwrap())
+            .await
+            .unwrap();
+        let accumulated_amount =
+            accumulated_amount_for(&pool, &time, &user, &goal, Recurrence::Monthly).await;
+
+        assert!(accumulated_amount - Decimal::new(7000, 2) < Decimal::new(1, 2));
+        assert!(accumulated_amount - Decimal::new(7000, 2) >= Decimal::ZERO);
+    }
+
+    async fn test_acceleration_skips_non_monthly_goal_when_disallowed() {
+        let (mut user, pool, time, goal) = setup().await;
+        let mut preferences = Preferences::default();
+        preferences.accelerate_goals = Some(true);
+        user.preferences = Some(Json(preferences));
+        user.update(&pool.get_client().await.unwrap())
+            .await
+            .unwrap();
+        let accumulated_amount =
+            accumulated_amount_for(&pool, &time, &user, &goal, Recurrence::Weekly).await;
+
+        assert!(accumulated_amount - Decimal::new(3999, 2) < Decimal::new(1, 2));
+        assert!(accumulated_amount - Decimal::new(3999, 2) >= Decimal::ZERO);
+    }
+
+    async fn test_acceleration_applies_to_non_monthly_goal_when_allowed() {
+        let (mut user, pool, time, goal) = setup().await;
+        let mut preferences = Preferences::default();
+        preferences.accelerate_goals = Some(true);
+        preferences.accelerate_non_monthly = Some(true);
+        user.preferences = Some(Json(preferences));
+        user.update(&pool.get_client().await.unwrap())
+            .await
+            .unwrap();
+        let accumulated_amount =
+            accumulated_amount_for(&pool, &time, &user, &goal, Recurrence::Weekly).await;
+
+        assert!(accumulated_amount - Decimal::new(7000, 2) < Decimal::new(1, 2));
+        assert!(accumulated_amount - Decimal::new(7000, 2) >= Decimal::ZERO);
     }
 }

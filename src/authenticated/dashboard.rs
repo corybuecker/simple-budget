@@ -2,7 +2,7 @@ use super::UserExtension;
 use crate::HandlebarsContext;
 use crate::errors::AppResponse;
 use crate::models::goal::Goal;
-use crate::models::user::Preferences;
+use crate::models::user::preferences::Preferences;
 use crate::utilities::dates::{TimeProvider, TimeUtilities};
 use crate::utilities::responses::{ResponseFormat, generate_response, get_response_format};
 use crate::{Section, SharedState, models::user::User};
@@ -77,6 +77,8 @@ pub async fn generate_dashboard_context_for(
             timezone: Some(String::from("UTC")),
             forecast_offset: None,
             monthly_income: Some(Decimal::ZERO),
+            accelerate_goals: Some(false),
+            accelerate_non_monthly: None,
         },
     };
 

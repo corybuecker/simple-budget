@@ -1,51 +1,13 @@
-use anyhow::{Result, anyhow};
-use chrono::{DateTime, Utc};
-use postgres_types::Json;
-use rust_database_common::GenericClient;
-use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+pub mod preferences;
 
 use crate::errors::AppError;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum GoalHeader {
-    Accumulated,
-    DaysRemaining,
-    PerDay,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Preferences {
-    pub timezone: Option<String>,
-    pub goal_header: Option<GoalHeader>,
-    pub forecast_offset: Option<i64>,
-    pub monthly_income: Option<Decimal>,
-}
-
-impl Preferences {
-    pub fn default() -> Self {
-        Self {
-            timezone: Some("UTC".to_owned()),
-            goal_header: Some(GoalHeader::Accumulated),
-            forecast_offset: Some(1),
-            monthly_income: Some(Decimal::ZERO),
-        }
-    }
-
-    pub fn timezone(&self) -> Result<String> {
-        self.timezone
-            .clone()
-            .or(Some("UTC".to_owned()))
-            .ok_or(anyhow!("failure fetching timezone"))
-    }
-
-    pub fn monthly_income(&self) -> Result<Decimal> {
-        self.monthly_income
-            .or(Some(Decimal::ZERO))
-            .ok_or(anyhow!("failure fetching monthly income"))
-    }
-}
+use anyhow::Result;
+use chrono::{DateTime, Utc};
+use postgres_types::Json;
+use preferences::Preferences;
+use rust_database_common::GenericClient;
+use rust_decimal::Decimal;
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct Session {
@@ -80,7 +42,10 @@ impl Session {
     pub async fn get_by_id(client: &impl GenericClient, id: &str) -> Result<Self> {
         let id = Uuid::parse_str(id)?;
         client
-            .query_one("SELECT * FROM sessions WHERE id = $1 AND expiration > NOW()", &[&id])
+            .query_one(
+                "SELECT * FROM sessions WHERE id = $1 AND expiration > NOW()",
+                &[&id],
+            )
             .await?
             .try_into()
     }
@@ -238,6 +203,20 @@ impl User {
             None => Ok(Decimal::ZERO),
         }
     }
+
+    pub fn accelerate_goals(&self) -> Result<bool> {
+        match &self.preferences {
+            Some(Json(preferences)) => preferences.accelerate_goals(),
+            None => Ok(false),
+        }
+    }
+
+    pub fn accelerate_non_monthly(&self) -> Result<bool> {
+        match &self.preferences {
+            Some(Json(preferences)) => preferences.accelerate_non_monthly(),
+            None => Ok(false),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -253,7 +232,9 @@ mod tests {
 
         // A legitimate user.
         let subject = uuid::Uuid::new_v4().to_string();
-        let user = User::create(&client, subject.clone(), subject).await.unwrap();
+        let user = User::create(&client, subject.clone(), subject)
+            .await
+            .unwrap();
 
         // A session that expired 2 days ago.
         let expiration = Utc::now().checked_sub_days(Days::new(2)).unwrap();

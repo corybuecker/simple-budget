@@ -4,7 +4,7 @@ use crate::{
     errors::AppResponse,
     models::{
         goal::Goal,
-        user::{GoalHeader, User},
+        user::{User, preferences::GoalHeader},
     },
     utilities::responses::{ResponseFormat, generate_response, get_response_format},
 };

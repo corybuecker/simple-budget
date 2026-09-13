@@ -2,7 +2,7 @@ mod index;
 mod update;
 
 use super::UserExtension;
-use crate::{HandlebarsContext, Section, SharedState, models::user::GoalHeader};
+use crate::{HandlebarsContext, Section, SharedState, models::user::preferences::GoalHeader};
 use axum::{
     Extension, Router,
     extract::Request,
@@ -19,6 +19,8 @@ pub struct PreferencesForm {
     goal_header: Option<GoalHeader>,
     forecast_offset: Option<i64>,
     monthly_income: Option<f64>,
+    accelerate_goals: Option<String>,
+    accelerate_non_monthly: Option<String>,
 }
 
 async fn initialize_context(

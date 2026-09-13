@@ -2,7 +2,7 @@ use crate::{
     HandlebarsContext, SharedState,
     authenticated::UserExtension,
     errors::AppResponse,
-    models::user::{Preferences, User},
+    models::user::{User, preferences::Preferences},
     utilities::responses::{ResponseFormat, generate_response, get_response_format},
 };
 use axum::{
@@ -30,6 +30,15 @@ pub async fn action(
         "monthly_income".to_string(),
         to_json(preferences.monthly_income),
     );
+    context.insert(
+        "accelerate_goals".to_string(),
+        to_json(preferences.accelerate_goals),
+    );
+    context.insert(
+        "accelerate_non_monthly".to_string(),
+        to_json(preferences.accelerate_non_monthly),
+    );
+    tracing::info!("{:#?}", &context);
 
     match response_format {
         ResponseFormat::Turbo | ResponseFormat::Html => Ok(generate_response(

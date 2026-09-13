@@ -4,7 +4,7 @@ use crate::{
     HandlebarsContext,
     authenticated::UserExtension,
     errors::AppError,
-    models::user::Preferences,
+    models::user::preferences::Preferences,
     utilities::handlebars::{DigestAssetHandlebarsHelper, walk_directory},
 };
 

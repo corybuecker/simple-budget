@@ -3,7 +3,7 @@ use crate::{
     HandlebarsContext, SharedState,
     authenticated::{UserExtension, dashboard::generate_dashboard_context_for},
     errors::AppResponse,
-    models::user::{Preferences, User},
+    models::user::{User, preferences::Preferences},
 };
 use anyhow::anyhow;
 use axum::{
@@ -25,12 +25,7 @@ pub async fn action(
 
     let mut preferences = match user.preferences {
         Some(preferences) => preferences.0.clone(),
-        None => Preferences {
-            goal_header: None,
-            timezone: None,
-            forecast_offset: None,
-            monthly_income: Some(Decimal::ZERO),
-        },
+        None => Preferences::default(),
     };
 
     if let Some(string) = &form.timezone {
@@ -66,6 +61,17 @@ pub async fn action(
             )
         }
     };
+
+    preferences.accelerate_goals = None;
+    preferences.accelerate_non_monthly = None;
+
+    if form.accelerate_goals.is_some() {
+        preferences.accelerate_goals = Some(true);
+    }
+
+    if form.accelerate_non_monthly.is_some() {
+        preferences.accelerate_non_monthly = Some(true);
+    }
 
     user.preferences = Some(Json(preferences.clone()));
     user.update(&client).await?;

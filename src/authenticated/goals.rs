@@ -8,7 +8,11 @@ mod update;
 
 use super::UserExtension;
 use crate::HandlebarsContext;
+use crate::models::goal::Goal;
+use crate::models::user::User;
+use crate::models::user::preferences::GoalHeader;
 use crate::{Section, SharedState};
+use anyhow::Result;
 use axum::{
     Extension, Router,
     extract::Request,
@@ -16,7 +20,10 @@ use axum::{
     response::Response,
     routing::{get, post},
 };
+use chrono::Utc;
 use handlebars::to_json;
+use rust_database_common::GenericClient;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -69,4 +76,41 @@ pub fn goals_router() -> Router<SharedState> {
         .route("/resets/{recurrence}", post(resets::action))
         .route("/{id}/delete", get(delete::modal))
         .route_layer(from_fn(initialize_context))
+}
+
+pub async fn generate_goal_index_context_for(
+    context: &mut HandlebarsContext,
+    user: &User,
+    client: &impl GenericClient,
+) -> Result<()> {
+    let mut accumulations: Vec<Decimal> = Vec::new();
+    let mut days_remaining: Vec<i64> = Vec::new();
+    let mut per_days: Vec<Decimal> = Vec::new();
+
+    let goal_header = match &user.preferences {
+        Some(preferences) => &preferences.0.goal_header,
+        None => &Some(GoalHeader::Accumulated),
+    };
+
+    // Use a cloned value for the context to avoid the move issue
+    let goal_header_for_context = goal_header.clone();
+    context.insert(
+        "goal_header".to_string(),
+        to_json(goal_header_for_context.or(Some(GoalHeader::Accumulated))),
+    );
+
+    let goals = Goal::get_all(client, user.id).await.unwrap();
+
+    for goal in &goals {
+        accumulations.push(goal.accumulated_amount);
+        per_days.push(goal.accumulated_per_day()?);
+        days_remaining.push((goal.target_date - Utc::now()).num_days());
+    }
+
+    context.insert("goals".to_string(), to_json(&goals));
+    context.insert("accumulations".to_string(), to_json(&accumulations));
+    context.insert("days_remaining".to_string(), to_json(&days_remaining));
+    context.insert("per_days".to_string(), to_json(&per_days));
+
+    Ok(())
 }

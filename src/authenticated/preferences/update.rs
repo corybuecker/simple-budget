@@ -1,9 +1,6 @@
 use super::PreferencesForm;
 use crate::{
-    HandlebarsContext, SharedState,
-    authenticated::{UserExtension, dashboard::generate_dashboard_context_for},
-    errors::AppResponse,
-    models::user::{User, preferences::Preferences},
+    HandlebarsContext, SharedState, authenticated::{UserExtension, dashboard::generate_dashboard_context_for, goals::generate_goal_index_context_for}, errors::AppResponse, models::user::{User, preferences::Preferences},
 };
 use anyhow::anyhow;
 use axum::{
@@ -77,6 +74,7 @@ pub async fn action(
     user.update(&client).await?;
 
     generate_dashboard_context_for(&mut context, &user, &client).await?;
+    generate_goal_index_context_for(&mut context, &user, &client).await?;
 
     let html = shared_state
         .handlebars

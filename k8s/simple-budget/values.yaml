@@ -35,16 +35,20 @@ imagePullSecrets: []
 deployments:
   - name: blue
     enabled: true
-    weight: 100
-    replicaCount: 1
-    # Per-slot image override. Any key omitted falls back to the top-level
-    # `image`, so `{}` means both slots run the same digest.
-    image: {}
+    weight: 0
+    replicaCount: 0
+    image:
+      repository: ghcr.io/corybuecker/simple-budget
+      digest: sha256:473c1502fd208545a90513cca98e37018f362f24a4fd4c4191ead6008fcc709d
+      pullPolicy: IfNotPresent
   - name: green
     enabled: true
-    weight: 0
+    weight: 100
     replicaCount: 1
-    image: {}
+    image:
+      repository: ghcr.io/corybuecker/simple-budget
+      digest: sha256:e2c2f710d8c241d7db76f94380d56f9ed338ff93fac1b4095ba1f7059d973cc4
+      pullPolicy: IfNotPresent
 
 revisionHistoryLimit: 3
 

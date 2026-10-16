@@ -1,57 +1,43 @@
 use crate::{
-    HandlebarsContext, SharedState,
+    LayoutCtx, SharedState,
     authenticated::UserExtension,
     errors::AppResponse,
     models::user::{User, preferences::Preferences},
-    utilities::responses::{ResponseFormat, generate_response, get_response_format},
+    utilities::responses::generate_response,
 };
-use axum::{
-    Extension, Json,
-    extract::State,
-    http::{HeaderMap, StatusCode},
-};
-use handlebars::to_json;
+use askama::Template;
+use axum::{Extension, extract::State, http::StatusCode};
 use postgres_types::Json as PgJson;
+
+#[derive(Template)]
+#[template(path = "preferences/index.html")]
+struct Index {
+    layout: LayoutCtx,
+    timezone: String,
+    monthly_income: String,
+    accelerate_goals: bool,
+    accelerate_non_monthly: bool,
+}
 
 pub async fn action(
     shared_state: State<SharedState>,
-    headers: HeaderMap,
-    user: Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(user): Extension<UserExtension>,
+    Extension(layout): Extension<LayoutCtx>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
     let user = User::get_by_id(&client, user.id).await?;
     let preferences = user.preferences.unwrap_or(PgJson(Preferences::default())).0;
-    let response_format = get_response_format(&headers)?;
-    let mut context = context.clone();
 
-    context.insert("timezone".to_string(), to_json(&preferences.timezone));
-    context.insert(
-        "monthly_income".to_string(),
-        to_json(preferences.monthly_income),
-    );
-    context.insert(
-        "accelerate_goals".to_string(),
-        to_json(preferences.accelerate_goals),
-    );
-    context.insert(
-        "accelerate_non_monthly".to_string(),
-        to_json(preferences.accelerate_non_monthly),
-    );
-    tracing::info!("{:#?}", &context);
+    let template = Index {
+        layout,
+        timezone: preferences.timezone.unwrap_or_default(),
+        monthly_income: preferences
+            .monthly_income
+            .map(|income| income.to_string())
+            .unwrap_or_default(),
+        accelerate_goals: preferences.accelerate_goals.unwrap_or(false),
+        accelerate_non_monthly: preferences.accelerate_non_monthly.unwrap_or(false),
+    };
 
-    match response_format {
-        ResponseFormat::Turbo | ResponseFormat::Html => Ok(generate_response(
-            &ResponseFormat::Html,
-            shared_state
-                .handlebars
-                .render("preferences/modal", &context)?,
-            StatusCode::OK,
-        )),
-        ResponseFormat::Json => Ok(generate_response(
-            &response_format,
-            Json(preferences),
-            StatusCode::OK,
-        )),
-    }
+    Ok(generate_response(template.render()?, StatusCode::OK))
 }

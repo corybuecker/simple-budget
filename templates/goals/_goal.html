@@ -1,0 +1,31 @@
+{% if let Some(id) = row.goal.id %}
+    <tr id="goal_{{ id }}">
+        <th scope="row">{{ row.goal.name }}</th>
+        <td data-controller="formatter"
+            data-formatter-currency-value="{{ row.goal.target }}">
+            {{ row.goal.target }}
+        </td>
+        {% match goal_header %}
+            {% when GoalHeader::Accumulated %}
+            <td data-controller="formatter"
+                data-formatter-currency-value="{{ row.goal.accumulated_amount }}"
+                data-formatter-currency-precision-value="2">
+                {{ row.goal.accumulated_amount }}
+            </td>
+            {% when GoalHeader::PerDay %}
+            <td data-controller="formatter"
+                data-formatter-currency-value="{{ row.per_day }}"
+                data-formatter-currency-precision-value="2">
+                {{ row.per_day }}
+            </td>
+            {% when GoalHeader::DaysRemaining %}
+            <td>{{ row.days_remaining }}</td>
+        {% endmatch %}
+        <td>
+            <div>
+                <a href="/goals/{{ id }}">Edit</a>
+                <a href="/goals/{{ id }}/delete">Delete</a>
+            </div>
+        </td>
+    </tr>
+{% endif %}

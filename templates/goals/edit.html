@@ -1,0 +1,6 @@
+{% extends "layout.html" %}
+{% block content %}
+    <form id="goal-{{ id }}" method="post" action="/goals/{{ id }}">
+        {% include "goals/_form.html" %}
+    </form>
+{% endblock %}

@@ -1,90 +1,48 @@
 use crate::{
-    HandlebarsContext, SharedState,
-    authenticated::UserExtension,
-    errors::AppResponse,
-    models::account::Account,
-    utilities::responses::{ResponseFormat, generate_response, get_response_format},
+    LayoutCtx, SharedState, authenticated::UserExtension, errors::AppResponse,
+    models::account::Account, templates::DeleteConfirmation,
+    utilities::responses::generate_response,
 };
+use askama::Template;
 use axum::{
-    Extension, Json,
+    Extension,
     extract::{Path, State},
-    http::{HeaderMap, StatusCode},
-    response::IntoResponse,
+    http::StatusCode,
+    response::{IntoResponse, Redirect},
 };
-use handlebars::to_json;
 use uuid::Uuid;
 
 pub async fn modal(
     shared_state: State<SharedState>,
     Path(id): Path<Uuid>,
-    headers: HeaderMap,
     Extension(user): Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(layout): Extension<LayoutCtx>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
     let account = Account::get_one(&client, id, user.id).await?;
-    let response_format = get_response_format(&headers)?;
 
-    match response_format {
-        ResponseFormat::Html => {
-            let mut context = context.clone();
-            context.insert(
-                "prompt".to_string(),
-                to_json("Are you sure you want to delete this account?"),
-            );
-            context.insert("action".to_string(), to_json(format!("/accounts/{}", id)));
-            context.insert("entity".to_string(), to_json(account.name));
-            context.insert("partial".to_string(), to_json("delete_confirmation"));
-            Ok(generate_response(
-                &response_format,
-                shared_state
-                    .handlebars
-                    .render("delete_confirmation", &context)?,
-                StatusCode::OK,
-            ))
-        }
-        ResponseFormat::Turbo => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
-        ResponseFormat::Json => Ok(generate_response(
-            &response_format,
-            Json(account),
-            StatusCode::OK,
-        )),
-    }
+    let template = DeleteConfirmation {
+        layout,
+        prompt: "Are you sure you want to delete this account?".to_string(),
+        action: format!("/accounts/{}/delete", id),
+        cancel: "/accounts".to_string(),
+        entity: account.name,
+    };
+
+    Ok(generate_response(template.render()?, StatusCode::OK))
 }
 
 pub async fn action(
     shared_state: State<SharedState>,
     Path(id): Path<Uuid>,
-    headers: HeaderMap,
     Extension(user): Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
     let account = Account::get_one(&client, id, user.id).await?;
 
     account.delete(&client).await?;
 
-    let response_format = get_response_format(&headers)?;
-    match response_format {
-        ResponseFormat::Html => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
-        ResponseFormat::Json => Ok(generate_response(
-            &response_format,
-            Json(account),
-            StatusCode::OK,
-        )),
-        ResponseFormat::Turbo => {
-            let mut context = context.clone();
-            context.insert("account".to_string(), to_json(&account));
-
-            Ok(generate_response(
-                &response_format,
-                shared_state
-                    .handlebars
-                    .render("accounts/delete", &context)?,
-                StatusCode::OK,
-            ))
-        }
-    }
+    Ok(Redirect::to("/accounts").into_response())
 }
 
 #[cfg(test)]
@@ -152,13 +110,13 @@ mod tests {
         let request = Request::builder()
             .uri(format!("/accounts/{}", account.id.unwrap()))
             .method("DELETE")
-            .header("Accept", "turbo")
             .body(Body::empty())
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers().get("location").unwrap(), "/accounts");
 
         let deleted_account = Account::get_one(&client, account.id.unwrap(), user_id).await;
         assert!(deleted_account.is_err());

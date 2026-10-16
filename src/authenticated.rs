@@ -1,8 +1,8 @@
 use crate::{SharedState, models::user::Session};
 use axum::{
     Extension, Router,
-    extract::{Request, State},
-    http::{HeaderMap, Method, StatusCode},
+    extract::{FromRequest, State},
+    http::{Method, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Redirect, Response},
     routing::get,
@@ -11,6 +11,7 @@ use axum_extra::extract::{
     SignedCookieJar,
     cookie::{Cookie, SameSite},
 };
+use serde::Deserialize;
 use uuid::Uuid;
 
 pub mod accounts;
@@ -25,33 +26,56 @@ pub struct UserExtension {
     pub csrf: String,
 }
 
+#[derive(Deserialize, Debug)]
+struct CsrfOnlyForm {
+    csrf: String,
+}
+
 async fn validate_csrf(
     user: Extension<UserExtension>,
-    headers: HeaderMap,
-    request: Request,
+    request: axum::extract::Request,
     next: Next,
-) -> Response {
-    let method = request.method().to_owned();
+) -> Result<Response<axum::body::Body>, StatusCode> {
+    let method = request.method();
 
     match method {
-        Method::POST | Method::PUT | Method::PATCH | Method::DELETE => {
-            let Some(header) = headers.get("x-csrf-token") else {
-                return StatusCode::BAD_REQUEST.into_response();
-            };
-            if user.csrf == header.clone() {
-                next.run(request).await
-            } else {
-                StatusCode::BAD_REQUEST.into_response()
+        &Method::POST | &Method::PUT | &Method::PATCH | &Method::DELETE => {
+            let (parts, body) = request.into_parts();
+            let bytes = axum::body::to_bytes(body, 4096)
+                .await
+                .map_err(|_e| StatusCode::BAD_REQUEST)?;
+
+            let probe = axum::extract::Request::from_parts(
+                parts.clone(),
+                axum::body::Body::from(bytes.clone()),
+            );
+
+            let probe = axum::extract::Form::<CsrfOnlyForm>::from_request(probe, &())
+                .await
+                .map_err(|e| {
+                    tracing::error!("{}", e);
+                    StatusCode::BAD_REQUEST
+                })?;
+
+            if probe.csrf.eq(&user.csrf) {
+                return Ok(next
+                    .run(axum::extract::Request::from_parts(
+                        parts,
+                        axum::body::Body::from(bytes.clone()),
+                    ))
+                    .await);
             }
+
+            Err(StatusCode::BAD_REQUEST)
         }
-        _ => next.run(request).await,
+        _ => Ok(next.run(request).await),
     }
 }
 
 async fn authenticated(
     State(state): State<SharedState>,
     jar: SignedCookieJar,
-    mut request: Request,
+    mut request: axum::extract::Request,
     next: Next,
 ) -> Result<(SignedCookieJar, Response), StatusCode> {
     let Some(session_id) = jar.get("session_id") else {

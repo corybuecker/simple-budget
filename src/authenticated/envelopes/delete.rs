@@ -1,89 +1,48 @@
 use crate::{
-    HandlebarsContext, SharedState,
-    authenticated::UserExtension,
-    errors::AppResponse,
-    models::envelope::Envelope,
-    utilities::responses::{ResponseFormat, generate_response, get_response_format},
+    LayoutCtx, SharedState, authenticated::UserExtension, errors::AppResponse,
+    models::envelope::Envelope, templates::DeleteConfirmation,
+    utilities::responses::generate_response,
 };
+use askama::Template;
 use axum::{
-    Extension, Json,
+    Extension,
     extract::{Path, State},
-    http::{HeaderMap, StatusCode},
-    response::IntoResponse,
+    http::StatusCode,
+    response::{IntoResponse, Redirect},
 };
-use handlebars::to_json;
 use uuid::Uuid;
 
 pub async fn modal(
     shared_state: State<SharedState>,
     Path(id): Path<Uuid>,
-    headers: HeaderMap,
     Extension(user): Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(layout): Extension<LayoutCtx>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
     let envelope = Envelope::get_one(&client, id, user.id).await?;
-    let response_format = get_response_format(&headers)?;
 
-    match response_format {
-        ResponseFormat::Html => {
-            let mut context = context.clone();
-            context.insert(
-                "prompt".to_string(),
-                to_json("Are you sure you want to delete this envelope?"),
-            );
-            context.insert("action".to_string(), to_json(format!("/envelopes/{}", id)));
-            context.insert("entity".to_string(), to_json(envelope.name));
-            context.insert("partial".to_string(), to_json("delete_confirmation"));
-            Ok(generate_response(
-                &response_format,
-                shared_state
-                    .handlebars
-                    .render("delete_confirmation", &context)?,
-                StatusCode::OK,
-            ))
-        }
-        ResponseFormat::Turbo => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
-        ResponseFormat::Json => Ok(generate_response(
-            &response_format,
-            Json(envelope),
-            StatusCode::OK,
-        )),
-    }
+    let template = DeleteConfirmation {
+        layout,
+        prompt: "Are you sure you want to delete this envelope?".to_string(),
+        action: format!("/envelopes/{}/delete", id),
+        cancel: "/envelopes".to_string(),
+        entity: envelope.name,
+    };
+
+    Ok(generate_response(template.render()?, StatusCode::OK))
 }
 
 pub async fn action(
     shared_state: State<SharedState>,
     Path(id): Path<Uuid>,
-    headers: HeaderMap,
     Extension(user): Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
     let envelope = Envelope::get_one(&client, id, user.id).await?;
+
     envelope.delete(&client).await?;
-    let response_format = get_response_format(&headers)?;
 
-    match response_format {
-        ResponseFormat::Html => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
-        ResponseFormat::Json => Ok(generate_response(
-            &response_format,
-            Json(envelope),
-            StatusCode::OK,
-        )),
-        ResponseFormat::Turbo => {
-            let mut context = context.clone();
-            context.insert("envelope".to_string(), to_json(&envelope));
-
-            Ok(generate_response(
-                &response_format,
-                shared_state
-                    .handlebars
-                    .render("envelopes/delete", &context)?,
-                StatusCode::OK,
-            ))
-        }
-    }
+    Ok(Redirect::to("/envelopes").into_response())
 }
 
 #[cfg(test)]
@@ -153,13 +112,13 @@ mod tests {
         let request = Request::builder()
             .uri(format!("/envelopes/{}", envelope.id.unwrap()))
             .method("DELETE")
-            .header("Accept", "turbo")
             .body(Body::empty())
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(response.headers().get("location").unwrap(), "/envelopes");
 
         let deleted_envelope = Envelope::get_one(&client, envelope.id.unwrap(), user_id).await;
         assert!(deleted_envelope.is_err());

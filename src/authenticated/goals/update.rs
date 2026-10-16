@@ -1,20 +1,20 @@
-use super::{GoalForm, schema};
+use super::{EditTemplate, GoalForm, schema};
 use crate::{
-    HandlebarsContext, SharedState,
+    LayoutCtx, SharedState,
     authenticated::UserExtension,
     errors::AppResponse,
     models::goal::{Goal, Recurrence},
-    utilities::responses::{self, generate_response, get_response_format},
+    utilities::responses::generate_response,
 };
 use anyhow::anyhow;
+use askama::Template;
 use axum::{
-    Extension, Form, Json,
+    Extension, Form,
     extract::{Path, State},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Redirect},
 };
 use chrono::{NaiveDateTime, NaiveTime};
-use handlebars::to_json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use std::str::FromStr;
 use uuid::Uuid;
@@ -23,53 +23,26 @@ pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<Uuid>,
-    headers: HeaderMap,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(layout): Extension<LayoutCtx>,
     Form(form): Form<GoalForm>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
     let json = serde_json::to_value(&form)?;
-    let valid = jsonschema::validate(&schema(), &json);
 
-    let response_format = responses::get_response_format(&headers)?;
-
-    match valid {
-        Ok(_) => {}
-        Err(validation_errors) => {
-            let mut context = context.clone();
-
-            context.insert("errors".to_string(), to_json(validation_errors.to_string()));
-            context.insert("id".to_string(), to_json(id));
-            context.insert("name".to_string(), to_json(&form.name));
-            context.insert("target".to_string(), to_json(form.target));
-            context.insert("target_date".to_string(), to_json(form.target_date));
-            context.insert("recurrence".to_string(), to_json(&form.recurrence));
-
-            match response_format {
-                responses::ResponseFormat::Html => {
-                    context.insert("partial".to_string(), to_json("goals/form"));
-                    return Ok(responses::generate_response(
-                        &responses::ResponseFormat::Html,
-                        shared_state.handlebars.render("layout", &context)?,
-                        StatusCode::BAD_REQUEST,
-                    ));
-                }
-                responses::ResponseFormat::Turbo => {
-                    return Ok(responses::generate_response(
-                        &response_format,
-                        shared_state.handlebars.render("goals/form", &context)?,
-                        StatusCode::BAD_REQUEST,
-                    ));
-                }
-                responses::ResponseFormat::Json => {
-                    return Ok(responses::generate_response(
-                        &response_format,
-                        serde_json::to_string(&context)?,
-                        StatusCode::BAD_REQUEST,
-                    ));
-                }
-            }
-        }
+    if let Err(validation_errors) = jsonschema::validate(&schema(), &json) {
+        let template = EditTemplate {
+            layout,
+            id,
+            name: form.name,
+            target: form.target.to_string(),
+            target_date: form.target_date.to_string(),
+            recurrence: form.recurrence,
+            errors: validation_errors.to_string(),
+        };
+        return Ok(generate_response(
+            template.render()?,
+            StatusCode::BAD_REQUEST,
+        ));
     }
 
     let mut goal = Goal::get_one(&client, id, user.id).await?;
@@ -98,16 +71,7 @@ pub async fn action(
 
     goal.update(&client).await?;
 
-    match get_response_format(&headers)? {
-        responses::ResponseFormat::Html | responses::ResponseFormat::Turbo => {
-            Ok(Redirect::to("/goals").into_response())
-        }
-        responses::ResponseFormat::Json => Ok(generate_response(
-            &responses::ResponseFormat::Json,
-            Json(goal),
-            StatusCode::OK,
-        )),
-    }
+    Ok(Redirect::to("/goals").into_response())
 }
 
 #[cfg(test)]

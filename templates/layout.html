@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        {% if let Some(csrf) = layout.csrf_token %}
+            <meta name="csrf-token" content="{{ csrf }}" />
+        {% endif %}
+        <link rel="stylesheet"
+              href="{{ layout.asset("assets/input.css") | safe }}"
+              nonce="{{ layout.nonce }}">
+	<title>Simple Budget</title>
+    </head>
+    <body>
+        <div>
+            <nav>
+		<div>
+                <a href="/">Reports</a>
+                <a href="/accounts">Accounts</a>
+                <a href="/envelopes">Envelopes</a>
+                <a href="/goals">Goals</a>
+                <a href="/preferences">Preferences</a>
+		</div>
+	    </nav>
+            <main>
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+        <script type="module"
+                src="{{ layout.asset("assets/index.ts") | safe }}"
+                nonce="{{ layout.nonce }}"></script>
+    </body>
+</html>

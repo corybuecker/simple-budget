@@ -1,0 +1,6 @@
+{% extends "layout.html" %}
+{% block content %}
+    <form id="envelopes-{{ id }}" method="post" action="/envelopes/{{ id }}">
+        {% include "envelopes/_form.html" %}
+    </form>
+{% endblock %}

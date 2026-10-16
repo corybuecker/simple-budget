@@ -7,12 +7,12 @@ mod resets;
 mod update;
 
 use super::UserExtension;
-use crate::HandlebarsContext;
 use crate::models::goal::Goal;
 use crate::models::user::User;
 use crate::models::user::preferences::GoalHeader;
-use crate::{Section, SharedState};
+use crate::{LayoutCtx, Section, SharedState};
 use anyhow::Result;
+use askama::Template;
 use axum::{
     Extension, Router,
     extract::Request,
@@ -21,11 +21,10 @@ use axum::{
     routing::{get, post},
 };
 use chrono::Utc;
-use handlebars::to_json;
-use rust_database_common::GenericClient;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use uuid::Uuid;
 
 fn schema() -> serde_json::Value {
     json!({
@@ -49,19 +48,71 @@ pub struct GoalForm {
     recurrence: String,
 }
 
+#[derive(Template)]
+#[template(path = "goals/new.html")]
+struct NewTemplate {
+    layout: LayoutCtx,
+    name: String,
+    target: String,
+    target_date: String,
+    recurrence: String,
+    errors: String,
+}
+
+#[derive(Template)]
+#[template(path = "goals/edit.html")]
+struct EditTemplate {
+    layout: LayoutCtx,
+    id: Uuid,
+    name: String,
+    target: String,
+    target_date: String,
+    recurrence: String,
+    errors: String,
+}
+
+/// One row of the goals table, with the values for every possible third column.
+pub struct GoalRow {
+    pub goal: Goal,
+    pub per_day: Decimal,
+    pub days_remaining: i64,
+}
+
+impl GoalRow {
+    pub fn from_goals(goals: Vec<Goal>) -> Result<Vec<GoalRow>> {
+        goals
+            .into_iter()
+            .map(|goal| {
+                Ok(GoalRow {
+                    per_day: goal.accumulated_per_day()?,
+                    days_remaining: (goal.target_date - Utc::now()).num_days(),
+                    goal,
+                })
+            })
+            .collect()
+    }
+}
+
+/// The user's chosen third column for the goals table, defaulting to `Accumulated`.
+pub fn goal_header_for(user: &User) -> GoalHeader {
+    user.preferences
+        .as_ref()
+        .and_then(|preferences| preferences.0.goal_header.clone())
+        .unwrap_or(GoalHeader::Accumulated)
+}
+
 async fn initialize_context(
     Extension(user_extension): Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(layout): Extension<LayoutCtx>,
     mut request: Request,
     next: Next,
 ) -> Response {
-    let mut context = context.clone();
+    let mut layout = layout.clone();
 
-    context.insert("section".to_string(), to_json(Section::Goals));
-    context.insert("csrf".to_string(), to_json(user_extension.csrf));
+    layout.section = Section::Goals;
+    layout.csrf_token = Some(user_extension.csrf);
 
-    request.extensions_mut().insert(context);
-
+    request.extensions_mut().insert(layout);
     next.run(request).await
 }
 
@@ -70,47 +121,13 @@ pub fn goals_router() -> Router<SharedState> {
         .route("/", get(index::action).post(create::action))
         .route(
             "/{id}",
-            get(edit::action).put(update::action).delete(delete::action),
+            get(edit::action)
+                .post(update::action)
+                .put(update::action)
+                .delete(delete::action),
         )
         .route("/new", get(new::action))
         .route("/resets/{recurrence}", post(resets::action))
-        .route("/{id}/delete", get(delete::modal))
+        .route("/{id}/delete", get(delete::modal).post(delete::action))
         .route_layer(from_fn(initialize_context))
-}
-
-pub async fn generate_goal_index_context_for(
-    context: &mut HandlebarsContext,
-    user: &User,
-    client: &impl GenericClient,
-) -> Result<()> {
-    let mut accumulations: Vec<Decimal> = Vec::new();
-    let mut days_remaining: Vec<i64> = Vec::new();
-    let mut per_days: Vec<Decimal> = Vec::new();
-
-    let goal_header = match &user.preferences {
-        Some(preferences) => &preferences.0.goal_header,
-        None => &Some(GoalHeader::Accumulated),
-    };
-
-    // Use a cloned value for the context to avoid the move issue
-    let goal_header_for_context = goal_header.clone();
-    context.insert(
-        "goal_header".to_string(),
-        to_json(goal_header_for_context.or(Some(GoalHeader::Accumulated))),
-    );
-
-    let goals = Goal::get_all(client, user.id).await.unwrap();
-
-    for goal in &goals {
-        accumulations.push(goal.accumulated_amount);
-        per_days.push(goal.accumulated_per_day()?);
-        days_remaining.push((goal.target_date - Utc::now()).num_days());
-    }
-
-    context.insert("goals".to_string(), to_json(&goals));
-    context.insert("accumulations".to_string(), to_json(&accumulations));
-    context.insert("days_remaining".to_string(), to_json(&days_remaining));
-    context.insert("per_days".to_string(), to_json(&per_days));
-
-    Ok(())
 }

@@ -1,0 +1,52 @@
+{% if let Some(csrf) = layout.csrf_token %}
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+{% endif %}
+<div>
+    <h1>
+        Accounts
+        {% if !name.is_empty() %}<div>{{ name }}</div>{% endif %}
+    </h1>
+    <div id="errors">{{ errors }}</div>
+    <div>
+        <label for="name">Account Name</label>
+        <input id="name"
+               name="name"
+               required
+               type="text"
+               value="{{ name }}"
+               placeholder="Enter account name" />
+    </div>
+    <div data-controller="currency-input"
+         data-currency-input-precision-value="2">
+        <label for="amount">Amount</label>
+        <div>
+            <span>$</span>
+            <input id="amount"
+                   data-currency-input-target="input"
+                   name="amount"
+                   pattern="\d*"
+                   required
+                   type="number"
+                   step="0.01"
+                   data-action="currency-input#change"
+                   value="{{ amount }}"
+                   placeholder="0.00" />
+        </div>
+        <div data-currency-input-target="output"></div>
+    </div>
+    <div>
+        <div>
+            <input id="debt"
+                   name="debt"
+                   type="checkbox"
+                   {% if debt %}checked{% endif %}
+                   value="true" />
+            <label for="debt">This is a debt account</label>
+        </div>
+        <p>Check this box if this account represents money you owe</p>
+    </div>
+    <div>
+        <a href="/accounts">Cancel</a>
+        <input type="submit" value="Save Account" />
+    </div>
+</div>

@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div>
+        <h1>Preferences</h1>
+        <div id="errors"></div>
+        <form action="/preferences" method="post">
+            {% if let Some(csrf) = layout.csrf_token %}
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+            {% endif %}
+            <div>
+                <label for="timezone">Timezone</label>
+                <select id="timezone" name="timezone">
+                    {% for (value, label) in [("", "Select your timezone"), ("UTC", "UTC"), ("America/New_York", "Eastern Time (ET)"), ("America/Chicago", "Central Time (CT)"), ("America/Denver", "Mountain Time (MT)"), ("America/Los_Angeles", "Pacific Time (PT)")] %}
+                        <option value="{{ value }}" {% if timezone == *value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="monthly_income">Monthly Income</label>
+                <div>
+                    <span>$</span>
+                    <input id="monthly_income"
+                           name="monthly_income"
+                           pattern="\d*"
+                           required
+                           type="number"
+                           step="0.01"
+                           value="{{ monthly_income }}"
+                           placeholder="0.00" />
+                </div>
+            </div>
+            <div>
+                <label for="accelerate_goals">Accelerate Goals</label>
+                <div>
+                    <input id="accelerate_goals"
+                           name="accelerate_goals"
+                           {% if accelerate_goals %}checked{% endif %}
+                           type="checkbox" />
+                </div>
+            </div>
+            <div>
+                <label for="accelerate_non_monthly">Accelerate Non-monthly</label>
+                <div>
+                    <input id="accelerate_non_monthly"
+                           name="accelerate_non_monthly"
+                           {% if accelerate_non_monthly %}checked{% endif %}
+                           type="checkbox" />
+                </div>
+            </div>
+            <div>
+                <a href="/">Cancel</a>
+                <input type="submit" value="Save Preferences" />
+            </div>
+        </form>
+    </div>
+{% endblock %}

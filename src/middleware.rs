@@ -1,13 +1,17 @@
-use crate::{HandlebarsContext, errors::AppError};
+use crate::{LayoutCtx, errors::AppError};
 use anyhow::anyhow;
 use axum::{extract::Request, http::HeaderValue, middleware::Next, response::Response};
 use uuid::Uuid;
 
-pub async fn inject_context(mut request: Request, next: Next) -> Response {
-    let nonce = Uuid::new_v4().to_string();
-    let mut handlebars_context = HandlebarsContext::new();
-    handlebars_context.insert("nonce".to_string(), nonce.into());
-    request.extensions_mut().insert(handlebars_context);
+pub async fn inject_layout_context(mut request: Request, next: Next) -> Response {
+    let layout_context = LayoutCtx {
+        nonce: Uuid::new_v4().to_string(),
+        section: crate::Section::Reports,
+        csrf_token: None,
+    };
+
+    request.extensions_mut().insert(layout_context);
+
     next.run(request).await
 }
 
@@ -15,14 +19,10 @@ pub async fn secure_headers(request: Request, next: Next) -> Result<Response, Ap
     let nonce = {
         let context = request
             .extensions()
-            .get::<HandlebarsContext>()
+            .get::<LayoutCtx>()
             .ok_or(AppError::Unknown(anyhow!("missing nonce value")))?;
-        context
-            .get("nonce")
-            .ok_or(anyhow!("bad nonce value"))?
-            .as_str()
-            .ok_or(anyhow!("nonce is not a string"))?
-            .to_string()
+
+        context.nonce.to_string()
     };
 
     let mut response = next.run(request).await;
@@ -67,7 +67,7 @@ mod tests {
         let app = Router::new()
             .route("/test", get(|| async { "test response" }))
             .layer(from_fn(secure_headers))
-            .layer(from_fn(inject_context));
+            .layer(from_fn(inject_layout_context));
 
         let response = app
             .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
@@ -93,13 +93,13 @@ mod tests {
             .route(
                 "/test",
                 get(|request: Request<Body>| async move {
-                    let context = request.extensions().get::<HandlebarsContext>().unwrap();
-                    let nonce = context.get("nonce").unwrap().as_str().unwrap();
+                    let context = request.extensions().get::<LayoutCtx>().unwrap();
+                    let nonce = &context.nonce;
                     assert!(!nonce.is_empty());
                     "ok"
                 }),
             )
-            .layer(from_fn(inject_context));
+            .layer(from_fn(inject_layout_context));
 
         let response = app
             .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())

@@ -5,6 +5,7 @@ mod errors;
 mod jobs;
 mod middleware;
 mod models;
+mod templates;
 mod utilities;
 
 use crate::utilities::handlebars::{
@@ -22,7 +23,7 @@ use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
 use rust_database_common::DatabasePool;
 use rust_web_common::telemetry::TelemetryBuilder;
 use serde::Serialize;
-use std::{collections::BTreeMap, env, time::Duration};
+use std::{collections::BTreeMap, env, fs::File, io::Read, time::Duration};
 use tokio::{
     select,
     signal::unix::{SignalKind, signal},
@@ -31,9 +32,10 @@ use tokio::{
 };
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::{Level, debug};
+use tracing_subscriber::EnvFilter;
 use utilities::dates::TimeProvider;
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub enum Section {
     Reports,
     Accounts,
@@ -43,6 +45,27 @@ pub enum Section {
 }
 
 pub type HandlebarsContext = BTreeMap<String, serde_json::Value>;
+#[derive(Clone, Debug)]
+pub struct LayoutCtx {
+    pub section: Section,
+    pub csrf_token: Option<String>,
+    pub nonce: String,
+}
+impl LayoutCtx {
+    pub fn asset(&self, filename: &str) -> String {
+        let mut manifest_raw = String::new();
+        File::open("static/.vite/manifest.json")
+            .unwrap()
+            .read_to_string(&mut manifest_raw)
+            .unwrap();
+
+        let manifest: serde_json::Value = serde_json::from_str(&manifest_raw).unwrap();
+
+        let file = &manifest[filename];
+
+        format!("/assets/{}", file["file"].as_str().unwrap())
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct SharedState {
@@ -81,11 +104,9 @@ async fn healthcheck() -> AppResponse {
 
 #[tokio::main]
 async fn main() {
-    let mut telemetry = TelemetryBuilder::new("simple-budget".to_string())
-        .with_json_log_format()
-        .with_targets(vec![(String::from("tower_http"), Level::DEBUG)]);
-    telemetry.init().expect("could not initialize subscriber");
-
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::try_new("tower_http=debug").unwrap())
+        .init();
     let cache_key = Utc::now().timestamp_millis().to_string();
     let mut handlebars = Handlebars::new();
     handlebars.set_dev_mode(true);
@@ -99,7 +120,7 @@ async fn main() {
 
     handlebars.register_helper("eq", Box::new(EqHandlebarsHelper {}));
 
-    for template in walk_directory("./templates").unwrap() {
+    for template in walk_directory("./templates_hbs").unwrap() {
         let name = template
             .to_str()
             .unwrap()
@@ -132,7 +153,7 @@ async fn main() {
         .merge(Router::new().route("/healthcheck", get(healthcheck)))
         .with_state(shared_state)
         .layer(from_fn(middleware::secure_headers))
-        .layer(from_fn(middleware::inject_context))
+        .layer(from_fn(middleware::inject_layout_context))
         .merge(
             Router::new()
                 .nest_service("/assets", ServeDir::new("static"))

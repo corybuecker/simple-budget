@@ -14,6 +14,12 @@ pub enum AppError {
     Unknown(anyhow::Error),
 }
 
+impl From<askama::Error> for AppError {
+    fn from(value: askama::Error) -> Self {
+        Self::Unknown(value.into())
+    }
+}
+
 impl From<DatabasePoolError> for AppError {
     fn from(value: DatabasePoolError) -> Self {
         Self::Unknown(value.into())

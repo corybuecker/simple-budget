@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div>
+        <div>
+            <div></div>
+            <div>Per day</div>
+        </div>
+        <div>
+            <div></div>
+            <div>Goals per day</div>
+        </div>
+        <div>
+            <div></div>
+            <div>Per day - monthly</div>
+        </div>
+        <div>
+            <div></div>
+            <div>Remaining</div>
+        </div>
+        <div>
+            <div>{{ remaining_days }}</div>
+            <div>Remaining days</div>
+        </div>
+        <div>
+            <div>{{ remaining_minutes }}</div>
+            <div>Minutes until today +{{ forecast_offset }}</div>
+        </div>
+    </div>
+{% endblock %}

@@ -5,6 +5,7 @@ mod errors;
 mod jobs;
 mod middleware;
 mod models;
+mod templates;
 mod utilities;
 
 use crate::utilities::handlebars::{
@@ -43,6 +44,16 @@ pub enum Section {
 }
 
 pub type HandlebarsContext = BTreeMap<String, serde_json::Value>;
+pub struct LayoutCtx {
+    pub section: Section,
+    pub csrf_token: Option<String>,
+    pub nonce: String,
+}
+impl LayoutCtx {
+    pub fn asset(filename: &str) -> String {
+        filename.to_string()
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct SharedState {

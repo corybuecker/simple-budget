@@ -1,4 +1,4 @@
-use crate::{HandlebarsContext, errors::AppError};
+use crate::{HandlebarsContext, LayoutCtx, errors::AppError};
 use anyhow::anyhow;
 use axum::{extract::Request, http::HeaderValue, middleware::Next, response::Response};
 use uuid::Uuid;
@@ -8,6 +8,7 @@ pub async fn inject_context(mut request: Request, next: Next) -> Response {
     let mut handlebars_context = HandlebarsContext::new();
     handlebars_context.insert("nonce".to_string(), nonce.into());
     request.extensions_mut().insert(handlebars_context);
+
     next.run(request).await
 }
 

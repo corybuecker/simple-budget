@@ -1,2 +1,4 @@
-@import "tailwindcss";
+@layer reset, base;
 @import "./google.css";
+@import "./reset.css" layer(reset);
+@layer base {}

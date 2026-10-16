@@ -1,12 +1,13 @@
 use super::UserExtension;
-use crate::HandlebarsContext;
 use crate::errors::AppResponse;
 use crate::models::goal::Goal;
 use crate::models::user::preferences::Preferences;
 use crate::utilities::dates::{TimeProvider, TimeUtilities};
 use crate::utilities::responses::{ResponseFormat, generate_response, get_response_format};
+use crate::{HandlebarsContext, LayoutCtx};
 use crate::{Section, SharedState, models::user::User};
 use anyhow::{Result, anyhow};
+use askama::Template;
 use axum::{
     Extension, Json,
     extract::State,
@@ -15,58 +16,64 @@ use axum::{
 };
 use chrono::{Duration, Local, NaiveTime};
 use chrono_tz::Tz;
-use handlebars::to_json;
 use rust_database_common::GenericClient;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
+
+#[derive(Template)]
+#[template(path = "dashboard.html")]
+struct Dashboard {
+    pub layout: LayoutCtx,
+    pub tomorrow_remaining_total: String,
+    pub goals_accumulated_per_day: String,
+    pub remaining_days: String,
+    pub remaining_minutes: String,
+    pub remaining_total: String,
+    pub forecast_offset: String,
+    pub per_diem: String,
+    pub per_diem_diff_monthly: String,
+}
 
 pub async fn index(
     shared_state: State<SharedState>,
     headers: HeaderMap,
     user: Extension<UserExtension>,
-    Extension(mut context): Extension<HandlebarsContext>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
     let csrf = user.csrf.clone();
     let user = User::get_by_id(&client, user.id).await?;
-    generate_dashboard_context_for(&mut context, &user, &client).await?;
+    let mut dashboard = Dashboard {
+        layout: LayoutCtx {
+            section: Section::Reports,
+            csrf_token: Some(csrf.clone()),
+            nonce: "test".to_string(),
+        },
 
-    context.insert("csrf".to_string(), to_json(csrf));
-    context.insert("section".to_string(), to_json(Section::Reports));
-    context.insert("partial".to_string(), to_json("dashboard"));
+        tomorrow_remaining_total: String::new(),
+        goals_accumulated_per_day: String::new(),
+        remaining_days: String::new(),
+        remaining_minutes: String::new(),
+        remaining_total: String::new(),
+        forecast_offset: String::new(),
+        per_diem: String::new(),
+        per_diem_diff_monthly: String::new(),
+    };
+    generate_dashboard_context_for(&mut dashboard, &user, &client).await?;
 
     let response_format = get_response_format(&headers)?;
 
     match response_format {
         ResponseFormat::Html => Ok(generate_response(
             &response_format,
-            shared_state.handlebars.render("layout", &context)?,
+            dashboard.to_string(),
             StatusCode::OK,
         )),
-        ResponseFormat::Turbo => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
-        ResponseFormat::Json => {
-            // Extract the relevant data from context for JSON response
-            let dashboard_data = serde_json::json!({
-                "remaining_total": context.get("remaining_total"),
-                "tomorrow_remaining_total": context.get("tomorrow_remaining_total"),
-                "goals_accumulated_per_day": context.get("goals_accumulated_per_day"),
-                "remaining_days": context.get("remaining_days"),
-                "remaining_minutes": context.get("remaining_minutes"),
-                "forecast_offset": context.get("forecast_offset"),
-                "per_diem": context.get("per_diem"),
-            });
-
-            Ok(generate_response(
-                &response_format,
-                Json(dashboard_data),
-                StatusCode::OK,
-            ))
-        }
+        _ => Ok(StatusCode::NOT_ACCEPTABLE.into_response()),
     }
 }
 
-pub async fn generate_dashboard_context_for(
-    context: &mut HandlebarsContext,
+async fn generate_dashboard_context_for(
+    context: &mut Dashboard,
     user: &User,
     client: &impl GenericClient,
 ) -> Result<()> {
@@ -132,27 +139,15 @@ pub async fn generate_dashboard_context_for(
 
     let per_diem_diff_monthly = per_diem - monthly_income_per_day;
 
-    context.insert(
-        "tomorrow_remaining_total".to_string(),
-        to_json(tomorrow_remaining_total),
-    );
-    context.insert(
-        "goals_accumulated_per_day".to_string(),
-        to_json(goals_accumulated),
-    );
-    context.insert("remaining_days".to_string(), to_json(remaining_days));
-    context.insert(
-        "remaining_minutes".to_string(),
-        to_json(duration_until_tomorrow.num_minutes()),
-    );
-
-    context.insert("remaining_total".to_string(), to_json(remaining_total));
-    context.insert("forecast_offset".to_string(), to_json(forecast_offset));
-    context.insert("per_diem".to_string(), to_json(per_diem));
-    context.insert(
-        "per_diem_diff_monthly".to_string(),
-        to_json(per_diem_diff_monthly),
-    );
+    context.tomorrow_remaining_total = tomorrow_remaining_total.to_string();
+    context.goals_accumulated_per_day = goals_accumulated.to_string();
+    context.remaining_days = remaining_days.to_string();
+    context.remaining_minutes = remaining_total.to_string();
+    context.forecast_offset = forecast_offset.to_string();
+    context.per_diem = per_diem.to_string();
+    context.per_diem_diff_monthly = per_diem_diff_monthly.to_string();
+    context.tomorrow_remaining_total = tomorrow_remaining_total.to_string();
+    context.tomorrow_remaining_total = tomorrow_remaining_total.to_string();
 
     Ok(())
 }

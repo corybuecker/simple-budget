@@ -1,6 +1,7 @@
-@layer reset, base;
+@layer reset, base, nav;
 
 @import "./google.css";
 @import "./reset.css" layer(reset);
+@import "./nav.css" layer(nav);
 
 @layer base {}

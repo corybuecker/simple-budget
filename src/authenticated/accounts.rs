@@ -6,7 +6,7 @@ mod new;
 mod update;
 
 use super::UserExtension;
-use crate::{HandlebarsContext, LayoutCtx, Section, SharedState};
+use crate::{LayoutCtx, Section, SharedState};
 use axum::{
     Extension, Router,
     extract::Request,
@@ -14,7 +14,6 @@ use axum::{
     response::Response,
     routing::get,
 };
-use handlebars::to_json;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 

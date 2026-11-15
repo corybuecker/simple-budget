@@ -41,7 +41,7 @@ pub async fn index(
     Extension(layout): Extension<LayoutCtx>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
-    let csrf = user.csrf.clone();
+    let _csrf = user.csrf.clone();
     let user = User::get_by_id(&client, user.id).await?;
     let mut dashboard = Dashboard {
         layout,

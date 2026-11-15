@@ -21,7 +21,6 @@ use errors::AppResponse;
 use handlebars::Handlebars;
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
 use rust_database_common::DatabasePool;
-use rust_web_common::telemetry::TelemetryBuilder;
 use serde::Serialize;
 use std::{collections::BTreeMap, env, fs::File, io::Read, time::Duration};
 use tokio::{
@@ -31,7 +30,7 @@ use tokio::{
     time::interval,
 };
 use tower_http::{services::ServeDir, trace::TraceLayer};
-use tracing::{Level, debug};
+use tracing::debug;
 use tracing_subscriber::EnvFilter;
 use utilities::dates::TimeProvider;
 

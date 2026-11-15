@@ -6,7 +6,7 @@ mod new;
 mod update;
 
 use super::UserExtension;
-use crate::{HandlebarsContext, Section, SharedState};
+use crate::{HandlebarsContext, LayoutCtx, Section, SharedState};
 use axum::{
     Extension, Router,
     extract::Request,
@@ -40,16 +40,16 @@ pub struct AccountForm {
 
 async fn initialize_context(
     Extension(user_extension): Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(layout): Extension<LayoutCtx>,
     mut request: Request,
     next: Next,
 ) -> Response {
-    let mut context = context.clone();
+    let mut layout = layout.clone();
 
-    context.insert("section".to_string(), to_json(Section::Accounts));
-    context.insert("csrf".to_string(), to_json(user_extension.csrf));
+    layout.section = Section::Accounts;
+    layout.csrf_token = Some(user_extension.csrf);
 
-    request.extensions_mut().insert(context);
+    request.extensions_mut().insert(layout);
     next.run(request).await
 }
 

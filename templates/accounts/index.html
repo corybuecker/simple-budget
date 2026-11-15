@@ -1,0 +1,36 @@
+<div>
+    <div>
+        <p>
+            <a href="/accounts/new">New account</a>
+        </p>
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Amount</th>
+                        <th scope="col">Debt?</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in accounts %}
+                        {% if let Some(id) = account.id %}
+                            <tr id="account_{{ id }}">
+                                <th scope="row">{{ account.name }}</th>
+                                <td>{{ account.amount }}</td>
+                                <td>{% if account.debt %} Yes {% else %} No {% endif %}</td>
+                                <td>
+                                    <div>
+                                        <a href="/accounts/{{ id }}">Edit</a>
+                                        <a href="/accounts/{{ id }}/delete">Delete</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

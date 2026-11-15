@@ -5,7 +5,7 @@ use crate::models::goal::Goal;
 use crate::models::user::preferences::Preferences;
 use crate::utilities::dates::{TimeProvider, TimeUtilities};
 use crate::utilities::responses::{ResponseFormat, generate_response, get_response_format};
-use crate::{Section, SharedState, models::user::User};
+use crate::{SharedState, models::user::User};
 use anyhow::{Result, anyhow};
 use askama::Template;
 use axum::{

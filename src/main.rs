@@ -30,8 +30,7 @@ use tokio::{
     time::interval,
 };
 use tower_http::{services::ServeDir, trace::TraceLayer};
-use tracing::debug;
-use tracing_subscriber::EnvFilter;
+use tracing::{Level, debug};
 use utilities::dates::TimeProvider;
 
 #[derive(Serialize, Clone, Debug)]
@@ -104,8 +103,9 @@ async fn healthcheck() -> AppResponse {
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_new("tower_http=debug").unwrap())
+        .with_max_level(Level::DEBUG)
         .init();
+
     let cache_key = Utc::now().timestamp_millis().to_string();
     let mut handlebars = Handlebars::new();
     handlebars.set_dev_mode(true);

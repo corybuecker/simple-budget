@@ -1,8 +1,6 @@
 //import "./input.css";
 
 
-console.log('here');
-
 // mport FormatterController from "./controllers/formatter_controller.js";
 // mport ModalController from "./controllers/modal_controller.js";
 // mport CurrencyInputController from "./controllers/currency_input_controller.js";

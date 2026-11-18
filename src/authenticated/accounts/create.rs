@@ -1,69 +1,58 @@
 use super::AccountForm;
-use crate::HandlebarsContext;
+use crate::LayoutCtx;
 use crate::authenticated::accounts::schema;
 use crate::errors::AppResponse;
 use crate::{
     SharedState, authenticated::UserExtension, models::account::Account, utilities::responses,
 };
 use anyhow::anyhow;
+use askama::Template;
 use axum::{
     Extension, Form,
     extract::State,
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Redirect},
 };
-use handlebars::to_json;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
 
+#[derive(Template)]
+#[template(path = "accounts/new.html")]
+struct New {
+    #[allow(unused)]
+    layout: LayoutCtx,
+
+    name: String,
+    amount: String,
+    debt: bool,
+
+    errors: String,
+}
 pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
-    headers: HeaderMap,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(layout): Extension<LayoutCtx>,
     Form(form): Form<AccountForm>,
 ) -> AppResponse {
+    tracing::debug!("testing");
     let json = serde_json::to_value(&form)?;
     let valid = jsonschema::validate(&schema(), &json);
-
-    let response_format = responses::get_response_format(&headers)?;
 
     match valid {
         Ok(_) => {}
         Err(validation_errors) => {
-            let mut context = context.clone();
-
-            context.insert("errors".to_string(), to_json(validation_errors.to_string()));
-            context.insert("name".to_string(), to_json(&form.name));
-            context.insert("amount".to_string(), to_json(form.amount));
-            context.insert("debt".to_string(), to_json(form.debt));
-
-            match response_format {
-                responses::ResponseFormat::Html => {
-                    context.insert("partial".to_string(), to_json("accounts/new"));
-                    return Ok(responses::generate_response(
-                        &responses::ResponseFormat::Html,
-                        shared_state.handlebars.render("layout", &context)?,
-                        StatusCode::BAD_REQUEST,
-                    ));
-                }
-                responses::ResponseFormat::Turbo => {
-                    return Ok(responses::generate_response(
-                        &response_format,
-                        shared_state
-                            .handlebars
-                            .render("accounts/_form.turbo", &context)?,
-                        StatusCode::BAD_REQUEST,
-                    ));
-                }
-                responses::ResponseFormat::Json => {
-                    return Ok(responses::generate_response(
-                        &response_format,
-                        serde_json::to_string(&context)?,
-                        StatusCode::BAD_REQUEST,
-                    ));
-                }
-            }
+            let new = New {
+                layout,
+                name: form.name,
+                amount: form.amount.to_string(),
+                debt: form.debt.unwrap_or(false),
+                errors: validation_errors.to_string(),
+            };
+            return Ok(responses::generate_response(
+                &responses::ResponseFormat::Html,
+                new.render()?,
+                StatusCode::BAD_REQUEST,
+            ));
         }
     }
 
@@ -117,7 +106,6 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(response.headers().get("location").unwrap(), "/accounts");
-
         let account = client
             .query_one(
                 "SELECT * FROM accounts WHERE user_id = $1 LIMIT 1",

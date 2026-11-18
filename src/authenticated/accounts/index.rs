@@ -11,6 +11,7 @@ use axum::{Extension, extract::State, http::StatusCode};
 #[derive(Template)]
 #[template(path = "accounts/index.html")]
 struct Index {
+    #[allow(unused)]
     layout: LayoutCtx,
     accounts: Vec<Account>,
 }

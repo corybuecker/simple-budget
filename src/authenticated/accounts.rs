@@ -30,7 +30,7 @@ fn schema() -> serde_json::Value {
     })
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct AccountForm {
     pub name: String,
     pub amount: f64,

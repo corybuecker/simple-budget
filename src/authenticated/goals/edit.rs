@@ -1,56 +1,34 @@
+use super::EditTemplate;
 use crate::{
-    HandlebarsContext, SharedState,
-    authenticated::UserExtension,
-    errors::AppResponse,
-    models::goal::Goal,
-    utilities::responses::{ResponseFormat, generate_response, get_response_format},
+    LayoutCtx, SharedState, authenticated::UserExtension, errors::AppResponse, models::goal::Goal,
+    utilities::responses::generate_response,
 };
+use askama::Template;
 use axum::{
-    Extension, Json,
+    Extension,
     extract::{Path, State},
-    http::{HeaderMap, StatusCode},
-    response::IntoResponse,
+    http::StatusCode,
 };
-use handlebars::to_json;
 use uuid::Uuid;
 
 pub async fn action(
     shared_state: State<SharedState>,
     Path(id): Path<Uuid>,
-    headers: HeaderMap,
-    user: Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(user): Extension<UserExtension>,
+    Extension(layout): Extension<LayoutCtx>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
     let goal = Goal::get_one(&client, id, user.id).await?;
-    let mut context = context.clone();
-    let response_format = get_response_format(&headers)?;
-    context.insert("id".to_string(), to_json(goal.id));
-    context.insert("name".to_string(), to_json(&goal.name));
-    context.insert("target".to_string(), to_json(goal.target));
-    context.insert(
-        "target_date".to_string(),
-        to_json(goal.target_date.format("%Y-%m-%d").to_string()),
-    );
-    context.insert(
-        "recurrence".to_string(),
-        to_json(format!("{:?}", goal.recurrence).to_lowercase()),
-    );
-    match response_format {
-        ResponseFormat::Html => {
-            context.insert("partial".to_string(), to_json("goals/edit"));
 
-            Ok(generate_response(
-                &response_format,
-                shared_state.handlebars.render("layout", &context)?,
-                StatusCode::OK,
-            ))
-        }
-        ResponseFormat::Turbo => Ok(StatusCode::BAD_REQUEST.into_response()),
-        ResponseFormat::Json => Ok(generate_response(
-            &response_format,
-            Json(goal),
-            StatusCode::OK,
-        )),
-    }
+    let template = EditTemplate {
+        layout,
+        id,
+        name: goal.name,
+        target: goal.target.to_string(),
+        target_date: goal.target_date.format("%Y-%m-%d").to_string(),
+        recurrence: format!("{:?}", goal.recurrence).to_lowercase(),
+        errors: String::new(),
+    };
+
+    Ok(generate_response(template.render()?, StatusCode::OK))
 }

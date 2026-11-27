@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div>
+        <p>
+            <a href="/envelopes/new">New envelope</a>
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for envelope in envelopes %}
+                    {% if let Some(id) = envelope.id %}
+                        <tr id="envelope_{{ id }}">
+                            <th scope="row">{{ envelope.name }}</th>
+                            <td data-controller="formatter"
+                                data-formatter-currency-value="{{ envelope.amount }}">
+                                {{ envelope.amount }}
+                            </td>
+                            <td>
+                                <div>
+                                    <a href="/envelopes/{{ id }}">Edit</a>
+                                    <a href="/envelopes/{{ id }}/delete">Delete</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

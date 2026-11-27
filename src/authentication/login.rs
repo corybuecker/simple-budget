@@ -1,30 +1,29 @@
 use super::client::clients_from_metadata;
 use crate::{
-    HandlebarsContext, SharedState,
+    LayoutCtx,
     errors::{AppError, AppResponse},
 };
+use askama::Template;
 use axum::{
     Extension,
-    extract::State,
     response::{Html, IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::{
     SignedCookieJar,
     cookie::{Cookie, SameSite},
 };
-use handlebars::to_json;
 use openidconnect::{CsrfToken, Nonce, Scope, core::CoreAuthenticationFlow};
 
-pub async fn login(
-    state: State<SharedState>,
-    Extension(context): Extension<HandlebarsContext>,
-) -> AppResponse {
-    let mut context = context.clone();
-    context.insert("partial".to_string(), to_json("authentication/login"));
-    let handlebars = &state.handlebars;
-    let content = handlebars.render("layout", &context)?;
+#[derive(Template)]
+#[template(path = "login.html")]
+struct Login {
+    pub layout: LayoutCtx,
+}
 
-    Ok(Html::from(content).into_response())
+pub async fn login(Extension(layout): Extension<LayoutCtx>) -> AppResponse {
+    tracing::debug!("{:#?}", layout);
+    let content = Login { layout };
+    Ok(Html::from(content.render()?).into_response())
 }
 
 pub async fn redirect(jar: SignedCookieJar) -> Result<(SignedCookieJar, Response), AppError> {

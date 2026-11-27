@@ -2,7 +2,7 @@ mod index;
 mod update;
 
 use super::UserExtension;
-use crate::{HandlebarsContext, Section, SharedState, models::user::preferences::GoalHeader};
+use crate::{LayoutCtx, Section, SharedState, models::user::preferences::GoalHeader};
 use axum::{
     Extension, Router,
     extract::Request,
@@ -10,7 +10,6 @@ use axum::{
     response::Response,
     routing::get,
 };
-use handlebars::to_json;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -25,21 +24,24 @@ pub struct PreferencesForm {
 
 async fn initialize_context(
     Extension(user_extension): Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(layout): Extension<LayoutCtx>,
     mut request: Request,
     next: Next,
 ) -> Response {
-    let mut context = context.clone();
+    let mut layout = layout.clone();
 
-    context.insert("section".to_string(), to_json(Section::Preferences));
-    context.insert("csrf".to_string(), to_json(user_extension.csrf));
+    layout.section = Section::Preferences;
+    layout.csrf_token = Some(user_extension.csrf);
 
-    request.extensions_mut().insert(context);
+    request.extensions_mut().insert(layout);
 
     next.run(request).await
 }
 pub fn preferences_router() -> Router<SharedState> {
     Router::new()
-        .route("/", get(index::action).put(update::action))
+        .route(
+            "/",
+            get(index::action).post(update::action).put(update::action),
+        )
         .route_layer(from_fn(initialize_context))
 }

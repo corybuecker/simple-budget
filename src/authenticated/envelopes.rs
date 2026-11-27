@@ -6,7 +6,8 @@ mod new;
 mod update;
 
 use super::UserExtension;
-use crate::{HandlebarsContext, Section, SharedState};
+use crate::{LayoutCtx, Section, SharedState};
+use askama::Template;
 use axum::{
     Extension, Router,
     extract::Request,
@@ -14,9 +15,9 @@ use axum::{
     response::Response,
     routing::get,
 };
-use handlebars::to_json;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use uuid::Uuid;
 
 fn schema() -> serde_json::Value {
     json!({
@@ -36,19 +37,37 @@ pub struct EnvelopeForm {
     pub amount: f64,
 }
 
+#[derive(Template)]
+#[template(path = "envelopes/new.html")]
+struct NewTemplate {
+    layout: LayoutCtx,
+    name: String,
+    amount: String,
+    errors: String,
+}
+
+#[derive(Template)]
+#[template(path = "envelopes/edit.html")]
+struct EditTemplate {
+    layout: LayoutCtx,
+    id: Uuid,
+    name: String,
+    amount: String,
+    errors: String,
+}
+
 async fn initialize_context(
     Extension(user_extension): Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(layout): Extension<LayoutCtx>,
     mut request: Request,
     next: Next,
 ) -> Response {
-    let mut context = context.clone();
+    let mut layout = layout.clone();
 
-    context.insert("section".to_string(), to_json(Section::Envelopes));
-    context.insert("csrf".to_string(), to_json(user_extension.csrf));
+    layout.section = Section::Envelopes;
+    layout.csrf_token = Some(user_extension.csrf);
 
-    request.extensions_mut().insert(context);
-
+    request.extensions_mut().insert(layout);
     next.run(request).await
 }
 
@@ -57,9 +76,12 @@ pub fn envelopes_router() -> Router<SharedState> {
         .route("/", get(index::action).post(create::action))
         .route(
             "/{id}",
-            get(edit::action).put(update::action).delete(delete::action),
+            get(edit::action)
+                .post(update::action)
+                .put(update::action)
+                .delete(delete::action),
         )
         .route("/new", get(new::action))
-        .route("/{id}/delete", get(delete::modal))
+        .route("/{id}/delete", get(delete::modal).post(delete::action))
         .route_layer(from_fn(initialize_context))
 }

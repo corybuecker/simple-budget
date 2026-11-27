@@ -1,57 +1,32 @@
+use super::EditTemplate;
 use crate::{
-    HandlebarsContext, SharedState,
-    authenticated::UserExtension,
-    errors::AppResponse,
-    models::envelope::Envelope,
-    utilities::responses::{ResponseFormat, generate_response, get_response_format},
+    LayoutCtx, SharedState, authenticated::UserExtension, errors::AppResponse,
+    models::envelope::Envelope, utilities::responses::generate_response,
 };
+use askama::Template;
 use axum::{
-    Extension, Json,
+    Extension,
     extract::{Path, State},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
 };
-use handlebars::to_json;
 use uuid::Uuid;
 
 pub async fn action(
     shared_state: State<SharedState>,
     Path(id): Path<Uuid>,
-    headers: HeaderMap,
-    user: Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(user): Extension<UserExtension>,
+    Extension(layout): Extension<LayoutCtx>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
     let envelope = Envelope::get_one(&client, id, user.id).await?;
-    let mut context = context.clone();
-    let response_format = get_response_format(&headers)?;
 
-    match response_format {
-        ResponseFormat::Html => {
-            context.insert("partial".to_string(), to_json("envelopes/edit"));
+    let template = EditTemplate {
+        layout,
+        id,
+        name: envelope.name,
+        amount: envelope.amount.to_string(),
+        errors: String::new(),
+    };
 
-            context.insert("id".to_string(), to_json(envelope.id));
-            context.insert("name".to_string(), to_json(envelope.name));
-            context.insert("amount".to_string(), to_json(envelope.amount));
-
-            Ok(generate_response(
-                &response_format,
-                shared_state.handlebars.render("layout", &context)?,
-                StatusCode::OK,
-            ))
-        }
-        ResponseFormat::Turbo => {
-            context.insert("envelope".to_string(), to_json(&envelope));
-
-            Ok(generate_response(
-                &response_format,
-                shared_state.handlebars.render("envelopes/edit", &context)?,
-                StatusCode::OK,
-            ))
-        }
-        ResponseFormat::Json => Ok(generate_response(
-            &response_format,
-            Json(envelope),
-            StatusCode::OK,
-        )),
-    }
+    Ok(generate_response(template.render()?, StatusCode::OK))
 }

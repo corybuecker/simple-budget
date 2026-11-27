@@ -5,21 +5,20 @@ edition = "2024"
 
 [dependencies]
 anyhow = { version = "1.0.102" }
+askama = { version = "0.16.1" }
 axum = { version = "0.8.9", features = ["ws", "macros"] }
 axum-extra = { version = "0.12.5", features = ["cookie-signed", "query"] }
 base64 = "0.23.1"
 chrono = { version = "0.4.43" }
 chrono-tz = { version = "0.10.3" }
 futures-util = { version = "0.3.32" }
-handlebars = "6.4.0"
-jsonschema = { version = "0.60.1" }
+jsonschema = { version = "0.61.2" }
 jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
 openidconnect = { version = "4.0.1", features = ["reqwest"] }
 postgres-types = { version = "0.2.12", features = ["derive"] }
 rand = { version = "0.10.1" }
 rust_decimal = { version = "1.41.0", features = ["db-tokio-postgres"] }
 rust-database-common = { git = "https://github.com/corybuecker/rust-database-common", tag = "v2.0.2" }
-rust-web-common = { git = "https://github.com/corybuecker/rust-web-common", tag = "v2.1.0" }
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = { version = "1.0.149" }
 tokio = { version = "1.52.3", features = ["full"] }

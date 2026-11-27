@@ -5,24 +5,19 @@ mod errors;
 mod jobs;
 mod middleware;
 mod models;
+mod templates;
 mod utilities;
 
-use crate::utilities::handlebars::{
-    DigestAssetHandlebarsHelper, EqHandlebarsHelper, walk_directory,
-};
 use axum::{
     Router, extract::FromRef, http::StatusCode, middleware::from_fn, response::IntoResponse,
     routing::get,
 };
 use axum_extra::extract::cookie::Key;
-use chrono::Utc;
 use errors::AppResponse;
-use handlebars::Handlebars;
 use jobs::{clear_sessions::clear_sessions, convert_goals::convert_goals};
 use rust_database_common::DatabasePool;
-use rust_web_common::telemetry::TelemetryBuilder;
 use serde::Serialize;
-use std::{collections::BTreeMap, env, time::Duration};
+use std::{env, fs, sync::OnceLock, time::Duration};
 use tokio::{
     select,
     signal::unix::{SignalKind, signal},
@@ -33,7 +28,7 @@ use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::{Level, debug};
 use utilities::dates::TimeProvider;
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub enum Section {
     Reports,
     Accounts,
@@ -42,13 +37,37 @@ pub enum Section {
     Preferences,
 }
 
-pub type HandlebarsContext = BTreeMap<String, serde_json::Value>;
+#[derive(Clone, Debug)]
+pub struct LayoutCtx {
+    pub section: Section,
+    pub csrf_token: Option<String>,
+    pub nonce: String,
+}
+impl LayoutCtx {
+    /// Resolves a Vite entry (e.g. `assets/index.ts`) to its built, hashed path.
+    /// The manifest is read once; if it is missing (e.g. in tests, before a
+    /// frontend build) the entry name is served as-is.
+    pub fn asset(&self, filename: &str) -> String {
+        static MANIFEST: OnceLock<serde_json::Value> = OnceLock::new();
+
+        let manifest = MANIFEST.get_or_init(|| {
+            fs::read_to_string("static/.vite/manifest.json")
+                .ok()
+                .and_then(|raw| serde_json::from_str(&raw).ok())
+                .unwrap_or(serde_json::Value::Null)
+        });
+
+        match manifest[filename]["file"].as_str() {
+            Some(file) => format!("/assets/{}", file),
+            None => format!("/assets/{}", filename),
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct SharedState {
     key: Key,
     pool: DatabasePool,
-    handlebars: Handlebars<'static>,
 }
 
 impl FromRef<SharedState> for Key {
@@ -81,34 +100,9 @@ async fn healthcheck() -> AppResponse {
 
 #[tokio::main]
 async fn main() {
-    let mut telemetry = TelemetryBuilder::new("simple-budget".to_string())
-        .with_json_log_format()
-        .with_targets(vec![(String::from("tower_http"), Level::DEBUG)]);
-    telemetry.init().expect("could not initialize subscriber");
-
-    let cache_key = Utc::now().timestamp_millis().to_string();
-    let mut handlebars = Handlebars::new();
-    handlebars.set_dev_mode(true);
-    handlebars.set_strict_mode(true);
-    handlebars.register_helper(
-        "digest_asset",
-        Box::new(DigestAssetHandlebarsHelper {
-            key: cache_key.clone(),
-        }),
-    );
-
-    handlebars.register_helper("eq", Box::new(EqHandlebarsHelper {}));
-
-    for template in walk_directory("./templates").unwrap() {
-        let name = template
-            .to_str()
-            .unwrap()
-            .replace("./templates/", "")
-            .replace(".hbs", "");
-        handlebars
-            .register_template_file(&name, template.to_str().unwrap())
-            .unwrap();
-    }
+    tracing_subscriber::fmt()
+        .with_max_level(Level::DEBUG)
+        .init();
 
     let secret_key = env::var("SECRET_KEY").expect("cannot find secret key");
     let key = Key::from(secret_key.as_bytes());
@@ -120,11 +114,7 @@ async fn main() {
         }
     };
 
-    let shared_state = SharedState {
-        key,
-        pool,
-        handlebars,
-    };
+    let shared_state = SharedState { key, pool };
 
     let app = Router::new()
         .merge(authentication::authentication_router())
@@ -132,7 +122,7 @@ async fn main() {
         .merge(Router::new().route("/healthcheck", get(healthcheck)))
         .with_state(shared_state)
         .layer(from_fn(middleware::secure_headers))
-        .layer(from_fn(middleware::inject_context))
+        .layer(from_fn(middleware::inject_layout_context))
         .merge(
             Router::new()
                 .nest_service("/assets", ServeDir::new("static"))

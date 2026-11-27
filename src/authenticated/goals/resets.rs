@@ -1,88 +1,31 @@
 use crate::{
-    HandlebarsContext, SharedState,
+    SharedState,
     authenticated::UserExtension,
     errors::AppResponse,
-    models::{
-        goal::{Goal, Recurrence},
-        user::{User, preferences::GoalHeader},
-    },
-    utilities::responses::{self, ResponseFormat, generate_response},
+    models::goal::{Goal, Recurrence},
 };
-use anyhow::anyhow;
 use axum::{
     Extension,
     extract::{Path, State},
-    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Redirect},
 };
-use chrono::Utc;
-use handlebars::to_json;
 use rust_decimal::Decimal;
-
-#[allow(unused)]
-use tracing::debug;
 
 pub async fn action(
     shared_state: State<SharedState>,
     Path(_recurrence): Path<String>,
-    headers: HeaderMap,
     Extension(user): Extension<UserExtension>,
-    Extension(context): Extension<HandlebarsContext>,
 ) -> AppResponse {
-    let mut context = context.clone();
-    let response_format = responses::get_response_format(&headers)?;
     let client = shared_state.pool.get_client().await?;
-    let user_id = user.id;
 
-    let mut goals = Goal::get_all(&client, user_id).await?;
-    let mut accumulations: Vec<Decimal> = Vec::new();
-    let mut days_remaining: Vec<i64> = Vec::new();
-    let mut per_days: Vec<Decimal> = Vec::new();
-
-    for goal in &mut goals {
+    for mut goal in Goal::get_all(&client, user.id).await? {
         if goal.recurrence.eq(&Recurrence::Monthly) {
             goal.accumulated_amount = Decimal::ZERO;
             goal.update(&client).await?;
         }
-
-        accumulations.push(goal.accumulated_amount);
-        per_days.push(goal.accumulated_per_day()?);
-        days_remaining.push((goal.target_date - Utc::now()).num_days());
     }
 
-    match response_format {
-        ResponseFormat::Html => Ok(Redirect::to("/goals").into_response()),
-        ResponseFormat::Turbo => {
-            let user = User::get_by_id(&client, user_id).await?;
-            let goal_header = match user.preferences {
-                Some(preferences) => preferences.0.goal_header,
-                None => Some(GoalHeader::Accumulated),
-            };
-
-            // Use a cloned value for the context to avoid the move issue
-            let goal_header_for_context = goal_header.clone();
-            context.insert(
-                "goal_header".to_string(),
-                to_json(goal_header_for_context.or(Some(GoalHeader::Accumulated))),
-            );
-
-            context.insert("goals".to_string(), to_json(goals));
-            context.insert("accumulations".to_string(), to_json(accumulations));
-            context.insert("days_remaining".to_string(), to_json(days_remaining));
-            context.insert("per_days".to_string(), to_json(per_days));
-
-            let content = shared_state
-                .handlebars
-                .render("goals/resets.turbo", &context);
-
-            Ok(generate_response(
-                &response_format,
-                content?,
-                StatusCode::OK,
-            ))
-        }
-        ResponseFormat::Json => Err(anyhow!("Not implemented").into()),
-    }
+    Ok(Redirect::to("/goals").into_response())
 }
 
 #[cfg(test)]
@@ -93,7 +36,7 @@ mod tests {
     use crate::test_utils::state_for_tests;
     use axum::Router;
     use axum::body::Body;
-    use axum::http::{Request, StatusCode, header};
+    use axum::http::{Request, StatusCode};
     use axum::routing::post;
     use chrono::{Duration, Utc};
     use postgres_types::Json;
@@ -148,7 +91,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_resets_action_turbo_response() {
+    async fn test_resets_action_only_resets_monthly_goals() {
         let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
         let client = shared_state.pool.get_client().await.unwrap();
         let user_id = user_extension.0.id;
@@ -193,17 +136,12 @@ mod tests {
         let request = Request::builder()
             .method("POST")
             .uri("/goals/resets/monthly")
-            .header(header::ACCEPT, "text/vnd.turbo-stream.html")
             .body(Body::empty())
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/vnd.turbo-stream.html"
-        );
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
 
         // Verify only monthly goals were reset
         let updated_monthly = Goal::get_one(&client, monthly_goal.id.unwrap(), user_id)
@@ -259,17 +197,12 @@ mod tests {
         let request = Request::builder()
             .method("POST")
             .uri("/goals/resets/monthly")
-            .header(header::ACCEPT, "text/vnd.turbo-stream.html")
             .body(Body::empty())
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/vnd.turbo-stream.html"
-        );
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
     }
 
     #[tokio::test]
@@ -318,13 +251,12 @@ mod tests {
         let request = Request::builder()
             .method("POST")
             .uri("/goals/resets/monthly")
-            .header(header::ACCEPT, "text/vnd.turbo-stream.html")
             .body(Body::empty())
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
 
         // Verify non-monthly goals were not reset
         let updated_daily = Goal::get_one(&client, daily_goal.id.unwrap(), user_id)
@@ -336,28 +268,6 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(updated_yearly.accumulated_amount, Decimal::new(2500, 0));
-    }
-
-    #[tokio::test]
-    async fn test_resets_action_json_not_implemented() {
-        let (shared_state, user_extension, context_extension) = state_for_tests().await.unwrap();
-
-        let app = Router::new()
-            .route("/goals/resets/{recurrence}", post(action))
-            .layer(user_extension)
-            .layer(context_extension)
-            .with_state(shared_state.clone());
-
-        let request = Request::builder()
-            .method("POST")
-            .uri("/goals/resets/monthly")
-            .header(header::ACCEPT, "application/json")
-            .body(Body::empty())
-            .unwrap();
-
-        let response = app.oneshot(request).await.unwrap();
-
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
@@ -373,16 +283,11 @@ mod tests {
         let request = Request::builder()
             .method("POST")
             .uri("/goals/resets/monthly")
-            .header(header::ACCEPT, "text/vnd.turbo-stream.html")
             .body(Body::empty())
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/vnd.turbo-stream.html"
-        );
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
     }
 }

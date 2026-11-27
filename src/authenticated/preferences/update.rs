@@ -1,12 +1,15 @@
 use super::PreferencesForm;
 use crate::{
-    HandlebarsContext, SharedState, authenticated::{UserExtension, dashboard::generate_dashboard_context_for, goals::generate_goal_index_context_for}, errors::AppResponse, models::user::{User, preferences::Preferences},
+    SharedState,
+    authenticated::UserExtension,
+    errors::AppResponse,
+    models::user::{User, preferences::Preferences},
 };
 use anyhow::anyhow;
 use axum::{
     Extension, Form,
     extract::State,
-    response::{Html, IntoResponse},
+    response::{IntoResponse, Redirect},
 };
 use postgres_types::Json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
@@ -14,7 +17,6 @@ use rust_decimal::{Decimal, prelude::FromPrimitive};
 pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
-    Extension(mut context): Extension<HandlebarsContext>,
     form: Form<PreferencesForm>,
 ) -> AppResponse {
     let client = shared_state.pool.get_client().await?;
@@ -73,16 +75,10 @@ pub async fn action(
     user.preferences = Some(Json(preferences.clone()));
     user.update(&client).await?;
 
-    generate_dashboard_context_for(&mut context, &user, &client).await?;
-    generate_goal_index_context_for(&mut context, &user, &client).await?;
-
-    let html = shared_state
-        .handlebars
-        .render("preferences/update", &context)?;
-
-    Ok((
-        [("content-type", "text/vnd.turbo-stream.html")],
-        Html::from(html),
-    )
-        .into_response())
+    // The goals table header only submits `goal_header`; send that back to the goals page.
+    if form.goal_header.is_some() {
+        Ok(Redirect::to("/goals").into_response())
+    } else {
+        Ok(Redirect::to("/preferences").into_response())
+    }
 }

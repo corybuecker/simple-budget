@@ -111,7 +111,7 @@ The application includes:
 │   └── main.rs              # Application entry point
 ├── migrations/              # Database schema migrations
 ├── assets/                  # Static assets and compiled CSS
-├── templates_legacy/        # Tera HTML templates
+├── templates/               # Askama HTML templates
 ├── k8s/                     # Kubernetes deployment manifests
 ├── ios/                     # Companion iOS application
 └── dev/docker-compose.yaml  # Local development environment

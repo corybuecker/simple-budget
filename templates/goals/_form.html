@@ -1,0 +1,61 @@
+{% if let Some(csrf) = layout.csrf_token %}
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+{% endif %}
+<div>
+    <h1>
+        Goals
+        {% if !name.is_empty() %}<div>{{ name }}</div>{% endif %}
+    </h1>
+    <div id="errors">
+        {% if !errors.is_empty() %}<div>{{ errors }}</div>{% endif %}
+    </div>
+    <div>
+        <label for="name">Goal Name</label>
+        <input id="name"
+               name="name"
+               required
+               type="text"
+               value="{{ name }}"
+               placeholder="Enter goal name" />
+    </div>
+    <div data-controller="currency-input"
+         data-currency-input-precision-value="2">
+        <label for="target">Target Amount</label>
+        <div>
+            <span>$</span>
+            <input id="target"
+                   data-action="currency-input#change"
+                   data-currency-input-target="input"
+                   inputmode="decimal"
+                   min="0"
+                   name="target"
+                   placeholder="0.00"
+                   required
+                   step="0.01"
+                   type="number"
+                   value="{{ target }}" />
+        </div>
+        <div data-currency-input-target="output"></div>
+    </div>
+    <div>
+        <label for="target_date">Target Date</label>
+        <input id="target_date"
+               name="target_date"
+               required
+               type="date"
+               value="{{ target_date }}" />
+    </div>
+    <div>
+        <label for="recurrence">Recurrence</label>
+        <select id="recurrence" name="recurrence" required>
+            {% for (value, label) in [("never", "Never"), ("daily", "Daily"), ("weekly", "Weekly"), ("monthly", "Monthly"), ("quarterly", "Quarterly"), ("yearly", "Yearly")] %}
+                <option value="{{ value }}" {% if recurrence == *value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <p>How often should this goal repeat after completion?</p>
+    </div>
+    <div>
+        <a href="/goals">Cancel</a>
+        <input type="submit" value="Save Goal" />
+    </div>
+</div>

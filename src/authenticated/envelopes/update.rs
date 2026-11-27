@@ -1,19 +1,16 @@
-use super::{EnvelopeForm, schema};
+use super::{EditTemplate, EnvelopeForm, schema};
 use crate::{
-    HandlebarsContext, SharedState,
-    authenticated::UserExtension,
-    errors::AppResponse,
-    models::envelope::Envelope,
-    utilities::responses::{self, generate_response, get_response_format},
+    LayoutCtx, SharedState, authenticated::UserExtension, errors::AppResponse,
+    models::envelope::Envelope, utilities::responses::generate_response,
 };
 use anyhow::anyhow;
+use askama::Template;
 use axum::{
-    Extension, Form, Json,
+    Extension, Form,
     extract::{Path, State},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Redirect},
 };
-use handlebars::to_json;
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 use uuid::Uuid;
 
@@ -21,68 +18,33 @@ pub async fn action(
     shared_state: State<SharedState>,
     user: Extension<UserExtension>,
     Path(id): Path<Uuid>,
-    headers: HeaderMap,
-    Extension(context): Extension<HandlebarsContext>,
+    Extension(layout): Extension<LayoutCtx>,
     Form(form): Form<EnvelopeForm>,
 ) -> AppResponse {
-    let json = serde_json::to_value(&form)?;
-    let valid = jsonschema::validate(&schema(), &json);
-    let response_format = responses::get_response_format(&headers)?;
-
-    match valid {
-        Ok(_) => {}
-        Err(validation_errors) => {
-            let mut context = context.clone();
-
-            context.insert("errors".to_string(), to_json(validation_errors.to_string()));
-            context.insert("id".to_string(), to_json(id));
-            context.insert("name".to_string(), to_json(&form.name));
-            context.insert("amount".to_string(), to_json(form.amount));
-
-            match response_format {
-                responses::ResponseFormat::Html => {
-                    context.insert("partial".to_string(), to_json("envelopes/form"));
-                    return Ok(responses::generate_response(
-                        &responses::ResponseFormat::Html,
-                        shared_state.handlebars.render("layout", &context)?,
-                        StatusCode::BAD_REQUEST,
-                    ));
-                }
-                responses::ResponseFormat::Turbo => {
-                    return Ok(responses::generate_response(
-                        &response_format,
-                        shared_state.handlebars.render("envelopes/form", &context)?,
-                        StatusCode::BAD_REQUEST,
-                    ));
-                }
-                responses::ResponseFormat::Json => {
-                    return Ok(responses::generate_response(
-                        &response_format,
-                        serde_json::to_string(&context)?,
-                        StatusCode::BAD_REQUEST,
-                    ));
-                }
-            }
-        }
-    }
     let client = shared_state.pool.get_client().await?;
-    let mut envelope = Envelope::get_one(&client, id, user.id).await?;
+    let json = serde_json::to_value(&form)?;
 
+    if let Err(validation_errors) = jsonschema::validate(&schema(), &json) {
+        let template = EditTemplate {
+            layout,
+            id,
+            name: form.name,
+            amount: form.amount.to_string(),
+            errors: validation_errors.to_string(),
+        };
+        return Ok(generate_response(
+            template.render()?,
+            StatusCode::BAD_REQUEST,
+        ));
+    }
+
+    let mut envelope = Envelope::get_one(&client, id, user.id).await?;
     envelope.name = form.name.clone();
     envelope.amount =
         Decimal::from_f64(form.amount).ok_or_else(|| anyhow!("could not parse decimal"))?;
     envelope.update(&client).await?;
 
-    match get_response_format(&headers)? {
-        responses::ResponseFormat::Html | responses::ResponseFormat::Turbo => {
-            Ok(Redirect::to("/envelopes").into_response())
-        }
-        responses::ResponseFormat::Json => Ok(generate_response(
-            &responses::ResponseFormat::Json,
-            Json(envelope),
-            StatusCode::OK,
-        )),
-    }
+    Ok(Redirect::to("/envelopes").into_response())
 }
 
 #[cfg(test)]

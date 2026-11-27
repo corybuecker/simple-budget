@@ -1,11 +1,8 @@
-use std::{env, str::FromStr};
+use std::env;
 
 use crate::{
-    HandlebarsContext,
-    authenticated::UserExtension,
-    errors::AppError,
+    LayoutCtx, Section, authenticated::UserExtension, errors::AppError,
     models::user::preferences::Preferences,
-    utilities::handlebars::{DigestAssetHandlebarsHelper, walk_directory},
 };
 
 #[cfg(test)]
@@ -13,53 +10,29 @@ use crate::{SharedState, db::database_pool, models::user::User};
 use anyhow::{Result, anyhow};
 use axum::Extension;
 use axum_extra::extract::cookie::Key;
-use handlebars::Handlebars;
 use postgres_types::Json;
 use rust_database_common::GenericClient;
 
-pub async fn state_for_tests() -> Result<(
-    SharedState,
-    Extension<UserExtension>,
-    Extension<HandlebarsContext>,
-)> {
+pub async fn state_for_tests()
+-> Result<(SharedState, Extension<UserExtension>, Extension<LayoutCtx>)> {
     let pool = database_pool(Some(&env::var("TEST_DATABASE_URL")?)).await?;
 
-    let client = pool.get_client().await?;
-
-    let user_extension = user_extension_for_tests(&client).await.unwrap();
-    let mut handlebars = Handlebars::new();
-    handlebars.set_dev_mode(true);
-    handlebars.register_helper(
-        "digest_asset",
-        Box::new(DigestAssetHandlebarsHelper {
-            key: String::from_str("test")?,
-        }),
-    );
-
-    for template in walk_directory("./templates").unwrap() {
-        let name = template
-            .to_str()
-            .unwrap()
-            .replace("./templates/", "")
-            .replace(".hbs", "");
-        handlebars
-            .register_template_file(&name, template.to_str().unwrap())
-            .unwrap();
-    }
-
-    let pool = database_pool(Some(&env::var("TEST_DATABASE_URL")?)).await?;
+    let user_extension = user_extension_for_tests(&pool.get_client().await?)
+        .await
+        .unwrap();
 
     let shared_state = SharedState {
         key: Key::generate(),
         pool,
-        handlebars,
     };
 
-    Ok((
-        shared_state,
-        user_extension,
-        Extension(HandlebarsContext::new()),
-    ))
+    let layout = LayoutCtx {
+        section: Section::Reports,
+        csrf_token: Some(user_extension.csrf.clone()),
+        nonce: "test".to_owned(),
+    };
+
+    Ok((shared_state, user_extension, Extension(layout)))
 }
 
 pub async fn user_for_tests(
